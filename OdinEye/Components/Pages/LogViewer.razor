@@ -1,0 +1,54 @@
+﻿@page "/log"
+@implements IAsyncDisposable
+@inject LogChannel LogChannel
+
+<PageTitle>Log</PageTitle>
+
+<RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Start" Gap="0">
+    @foreach (var line in logLines)
+    {
+        <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Left" Style="font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;">
+            <span>@line</span>
+        </RadzenText>
+    }
+</RadzenStack>
+
+@code {
+    const int MaxLines = 250;
+
+    static List<string> logLines = new(MaxLines);
+
+    Task logReader = null!;
+    CancellationTokenSource cts = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        logReader = Task.Run(ReceiveLogs);
+
+        return base.OnInitializedAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        cts.Cancel();
+        await logReader;
+        cts.Dispose();
+    }
+
+    private async Task ReceiveLogs()
+    {
+        try
+        {
+            await foreach (var line in LogChannel.Reader.ReadAllAsync(cts.Token))
+            {
+                logLines.Insert(0, line);
+                if (logLines.Count > MaxLines)
+                {
+                    logLines.RemoveRange(MaxLines, logLines.Count - MaxLines);
+                }
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+}

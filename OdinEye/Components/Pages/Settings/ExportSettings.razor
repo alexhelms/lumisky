@@ -1,0 +1,142 @@
+﻿@using OdinEye.Core.Profile
+@inject IProfileProvider Profile
+@inject NotificationService NotificationService
+
+<RadzenTemplateForm TItem="ExportSettingsModel" Data="@model" Submit="OnSubmit">
+    <RadzenStack>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>General</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.EnableExport" />
+                        <RadzenLabel Text="Enable Exporting" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.ExportRaws" />
+                        <RadzenLabel Text="Export Raws" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.ExportImages" />
+                        <RadzenLabel Text="Export Images" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.ExportPanoramas" />
+                        <RadzenLabel Text="Export Panorama" Component="True" />
+                    </RadzenStack>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>FTP</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.EnableFtp" />
+                        <RadzenLabel Text="Enable FTP" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenFormField Text="Host" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenTextBox @bind-Value="model.FtpHostname" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Port" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.FtpPort" Min="1" Max="65535" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Username" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenTextBox @bind-Value="model.FtpUsername" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Password" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenPassword @bind-Value="model.FtpPassword" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Remote Path" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenTextBox @bind-Value="model.FtpRemotePath" />
+                    </RadzenFormField>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.EnableCertificateValidation" />
+                        <RadzenLabel Text="Validate Certificates" Component="True" />
+                    </RadzenStack>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenRow>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+        </RadzenRow>
+
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    private ExportSettingsModel model = new();
+
+    protected override void OnInitialized()
+    {
+        model.EnableExport = Profile.Current.Export.EnableExport;
+        model.ExportRaws = Profile.Current.Export.ExportRaws;
+        model.ExportImages = Profile.Current.Export.ExportImages;
+        model.ExportPanoramas = Profile.Current.Export.ExportPanoramas;
+        model.EnableFtp = Profile.Current.Export.EnableFtp;
+        model.FtpHostname = Profile.Current.Export.FtpHostname;
+        model.FtpPort = Profile.Current.Export.FtpPort;
+        model.FtpUsername = Profile.Current.Export.FtpUsername;
+        model.FtpPassword = Profile.Current.Export.FtpPassword;
+        model.FtpRemotePath = Profile.Current.Export.FtpRemotePath;
+        model.EnableCertificateValidation = Profile.Current.Export.EnableCertificateValidation;
+
+    }
+
+    private void OnSubmit(ExportSettingsModel model)
+    {
+        Profile.Current.Export.EnableExport = model.EnableExport;
+        Profile.Current.Export.ExportRaws = model.ExportRaws;
+        Profile.Current.Export.ExportImages = model.ExportImages;
+        Profile.Current.Export.ExportPanoramas = model.ExportPanoramas;
+        Profile.Current.Export.EnableFtp = model.EnableFtp;
+        Profile.Current.Export.FtpHostname = model.FtpHostname;
+        Profile.Current.Export.FtpPort = model.FtpPort;
+        Profile.Current.Export.FtpUsername = model.FtpUsername;
+        Profile.Current.Export.FtpPassword = model.FtpPassword;
+        Profile.Current.Export.FtpRemotePath = model.FtpRemotePath;
+        Profile.Current.Export.EnableCertificateValidation = model.EnableCertificateValidation;
+
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Duration = 2000,
+            Summary = "Saved!",
+        });
+    }
+
+    public record ExportSettingsModel
+    {
+        public bool EnableExport { get; set; }
+        public bool ExportRaws { get; set; }
+        public bool ExportImages { get; set; }
+        public bool ExportPanoramas { get; set; }
+        public bool EnableFtp { get; set; }
+        public string FtpHostname { get; set; } = null!;
+        public int FtpPort { get; set; }
+        public string FtpUsername { get; set; } = null!;
+        public string FtpPassword { get; set; } = null!;
+        public string FtpRemotePath { get; set; } = null!;
+        public bool EnableCertificateValidation { get; set; }
+    }
+}

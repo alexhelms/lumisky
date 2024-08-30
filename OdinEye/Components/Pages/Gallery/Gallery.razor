@@ -1,0 +1,32 @@
+﻿@page "/gallery"
+<PageTitle>Gallery</PageTitle>
+
+<RadzenTabs>
+    <Tabs>
+        
+        <RadzenTabsItem Text="Images">
+            <ImageGallery />
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Videos">
+            <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+                <RadzenText>No Videos Available</RadzenText>
+            </RadzenRow>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Panoramas">
+            <PanoramaGallery />
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Keograms">
+            <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+                <RadzenText>No Keograms Available</RadzenText>
+            </RadzenRow>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Raw Images">
+            <RawImageGallery />
+        </RadzenTabsItem>
+
+    </Tabs>
+</RadzenTabs>

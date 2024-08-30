@@ -1,0 +1,76 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using OdinEye.Controllers
+@using OdinEye.Core.Services
+@implements IDisposable
+@inject AppDbContext DbContext
+@inject ImageService ImageService
+
+@if (!panoramasAvailable)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+        <RadzenText>No Panoramas Available</RadzenText>
+    </RadzenRow>
+}
+else
+{
+    <RadzenDataGrid @ref=grid TItem="Panorama" Data="@panoramas" AllowFiltering="true" AllowColumnResize="true"
+                    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+        <Columns>
+            <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
+                <Template Context="panorama">
+                    <RadzenLink Path="@($"/api/image/download/panorama?ts={panorama.ExposedOn}")" Target="_blank">
+                        <RadzenButton Icon="download" Size="ButtonSize.Small" />
+                    </RadzenLink>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Title="View" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="panorama">
+                    <RadzenLink Path="@($"/api/image/view/panorama?ts={panorama.ExposedOn}")" Target="_blank">
+                        <RadzenButton Icon="open_in_new" Size="ButtonSize.Small" />
+                    </RadzenLink>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Panorama.Filename)" Title="Filename">
+                <Template Context="panorama">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body1" class="rz-m-0">@Path.GetFileName(panorama.Filename)</RadzenText>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Panorama.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending">
+                <Template Context="panorama">
+                    @DateTimeOffset.FromUnixTimeSeconds(panorama.ExposedOn).ToLocalTime().ToString("G")
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    RadzenDataGrid<Panorama>? grid;
+    IQueryable<Panorama>? panoramas;
+    bool panoramasAvailable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        panoramas = DbContext.Panoramas;
+        panoramasAvailable = await DbContext.Panoramas.AnyAsync();
+
+        ImageService.NewPanorama += OnNewPanorama;
+    }
+
+    public void Dispose()
+    {
+        ImageService.NewPanorama -= OnNewPanorama;
+    }
+
+    private void OnNewPanorama(object? sender, EventArgs e)
+    {
+        if (grid is not null)
+            InvokeAsync(grid.RefreshDataAsync);
+
+        panoramasAvailable = true;
+        InvokeAsync(StateHasChanged);
+    }
+}

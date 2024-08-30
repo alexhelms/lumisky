@@ -1,0 +1,243 @@
+﻿@using OdinEye.Core.Imaging
+@using OdinEye.Core.Profile
+@inject IProfileProvider Profile
+@inject NotificationService NotificationService
+
+<RadzenTemplateForm TItem="ProcessingSettingsModel" Data="@model" Submit="OnSubmit">
+    <RadzenStack>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Bias</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenFormField Text="Red" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.WbRedBias" Min="0" Max="1" Step="0.01" Format="0.0000" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Green" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.WbGreenBias" Min="0" Max="1" Step="0.01" Format="0.0000" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Blue" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.WbBlueBias" Min="0" Max="1" Step="0.01" Format="0.0000" />
+                    </RadzenFormField>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>White Balance</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn SizeMD="3">
+                            <RadzenFormField Text="Red" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
+                                <RadzenNumeric @bind-Value="model.WbRedScale" Min="0" Max="1" Step="0.01" Format="0.00" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn SizeMD="9">
+                            <RadzenSlider Min="0" Max="1" Step="0.01" @bind-Value=model.WbRedScale Style="width: 100%;" class="rz-mt-4" />
+                        </RadzenColumn>
+                    </RadzenRow>
+
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn SizeMD="3">
+                            <RadzenFormField Text="Green" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
+                                <RadzenNumeric @bind-Value="model.WbGreenScale" Min="0" Max="1" Step="0.01" Format="0.00" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn SizeMD="9">
+                            <RadzenSlider Min="0" Max="1" Step="0.01" @bind-Value=model.WbGreenScale Style="width: 100%;" class="rz-mt-4" />
+                        </RadzenColumn>
+                    </RadzenRow>
+
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn SizeMD="3">
+                            <RadzenFormField Text="Blue" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
+                                <RadzenNumeric @bind-Value="model.WbBlueScale" Min="0" Max="1" Step="0.01" Format="0.00" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn SizeMD="9">
+                            <RadzenSlider Min="0" Max="1" Step="0.01" @bind-Value=model.WbBlueScale Style="width: 100%;" class="rz-mt-4" />
+                        </RadzenColumn>
+                    </RadzenRow>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Circle Mask</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenFormField Text="Diameter" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.CircleMaskDiameter" Min="0" Max="10000" Step="10" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="X Offset" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.CircleMaskOffsetX" Min="-10000" Max="10000" Step="10" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Y Offset" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.CircleMaskOffsetY" Min="-10000" Max="10000" Step="10" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Blur Size" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.CircleMaskBlur" Min="0" Max="51" Step="2" />
+                    </RadzenFormField>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Overlay</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.DrawCardinalOverlay" />
+                        <RadzenLabel Text="Draw Cardinal Directions" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenFormField Text="Text Size" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.TextSize" Min="10" Max="200" Step="5" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Outline Thickness" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.TextOutline" Min="0" Max="50" Step="1" />
+                    </RadzenFormField>
+
+                    
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem">
+                            <RadzenLabel Text="Text Color" Component="TextColor" />
+                            <RadzenColorPicker Name="TextColor" @bind-Value="selectedTextColor" ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
+                        </RadzenStack>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem">
+                            <RadzenLabel Text="Outline Color" Component="OutlineColor" />
+                            <RadzenColorPicker Name="OutlineColor" @bind-Value="selectedTextOutlineColor" ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
+                        </RadzenStack>
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem" Wrap="FlexWrap.Wrap">
+                        <RadzenFormField Text="Top Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenDropDown @bind-Value="model.CardinalTopString" Data=@cardinalDirections />
+                        </RadzenFormField>
+                        <RadzenFormField Text="Bottom Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenDropDown @bind-Value="model.CardinalBottomString" Data=@cardinalDirections />
+                        </RadzenFormField>
+                        <RadzenFormField Text="Right Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenDropDown @bind-Value="model.CardinalRightString" Data=@cardinalDirections />
+                        </RadzenFormField>
+                        <RadzenFormField Text="Left Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenDropDown @bind-Value="model.CardinalLeftString" Data=@cardinalDirections />
+                        </RadzenFormField>
+                    </RadzenStack>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenRow>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+        </RadzenRow>
+
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    private ProcessingSettingsModel model = new();
+    private string selectedTextColor = "rgb(255, 255, 255)";
+    private string selectedTextOutlineColor = "rgb(0, 0, 0)";
+    private List<string> cardinalDirections = ["N", "S", "E", "W"];
+
+    protected override void OnInitialized()
+    {
+        model.WbRedScale = Profile.Current.Processing.WbRedScale;
+        model.WbGreenScale = Profile.Current.Processing.WbGreenScale;
+        model.WbBlueScale = Profile.Current.Processing.WbBlueScale;
+        model.WbRedBias = Profile.Current.Processing.WbRedBias;
+        model.WbGreenBias = Profile.Current.Processing.WbGreenBias;
+        model.WbBlueBias = Profile.Current.Processing.WbBlueBias;
+        model.CircleMaskDiameter = Profile.Current.Processing.CircleMaskDiameter;
+        model.CircleMaskOffsetX = Profile.Current.Processing.CircleMaskOffsetX;
+        model.CircleMaskOffsetY = Profile.Current.Processing.CircleMaskOffsetY;
+        model.CircleMaskBlur = Profile.Current.Processing.CircleMaskBlur;
+        model.DrawCardinalOverlay = Profile.Current.Processing.DrawCardinalOverlay;
+        model.TextSize = Profile.Current.Processing.TextSize;
+        model.TextOutline = Profile.Current.Processing.TextOutline;
+        model.TextColor = Profile.Current.Processing.TextColor;
+        model.TextOutlineColor = Profile.Current.Processing.TextOutlineColor;
+        model.CardinalTopString = Profile.Current.Processing.CardinalTopString;
+        model.CardinalBottomString = Profile.Current.Processing.CardinalBottomString;
+        model.CardinalRightString = Profile.Current.Processing.CardinalRightString;
+        model.CardinalLeftString = Profile.Current.Processing.CardinalLeftString;
+    }
+
+    private void OnSubmit(ProcessingSettingsModel model)
+    {
+        Profile.Current.Processing.WbRedScale = model.WbRedScale;
+        Profile.Current.Processing.WbGreenScale = model.WbGreenScale;
+        Profile.Current.Processing.WbBlueScale = model.WbBlueScale;
+        Profile.Current.Processing.WbRedBias = model.WbRedBias;
+        Profile.Current.Processing.WbGreenBias = model.WbGreenBias;
+        Profile.Current.Processing.WbBlueBias = model.WbBlueBias;
+        Profile.Current.Processing.CircleMaskDiameter = model.CircleMaskDiameter;
+        Profile.Current.Processing.CircleMaskOffsetX = model.CircleMaskOffsetX;
+        Profile.Current.Processing.CircleMaskOffsetY = model.CircleMaskOffsetY;
+        Profile.Current.Processing.CircleMaskBlur = model.CircleMaskBlur;
+        Profile.Current.Processing.DrawCardinalOverlay = model.DrawCardinalOverlay;
+        Profile.Current.Processing.TextSize = model.TextSize;
+        Profile.Current.Processing.TextOutline = model.TextOutline;
+        Profile.Current.Processing.TextColor = model.TextColor;
+        Profile.Current.Processing.TextOutlineColor = model.TextOutlineColor;
+        Profile.Current.Processing.CardinalTopString = model.CardinalTopString;
+        Profile.Current.Processing.CardinalBottomString = model.CardinalBottomString;
+        Profile.Current.Processing.CardinalRightString = model.CardinalRightString;
+        Profile.Current.Processing.CardinalLeftString = model.CardinalLeftString;
+
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Duration = 2000,
+            Summary = "Saved!",
+        });
+    }
+
+    public record ProcessingSettingsModel
+    {
+        public double WbRedScale { get; set; }
+        public double WbGreenScale { get; set; }
+        public double WbBlueScale { get; set; }
+        public double WbRedBias { get; set; }
+        public double WbGreenBias { get; set; }
+        public double WbBlueBias { get; set; }
+        public int CircleMaskDiameter { get; set; }
+        public int CircleMaskOffsetX { get; set; }
+        public int CircleMaskOffsetY { get; set; }
+        public int CircleMaskBlur { get; set; }
+        public bool DrawCardinalOverlay { get; set; }
+        public int TextSize { get; set; }
+        public int TextOutline { get; set; }
+        public string TextColor { get; set; } = null!;
+        public string TextOutlineColor { get; set; } = null!;
+        public string CardinalTopString { get; set; } = null!;
+        public string CardinalBottomString { get; set; } = null!;
+        public string CardinalRightString { get; set; } = null!;
+        public string CardinalLeftString { get; set; } = null!;
+    }
+}

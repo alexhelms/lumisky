@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "defaultProvider": "unpkg",
+  "libraries": [
+    {
+      "library": "@photo-sphere-viewer/core@5.9.0",
+      "destination": "wwwroot/lib/photo-sphere-viewer/core/"
+    },
+    {
+      "library": "three@0.167.1",
+      "destination": "wwwroot/lib/three/",
+      "files": [
+        "build/three.module.min.js"
+      ]
+    }
+  ]
+}

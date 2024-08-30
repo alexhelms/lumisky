@@ -1,0 +1,76 @@
+﻿@using OdinEye.Core.Services
+@implements IDisposable
+@inject AllSkyScheduler AllSkyScheduler
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+    @if (isStopping)
+    {
+        <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Light" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate"
+                                   Size="ProgressBarCircularSize.Small" />
+    }
+    <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-m-0">@allSkyStatusMessage</RadzenText>
+</RadzenStack>
+@if (!isAllSkyRunning)
+{
+    <RadzenButton Icon="play_arrow" ButtonStyle="ButtonStyle.Success" Click="StartAllSky" />
+}
+else
+{
+    <RadzenButton Icon="stop" ButtonStyle="ButtonStyle.Danger" Click="StopAllSky" Disabled="@(isStopping)"/>
+}
+
+@code {
+    bool isAllSkyRunning;
+    bool isStopping;
+    string allSkyStatusMessage = "Stopped";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        isAllSkyRunning = AllSkyScheduler.IsAllSkyRunning;
+
+        AllSkyScheduler.AllSkyStarted += OnAllSkyStarted;
+        AllSkyScheduler.AllSkyStopping += OnAllSkyStopping;
+        AllSkyScheduler.AllSkyStopped += OnAllSkyStopped;
+    }
+
+    public void Dispose()
+    {
+        AllSkyScheduler.AllSkyStarted -= OnAllSkyStarted;
+        AllSkyScheduler.AllSkyStopping -= OnAllSkyStopping;
+        AllSkyScheduler.AllSkyStopped -= OnAllSkyStopped;
+    }
+
+    private void OnAllSkyStarted(object? sender, EventArgs e)
+    {
+        allSkyStatusMessage = "Running";
+        isAllSkyRunning = AllSkyScheduler.IsAllSkyRunning;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnAllSkyStopping(object? sender, EventArgs e)
+    {
+        isStopping = true;
+        allSkyStatusMessage = "Stopping";
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnAllSkyStopped(object? sender, EventArgs e)
+    {
+        isStopping = false;
+        allSkyStatusMessage = "Stopped";
+        isAllSkyRunning = AllSkyScheduler.IsAllSkyRunning;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StartAllSky()
+    {
+        await AllSkyScheduler.Start();
+    }
+
+    private async Task StopAllSky()
+    {
+        await AllSkyScheduler.Stop();
+    }
+}

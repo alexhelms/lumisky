@@ -1,0 +1,157 @@
+﻿@using OdinEye.Core.Services
+@using SlimMessageBus
+@using System.Runtime.InteropServices.JavaScript
+@implements IDisposable
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject ImageService ImageService
+@page "/"
+
+<PageTitle>Images</PageTitle>
+
+<HeadContent>
+    <link rel="stylesheet" href="lib/photo-sphere-viewer/core/index.css" />
+</HeadContent>
+
+<RadzenTabs @bind-SelectedIndex="selectedTabIndex" Change="OnTabChange">
+    <Tabs>
+
+        <RadzenTabsItem Text="Fisheye">
+            @if (latestFisheyeUrl is not null)
+            {
+                <img src="@latestFisheyeUrl" style="width: 100%;" />
+            }
+            else
+            {
+                <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+                    <RadzenText>No Fisheye Available</RadzenText>
+                </RadzenRow>
+            }
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Panorama">
+            @if (latestPanoramaUrl is not null)
+            {
+                <img src="@latestPanoramaUrl" style="width: 100%;" />
+            }
+            else
+            {
+                <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+                    <RadzenText>No Panorama Available</RadzenText>
+                </RadzenRow>
+            }
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Panorama 3D">
+            @if (latestPanoramaUrl is not null)
+            {
+                <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+                    <div id="pano-viewer" style="width: 100%; height: 1200px;" />
+                </RadzenRow>
+            }
+            else
+            {
+                <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+                    <RadzenText>No Panorama 3D Available</RadzenText>
+                </RadzenRow>
+            }
+        </RadzenTabsItem>
+
+    </Tabs>
+</RadzenTabs>
+
+@code
+{
+    private const int Pano3dTabIndex = 2;
+
+    private const string LatestFisheyeUrlBase = "/api/image/latest/image";
+    private const string LatestPanoramaUrlBase = "/api/image/latest/panorama";
+    private string? latestFisheyeUrl;
+    private string? latestPanoramaUrl;
+    private int selectedTabIndex;
+    private int prevSelectedTabIndex;
+    private IJSObjectReference? module;
+
+    protected override void OnInitialized()
+    {
+        latestFisheyeUrl = GenerateFisheyeUrl();
+        latestPanoramaUrl = GeneratePanoramaUrl();
+        ImageService.NewImage += OnNewImage;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Images.razor.js");
+        }
+
+        if (selectedTabIndex == Pano3dTabIndex &&
+            latestPanoramaUrl is not null)
+        {
+            if (module is not null)
+            {
+                var size = ImageService.LatestPanoramaSize ?? default;
+                await module.InvokeVoidAsync("createPanoViewer");
+                await module.InvokeVoidAsync("updatePanoViewer", latestPanoramaUrl, size.Width, size.Height);
+            }
+        }
+        else
+        {
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("destroyPanoViewer");
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        ImageService.NewImage -= OnNewImage;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (module is not null)
+                await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+    }
+
+    private string? GenerateFisheyeUrl()
+    {
+        if (ImageService.LatestImagePath is not null)
+            return LatestFisheyeUrlBase + $"?time={DateTime.Now.Ticks}";
+        return null;
+    }
+
+    private string? GeneratePanoramaUrl()
+    {
+        if (ImageService.LatestPanoramaPath is not null)
+            return LatestPanoramaUrlBase + $"?time={DateTime.Now.Ticks}";
+        return null;
+    }
+
+    private void OnNewImage(object? sender, EventArgs e)
+    {
+        latestFisheyeUrl = GenerateFisheyeUrl();
+        latestPanoramaUrl = GeneratePanoramaUrl();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnTabChange(int index)
+    {
+        if (prevSelectedTabIndex == Pano3dTabIndex && index != Pano3dTabIndex)
+        {
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("destroyPanoViewer");
+            }
+        }
+
+        prevSelectedTabIndex = index;
+    }
+}
