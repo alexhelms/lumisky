@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-preview-noble AS base
 USER app
 WORKDIR /app
 EXPOSE 8080
@@ -14,18 +14,15 @@ RUN apt-get update -y \
     python3-pil \
     ffmpeg \
     libgeotiff5 \
-    #libhdf5-103-1t64 \
+    libhdf5-103-1t64 \
     libgstreamermm-1.0-1 \
-    vtk9 \
-    gstreamer1.0-gtk3 \
-    libgslcblas0 \
-    libatlas3-base
+    vtk9
 RUN mkdir /odineye \
     && chmod 755 /odineye \
     && chown app:app /odineye
 USER app
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-preview-noble AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Directory.Packages.props", "."]

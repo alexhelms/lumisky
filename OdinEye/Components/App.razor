@@ -5,9 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    @* <link rel="stylesheet" href="@Assets["app.css"]" /> *@
-    <link rel="stylesheet" href="app.css" />
-    <RadzenTheme Theme="standard-dark" @rendermode="InteractiveServer" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <RadzenTheme Theme="standard-dark" @rendermode="PageRenderMode" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <script type="importmap">
     {
@@ -17,11 +16,11 @@
         }
     }
     </script>
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    <Routes @rendermode="PageRenderMode" />
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
 </body>
@@ -32,6 +31,6 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    // private IComponentRenderMode? PageRenderMode =>
-    //     HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
 }

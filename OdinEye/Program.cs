@@ -17,9 +17,6 @@ public class Program
             .MinimumLevel.Debug()
             .Enrich.FromLogContext()
             .WriteTo.Console()
-#if DEBUG
-            .WriteTo.Debug()
-#endif
             .WriteTo.File(
                 path: Path.Combine(OdinEyePaths.Logs, "odineye.log"),
                 buffered: true,
@@ -33,14 +30,12 @@ public class Program
             builder.Services.AddSerilog((services, lc) => lc
                 .ReadFrom.Services(services)
                 .MinimumLevel.Information()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
                 .MinimumLevel.Override("Quartz", LogEventLevel.Warning)
                 .MinimumLevel.Override("SlimMessageBus", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-#if DEBUG
-                .WriteTo.Debug()
-#endif
                 .WriteTo.File(
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}",
                     path: Path.Combine(OdinEyePaths.Logs, "odineye.log"),
@@ -103,8 +98,7 @@ public class Program
 
             app.UseAntiforgery();
 
-            //app.MapStaticAssets();
-            app.UseStaticFiles();
+            app.MapStaticAssets();
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
 
