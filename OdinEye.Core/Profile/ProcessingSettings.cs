@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.CodeAnalysis.Text;
 
 namespace OdinEye.Core.Profile;
 
@@ -24,6 +23,10 @@ public interface IProcessingSettings : ISettings
     string CardinalBottomString { get; set; }
     string CardinalRightString { get; set; }
     string CardinalLeftString { get; set; }
+    string PanoramaCardinal0AzimuthString { get; set; }
+    string PanoramaCardinal90AzimuthString { get; set; }
+    string PanoramaCardinal180AzimuthString { get; set; }
+    string PanoramaCardinal270AzimuthString { get; set; }
 }
 
 public sealed partial class ProcessingSettings : Settings, IProcessingSettings
@@ -49,6 +52,10 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         CardinalBottomString = "S";
         CardinalRightString = "E";
         CardinalLeftString = "W";
+        PanoramaCardinal0AzimuthString = "N";
+        PanoramaCardinal90AzimuthString = "E";
+        PanoramaCardinal180AzimuthString = "S";
+        PanoramaCardinal270AzimuthString = "W";
     }
 
     [ObservableProperty] double _wbRedScale;
@@ -70,4 +77,8 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
     [ObservableProperty] string _cardinalBottomString = "S";
     [ObservableProperty] string _cardinalRightString = "E";
     [ObservableProperty] string _cardinalLeftString = "W";
+    [ObservableProperty] string _panoramaCardinal0AzimuthString = "N";
+    [ObservableProperty] string _panoramaCardinal90AzimuthString = "E";
+    [ObservableProperty] string _panoramaCardinal180AzimuthString = "S";
+    [ObservableProperty] string _panoramaCardinal270AzimuthString = "W";
 }

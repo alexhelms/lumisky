@@ -133,19 +133,40 @@
                         </RadzenStack>
                     </RadzenStack>
 
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem" Wrap="FlexWrap.Wrap">
-                        <RadzenFormField Text="Top Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                            <RadzenDropDown @bind-Value="model.CardinalTopString" Data=@cardinalDirections />
-                        </RadzenFormField>
-                        <RadzenFormField Text="Bottom Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                            <RadzenDropDown @bind-Value="model.CardinalBottomString" Data=@cardinalDirections />
-                        </RadzenFormField>
-                        <RadzenFormField Text="Right Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                            <RadzenDropDown @bind-Value="model.CardinalRightString" Data=@cardinalDirections />
-                        </RadzenFormField>
-                        <RadzenFormField Text="Left Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                            <RadzenDropDown @bind-Value="model.CardinalLeftString" Data=@cardinalDirections />
-                        </RadzenFormField>
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0">
+                        <RadzenText Text="Fisheye" TextStyle="TextStyle.Body1" class="rz-mb-0" />
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem" Wrap="FlexWrap.Wrap">
+                            <RadzenFormField Text="Top Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.CardinalTopString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="Bottom Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.CardinalBottomString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="Right Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.CardinalRightString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="Left Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.CardinalLeftString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                        </RadzenStack>
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0">
+                        <RadzenText Text="Panorama" TextStyle="TextStyle.Body1" class="rz-mb-0" />
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem" Wrap="FlexWrap.Wrap">
+                            <RadzenFormField Text="0° Azimuth Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.PanoramaCardinal0AzimuthString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="90° Azimuth Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.PanoramaCardinal90AzimuthString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="180° Azimuth Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.PanoramaCardinal180AzimuthString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="270° Azimuth Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.PanoramaCardinal270AzimuthString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                        </RadzenStack>
                     </RadzenStack>
 
                 </RadzenStack>
@@ -186,6 +207,10 @@
         model.CardinalBottomString = Profile.Current.Processing.CardinalBottomString;
         model.CardinalRightString = Profile.Current.Processing.CardinalRightString;
         model.CardinalLeftString = Profile.Current.Processing.CardinalLeftString;
+        model.PanoramaCardinal0AzimuthString = Profile.Current.Processing.PanoramaCardinal0AzimuthString;
+        model.PanoramaCardinal90AzimuthString = Profile.Current.Processing.PanoramaCardinal90AzimuthString;
+        model.PanoramaCardinal180AzimuthString = Profile.Current.Processing.PanoramaCardinal180AzimuthString;
+        model.PanoramaCardinal270AzimuthString = Profile.Current.Processing.PanoramaCardinal270AzimuthString;
     }
 
     private void OnSubmit(ProcessingSettingsModel model)
@@ -209,6 +234,10 @@
         Profile.Current.Processing.CardinalBottomString = model.CardinalBottomString;
         Profile.Current.Processing.CardinalRightString = model.CardinalRightString;
         Profile.Current.Processing.CardinalLeftString = model.CardinalLeftString;
+        Profile.Current.Processing.PanoramaCardinal0AzimuthString = model.PanoramaCardinal0AzimuthString;
+        Profile.Current.Processing.PanoramaCardinal90AzimuthString = model.PanoramaCardinal90AzimuthString;
+        Profile.Current.Processing.PanoramaCardinal180AzimuthString = model.PanoramaCardinal180AzimuthString;
+        Profile.Current.Processing.PanoramaCardinal270AzimuthString = model.PanoramaCardinal270AzimuthString;
 
         NotificationService.Notify(new NotificationMessage
         {
@@ -239,5 +268,9 @@
         public string CardinalBottomString { get; set; } = null!;
         public string CardinalRightString { get; set; } = null!;
         public string CardinalLeftString { get; set; } = null!;
+        public string PanoramaCardinal0AzimuthString { get; set; } = null!;
+        public string PanoramaCardinal90AzimuthString { get; set; } = null!;
+        public string PanoramaCardinal180AzimuthString { get; set; } = null!;
+        public string PanoramaCardinal270AzimuthString { get; set; } = null!;
     }
 }
