@@ -152,7 +152,11 @@
         model.Name = Profile.Current.Camera.Name;
         model.Offset = Profile.Current.Camera.Offset;
         model.DaytimeGain = Profile.Current.Camera.DaytimeGain;
+        model.DaytimeElectronGain = Profile.Current.Camera.DaytimeElectronGain;
+        model.DaytimeBias = Profile.Current.Camera.DaytimeBias;
         model.NighttimeGain = Profile.Current.Camera.NighttimeGain;
+        model.NighttimeElectronGain = Profile.Current.Camera.NighttimeElectronGain;
+        model.NighttimeBias = Profile.Current.Camera.NighttimeBias;
         model.FocalLength = Profile.Current.Camera.FocalLength;
     }
 
@@ -185,11 +189,11 @@
         public string? Name { get; set; }
         public int Offset { get; set; }
         public int DaytimeGain { get; set; }
-        public int DaytimeElectronGain{ get; set; }
-        public int DaytimeBias{ get; set; }
+        public double DaytimeElectronGain{ get; set; }
+        public double DaytimeBias{ get; set; }
         public int NighttimeGain { get; set; }
-        public int NighttimeElectronGain { get; set; }
-        public int NighttimeBias { get; set; }
+        public double NighttimeElectronGain { get; set; }
+        public double NighttimeBias { get; set; }
         public double FocalLength { get; set; }
     }
 }
