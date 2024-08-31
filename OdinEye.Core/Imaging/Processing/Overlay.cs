@@ -2,6 +2,7 @@
 using Emgu.CV;
 using OdinEye.Core.IO;
 using OdinEye.Core.Memory;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace OdinEye.Core.Imaging.Processing;
@@ -9,7 +10,7 @@ namespace OdinEye.Core.Imaging.Processing;
 public static class Overlay
 {
     private static string FontPath;
-    private static string PythonPath;
+    private static string PythonExecutable;
     private static string PythonOverlayPath;
     
     static Overlay()
@@ -17,7 +18,10 @@ public static class Overlay
         var assembly = typeof(Overlay).Assembly;
         var directory = Path.GetDirectoryName(assembly.Location)!;
         FontPath = Path.Combine(directory, "Fonts", "RobotoMono-Regular.ttf");
-        PythonPath = Environment.GetEnvironmentVariable("PYTHONEXE") ?? "python";
+        var defaultPythonExecutable = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? "python" 
+            : "/usr/bin/python3";
+        PythonExecutable = Environment.GetEnvironmentVariable("PYTHONEXE") ?? defaultPythonExecutable;
         PythonOverlayPath = Path.Combine(directory, "python", "overlay.py");
     }
 
@@ -36,7 +40,7 @@ public static class Overlay
         const char JoinChar = '~';
         var stderr = new StringBuilder();
 
-        var result = await Cli.Wrap(PythonPath)
+        var result = await Cli.Wrap(PythonExecutable)
             .WithArguments(c => c
                 .Add($"\"{PythonOverlayPath}\"", escape: false)
                 .Add($"\"{blobFilename}\"", escape: false)
