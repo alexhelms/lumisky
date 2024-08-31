@@ -1,5 +1,6 @@
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using OdinEye.Core.Primitives;
 
 namespace OdinEye.Core.Imaging.Processing;
 
@@ -28,48 +29,98 @@ public static class Transform
         if (image.Depth != DepthType.Cv8U)
             throw new ArgumentOutOfRangeException(nameof(image.Depth));
 
-        using var imageClone = image.Clone();
-        Rotate(imageClone, angle);
+        using var fisheyeImage = image.Clone();
+        Rotate(fisheyeImage, angle + 90);
 
-        int channels = imageClone.NumberOfChannels;
-        int width = imageClone.Cols;
-        int height = imageClone.Rows;
-        int centerX = (int)(width / 2 + xOffset);
-        int centerY = (int)(height / 2 + yOffset);
+        var fisheyeBounds = new Rectangle(0, 0, image.Cols, image.Rows);
+        var equirectBounds = new Rectangle(
+            x: 0,
+            y: 0,
+            width: (int)(2 * Math.PI * radius + 0.5),
+            height: (int)(Math.PI * radius + 0.5));
 
-        int w = (int)(2 * Math.PI * radius + 0.5);
-        int h = (int)(Math.PI * radius + 0.5);
 
-        var panoImage = new Mat(h, w, DepthType.Cv8U, 3);
+        int centerX = (int)(fisheyeBounds.Width / 2 + xOffset);
+        int centerY = (int)(fisheyeBounds.Height / 2 + yOffset);
+        
+        var panoImage = new Mat(equirectBounds.Height, equirectBounds.Width, DepthType.Cv8U, 3);
 
-        unsafe
+        var op = new PanoramaOperation(
+            fisheyeImage.DataPointer,
+            fisheyeImage.Step,
+            panoImage.DataPointer,
+            panoImage.Step,
+            fisheyeBounds,
+            equirectBounds,
+            centerX,
+            centerY,
+            radius);
+        op.Run();
+
+        return panoImage;
+    }
+
+    private class PanoramaOperation : IRowIntervalOperation
+    {
+        const int Channels = 3;
+
+        private nint fisheyePtr;
+        private int fisheyeStride;
+        private nint equirectPtr;
+        private int equirectStride;
+        private Rectangle fisheyeBounds;
+        private Rectangle equirectBounds;
+        private int centerX;
+        private int centerY;
+        private double radius;
+
+        public PanoramaOperation(nint fisheyePtr, int fisheyeStride, nint equirectPtr, int equirectStride,
+            Rectangle fisheyeBounds, Rectangle equirectBounds, int centerX, int centerY, double radius)
         {
-            var srcSpan = imageClone.GetSpan<byte>();
-            var dstSpan = panoImage.GetSpan<byte>();
+            this.fisheyePtr = fisheyePtr;
+            this.fisheyeStride = fisheyeStride;
+            this.equirectPtr = equirectPtr;
+            this.equirectStride = equirectStride;
+            this.fisheyeBounds = fisheyeBounds;
+            this.equirectBounds = equirectBounds;
+            this.centerX = centerX;
+            this.centerY = centerY;
+            this.radius = radius;
+        }
 
-            for (int y = 0; y < h; y++)
+        public void Run()
+        {
+            ParallelRowIterator.IterateRowIntervals(equirectBounds, this);
+        }
+
+        public unsafe void Invoke(in RowInterval rows)
+        {
+            int fisheyeLength = fisheyeBounds.Height * fisheyeStride;
+            int equirectLength = equirectBounds.Height * equirectStride;
+            var fisheyeSpan = new Span<byte>((void*)fisheyePtr, fisheyeLength);
+            var equirectSpan = new Span<byte>((void*)equirectPtr, equirectLength);
+
+            for (int y = rows.Top; y < rows.Bottom; y++)
             {
-                double r0 = radius * y / h;
+                double r0 = radius * y / equirectBounds.Height;
 
-                for (int x = 0; x < w; x++)
+                for (int x = rows.Left; x < rows.Right; x++)
                 {
-                    double theta = 2 * Math.PI * x / w;
+                    double theta = 2 * Math.PI * x / equirectBounds.Width;
                     double xx = r0 * Math.Cos(theta) + centerX;
                     double yy = r0 * Math.Sin(theta) + centerY;
                     int ix = (int)(xx + 0.5);
                     int iy = (int)(yy + 0.5);
-                    if (xx > 0 && ix < width && yy > 0 && iy < height)
+                    if (xx >= 0 && ix < fisheyeBounds.Width && yy >= 0 && iy < fisheyeBounds.Height)
                     {
-                        int srcOffset = (imageClone.Step * iy) + (ix * channels);
-                        int dstOffset = (panoImage.Step * y) + (x * channels);
-                        dstSpan[dstOffset + 0] = srcSpan[srcOffset + 0];
-                        dstSpan[dstOffset + 1] = srcSpan[srcOffset + 1];
-                        dstSpan[dstOffset + 2] = srcSpan[srcOffset + 2];
+                        int fisheyeOffset = (fisheyeStride * iy) + (ix * Channels);
+                        int equirectOffset = (equirectStride * y) + (x * Channels);
+                        equirectSpan[equirectOffset + 0] = fisheyeSpan[fisheyeOffset + 0];
+                        equirectSpan[equirectOffset + 1] = fisheyeSpan[fisheyeOffset + 1];
+                        equirectSpan[equirectOffset + 2] = fisheyeSpan[fisheyeOffset + 2];
                     }
                 }
             }
         }
-
-        return panoImage;
     }
 }
