@@ -12,19 +12,47 @@
 
 <HeadContent>
     <link rel="stylesheet" href="lib/photo-sphere-viewer/core/index.css" />
+    <style>
+        .rz-tabview-panels {
+            display: flex;
+        }
+
+        .rz-tabview-panel {
+            width: 100%;
+        }
+
+        .fisheye-img {
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .panorama-img {
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .panorama-3d {
+            display: block;
+            width: calc(100vw - 160px);
+            height: calc(100vh - 200px);
+        }
+    </style>
 </HeadContent>
 
-<RadzenTabs @bind-SelectedIndex="selectedTabIndex" Change="OnTabChange">
+<RadzenTabs @bind-SelectedIndex="selectedTabIndex" Change="OnTabChange" Style="height: 100%;">
     <Tabs>
-
         <RadzenTabsItem Text="Fisheye">
             @if (latestFisheyeUrl is not null)
             {
-                <img src="@latestFisheyeUrl" style="width: 100%;" />
+                <RadzenImage Path="@latestFisheyeUrl" AlternateText="Fisheye" class="fisheye-img" />
             }
             else
             {
-                <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+                <RadzenRow JustifyContent="JustifyContent.Center">
                     <RadzenText>No Fisheye Available</RadzenText>
                 </RadzenRow>
             }
@@ -33,12 +61,12 @@
         <RadzenTabsItem Text="Panorama">
             @if (latestPanoramaUrl is not null)
             {
-                <img src="@latestPanoramaUrl" style="width: 100%;" />
+                <RadzenImage Path="@latestPanoramaUrl" AlternateText="Panorama" class="fisheye-img" />
             }
             else
             {
-                <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
-                    <RadzenText>No Panorama Available</RadzenText>
+                <RadzenRow JustifyContent="JustifyContent.Center">
+                    <RadzenText>No Panoramas Available</RadzenText>
                 </RadzenRow>
             }
         </RadzenTabsItem>
@@ -46,13 +74,11 @@
         <RadzenTabsItem Text="Panorama 3D">
             @if (latestPanoramaUrl is not null)
             {
-                <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
-                    <div id="pano-viewer" style="width: 100%; height: 1200px;" />
-                </RadzenRow>
+                <div id="pano-viewer" class="panorama-3d"/>
             }
             else
             {
-                <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+                <RadzenRow JustifyContent="JustifyContent.Center">
                     <RadzenText>No Panorama 3D Available</RadzenText>
                 </RadzenRow>
             }
@@ -69,6 +95,7 @@
     private const string LatestPanoramaUrlBase = "/api/image/latest/panorama";
     private string? latestFisheyeUrl;
     private string? latestPanoramaUrl;
+    private string? prevPanoramaUrl;
     private int selectedTabIndex;
     private int prevSelectedTabIndex;
     private IJSObjectReference? module;
@@ -78,6 +105,7 @@
         latestFisheyeUrl = GenerateFisheyeUrl();
         latestPanoramaUrl = GeneratePanoramaUrl();
         ImageService.NewImage += OnNewImage;
+        ImageService.NewPanorama += OnNewPanorama;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -88,7 +116,8 @@
         }
 
         if (selectedTabIndex == Pano3dTabIndex &&
-            latestPanoramaUrl is not null)
+            latestPanoramaUrl is not null &&
+            latestPanoramaUrl != prevPanoramaUrl)
         {
             if (module is not null)
             {
@@ -96,6 +125,8 @@
                 await module.InvokeVoidAsync("createPanoViewer");
                 await module.InvokeVoidAsync("updatePanoViewer", latestPanoramaUrl, size.Width, size.Height);
             }
+            
+            prevPanoramaUrl = latestPanoramaUrl;
         }
         else
         {
@@ -109,6 +140,7 @@
     public void Dispose()
     {
         ImageService.NewImage -= OnNewImage;
+        ImageService.NewPanorama -= OnNewPanorama;
     }
 
     public async ValueTask DisposeAsync()
@@ -138,6 +170,11 @@
     private void OnNewImage(object? sender, EventArgs e)
     {
         latestFisheyeUrl = GenerateFisheyeUrl();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnNewPanorama(object? sender, EventArgs e)
+    {
         latestPanoramaUrl = GeneratePanoramaUrl();
         InvokeAsync(StateHasChanged);
     }
