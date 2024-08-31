@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OdinEye.Components;
@@ -53,6 +54,8 @@ public class Program
 
             builder.Services.AddRadzenComponents();
             builder.Services.AddHttpClient();
+            builder.Services.AddDataProtection()
+                .PersistKeysToDbContext<AppDbContext>();
 
             builder.Services.AddSingleton<LogChannel>();
 

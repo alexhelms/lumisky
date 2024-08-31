@@ -1,13 +1,15 @@
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using OdinEye.Core.IO;
 
 namespace OdinEye.Core.Data;
 
-public class AppDbContext
-    : IdentityDbContext<AppUser>
+public class AppDbContext : IdentityDbContext<AppUser>, IDataProtectionKeyContext
 {
     public string DbPath { get; }
+
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     public DbSet<Image> Images { get; set; }
     public DbSet<RawImage> RawImages { get; set; }
