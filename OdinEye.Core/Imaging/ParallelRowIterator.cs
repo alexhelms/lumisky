@@ -58,7 +58,7 @@ public interface IRowIntervalOperation<TBuffer>
 public static partial class ParallelRowIterator
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int DivideCeil(int dividend, int divisor) => 1 + ((dividend - 1) / divisor);
+    private static uint DivideCeil(uint value, uint divisor) => (value + divisor - 1) / divisor;
 
     public const int MinPixelsPerTask = 4096;
 
@@ -75,7 +75,7 @@ public static partial class ParallelRowIterator
         int height = rectangle.Height;
         int area = rectangle.Area;
 
-        int maxSteps = DivideCeil(area, MinPixelsPerTask);
+        int maxSteps = (int)DivideCeil((uint)area, MinPixelsPerTask);
         int numSteps = Math.Min(degreesOfParallelism.Value, maxSteps);
 
         // Do not parallelize a single batch
@@ -95,7 +95,7 @@ public static partial class ParallelRowIterator
             return;
         }
 
-        var rowsPerStep = DivideCeil(height, numSteps);
+        var rowsPerStep = (int)DivideCeil((uint)height, (uint)numSteps);
         var invoker = new RowInvoker<TOperation>(rectangle, in operation, rowsPerStep);
 
         try
@@ -126,7 +126,7 @@ public static partial class ParallelRowIterator
         int height = rectangle.Height;
         int area = rectangle.Area;
 
-        int maxSteps = DivideCeil(area, MinPixelsPerTask);
+        int maxSteps = (int)DivideCeil((uint)area, MinPixelsPerTask);
         int numSteps = Math.Min(degreesOfParallelism.Value, maxSteps);
 
         // Do not parallelize a single batch
@@ -148,7 +148,7 @@ public static partial class ParallelRowIterator
             return;
         }
 
-        var rowsPerStep = DivideCeil(height, numSteps);
+        var rowsPerStep = (int)DivideCeil((uint)height, (uint)numSteps);
         var invoker = new RowInvokerWithBuffer<TOperation, TBuffer>(rectangle, in operation, rowsPerStep);
 
         try
@@ -178,7 +178,7 @@ public static partial class ParallelRowIterator
         int height = rectangle.Height;
         int area = rectangle.Area;
 
-        int maxSteps = DivideCeil(area, MinPixelsPerTask);
+        int maxSteps = (int)DivideCeil((uint)area, MinPixelsPerTask);
         int numSteps = Math.Min(degreesOfParallelism.Value, maxSteps);
 
         // Do not parallelize a single batch
@@ -196,7 +196,7 @@ public static partial class ParallelRowIterator
             return;
         }
 
-        var rowsPerStep = DivideCeil(height, numSteps);
+        var rowsPerStep = (int)DivideCeil((uint)height, (uint)numSteps);
         var invoker = new RowIntervalInvoker<TOperation>(rectangle, in operation, rowsPerStep);
 
         try
@@ -227,7 +227,7 @@ public static partial class ParallelRowIterator
         int height = rectangle.Height;
         int area = rectangle.Area;
 
-        int maxSteps = DivideCeil(area, MinPixelsPerTask);
+        int maxSteps = (int)DivideCeil((uint) area, MinPixelsPerTask);
         int numSteps = Math.Min(degreesOfParallelism.Value, maxSteps);
 
         // Do not parallelize a single batch
@@ -246,7 +246,7 @@ public static partial class ParallelRowIterator
             return;
         }
 
-        var rowsPerStep = DivideCeil(height, numSteps);
+        var rowsPerStep = (int)DivideCeil((uint)height, (uint)numSteps);
         var invoker = new RowIntervalWithBufferInvoker<TOperation, TBuffer>(rectangle, in operation, rowsPerStep);
 
         try

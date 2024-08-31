@@ -9,10 +9,10 @@ using OdinEye.Core.Imaging.Processing;
 using OdinEye.Core.Primitives;
 using OdinEye.Core.Profile;
 using OdinEye.Core.Services;
+using OdinEye.Core.Utilities;
 using Quartz;
 using SlimMessageBus;
 using System.Diagnostics;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace OdinEye.Core.Jobs;
 
@@ -87,9 +87,6 @@ public class ProcessingJob : JobBase
             median: processResult.Median,
             gain: processResult.Gain);
 
-        // TODO: If "ExportFits" is enabled, send to ExportJob
-        // TODO: Send final image file to ExportJob
-
         if (!_profile.Current.Image.KeepRawImages)
         {
             await DeleteRawImage();
@@ -157,6 +154,8 @@ public class ProcessingJob : JobBase
 
         _dbContext.Images.Add(newImage);
         await _dbContext.SaveChangesAsync();
+
+        Log.Information("Added image {Filename}", filename);
     }
 
     private async Task PersistPanorama(string filename, DateTime exposureUtc)
@@ -169,6 +168,8 @@ public class ProcessingJob : JobBase
 
         _dbContext.Panoramas.Add(newImage);
         await _dbContext.SaveChangesAsync();
+
+        Log.Information("Added panorama {Filename}", filename);
     }
 
     private async Task DeleteRawImage()
@@ -184,8 +185,8 @@ public class ProcessingJob : JobBase
             var fileInfo = new FileInfo(rawImage.Filename);
             if (fileInfo.Exists)
             {
-                // Delete the raw file
                 fileInfo.Delete();
+                Log.Information("Deleted raw {Filename}", fileInfo.FullName);
             }
         }
         catch (Exception e)
@@ -207,13 +208,16 @@ public class ProcessingJob : JobBase
 
             try
             {
-                await Overlay.DrawCardinalPoints(image,
-                    labels,
-                    fontSize: _profile.Current.Processing.TextSize,
-                    fill: _profile.Current.Processing.TextColor,
-                    strokeFill: _profile.Current.Processing.TextOutlineColor,
-                    strokeWidth: _profile.Current.Processing.TextOutline,
-                    margin: _profile.Current.Processing.TextSize / 2);
+                using (Benchmark.Start(elapsed => Log.Information("Image cardinal overlay in {Elapsed:F3} sec", elapsed.TotalSeconds)))
+                {
+                    await Overlay.DrawCardinalPoints(image,
+                        labels,
+                        fontSize: _profile.Current.Processing.TextSize,
+                        fill: _profile.Current.Processing.TextColor,
+                        strokeFill: _profile.Current.Processing.TextOutlineColor,
+                        strokeWidth: _profile.Current.Processing.TextOutline,
+                        margin: _profile.Current.Processing.TextSize / 2);
+                }
             }
             catch (Exception e)
             {
@@ -227,21 +231,24 @@ public class ProcessingJob : JobBase
         if (_profile.Current.Processing.DrawCardinalOverlay)
         {
             string[] labels = [
-                _profile.Current.Processing.CardinalTopString,
-                _profile.Current.Processing.CardinalBottomString,
-                _profile.Current.Processing.CardinalRightString,
-                _profile.Current.Processing.CardinalLeftString,
+                _profile.Current.Processing.PanoramaCardinal0AzimuthString,
+                _profile.Current.Processing.PanoramaCardinal90AzimuthString,
+                _profile.Current.Processing.PanoramaCardinal180AzimuthString,
+                _profile.Current.Processing.PanoramaCardinal270AzimuthString,
             ];
 
             try
             {
-                await Overlay.DrawCardinalPointsPanorama(panorama,
-                    labels,
-                    fontSize: _profile.Current.Processing.TextSize,
-                    fill: _profile.Current.Processing.TextColor,
-                    strokeFill: _profile.Current.Processing.TextOutlineColor,
-                    strokeWidth: _profile.Current.Processing.TextOutline,
-                    margin: _profile.Current.Processing.TextSize / 2);
+                using (Benchmark.Start(elapsed => Log.Information("Panorama cardinal overlay in {Elapsed:F3} sec", elapsed.TotalSeconds)))
+                {
+                    await Overlay.DrawCardinalPointsPanorama(panorama,
+                        labels,
+                        fontSize: _profile.Current.Processing.TextSize,
+                        fill: _profile.Current.Processing.TextColor,
+                        strokeFill: _profile.Current.Processing.TextOutlineColor,
+                        strokeWidth: _profile.Current.Processing.TextOutline,
+                        margin: _profile.Current.Processing.TextSize / 2);
+                }
             }
             catch (Exception e)
             {

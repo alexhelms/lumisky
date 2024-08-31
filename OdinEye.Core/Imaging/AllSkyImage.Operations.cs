@@ -301,7 +301,7 @@ public partial class AllSkyImage
     private class MinMaxOperation : BaseRowIntervalOperation
     {
         private readonly ConcurrentBag<float> minBag = new();
-        private readonly ConcurrentBag<float> maxBag = new ConcurrentBag<float>();
+        private readonly ConcurrentBag<float> maxBag = new();
 
         private float min, max;
 
