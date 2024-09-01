@@ -1,7 +1,6 @@
 services:
   odineye:
     container_name: "odineye"
-    # image: odineye:dev
     build:
       context: .
       dockerfile: ./OdinEye/Dockerfile
@@ -13,7 +12,6 @@ services:
       - 8080:8080
     environment:
       TZ: "America/Phoenix"
-      PYTHONEXE: "/usr/bin/python3.12"
       ODINEYE_PATH: "/odineye"
 
 volumes:
