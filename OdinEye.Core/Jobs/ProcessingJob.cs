@@ -163,7 +163,7 @@ public class ProcessingJob : JobBase
         return filename;
     }
 
-    private async Task<int> PersistRawImage(string filename, DateTime timestamp)
+    private async Task PersistRawImage(string filename, DateTime timestamp)
     {
         var rawImage = new Data.RawImage
         {
@@ -173,7 +173,8 @@ public class ProcessingJob : JobBase
 
         _dbContext.RawImages.Add(rawImage);
         await _dbContext.SaveChangesAsync();
-        return rawImage.Id;
+
+        Log.Information("Added raw image {Filename}", filename);
     }
 
     private async Task PersistImage(string filename, DateTime exposureUtc)
