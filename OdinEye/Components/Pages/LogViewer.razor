@@ -41,12 +41,15 @@
         {
             await foreach (var line in LogChannel.Reader.ReadAllAsync(cts.Token))
             {
-                logLines.Insert(0, line);
-                if (logLines.Count > MaxLines)
+                await InvokeAsync(() =>
                 {
-                    logLines.RemoveRange(MaxLines, logLines.Count - MaxLines);
-                }
-                await InvokeAsync(StateHasChanged);
+                    logLines.Insert(0, line);
+                    if (logLines.Count > MaxLines)
+                    {
+                        logLines.RemoveRange(MaxLines, logLines.Count - MaxLines);
+                    }
+                    StateHasChanged();
+                });
             }
         }
         catch (OperationCanceledException) { }
