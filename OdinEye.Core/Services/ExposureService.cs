@@ -71,6 +71,7 @@ public class ExposureService
 
         // Ensure positive
         double ePerSec = (median - bias) * conversionGain / exposureSec;
+        ePerSec *= ushort.MaxValue; // denormalize
         ePerSec = Math.Clamp(ePerSec, 1e-6, double.MaxValue);
 
         // Maintain window size
