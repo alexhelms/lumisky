@@ -1,5 +1,4 @@
 ﻿using OdinEye.Core.Jobs;
-using OdinEye.Core.Profile;
 using Quartz;
 using Quartz.Listener;
 
@@ -7,20 +6,17 @@ namespace OdinEye.Core.Services;
 
 public class AllSkyScheduler : SchedulerListenerSupport
 {
-    private readonly IProfileProvider _profile;
     private readonly ISchedulerFactory _schedulerFactory;
 
     public event EventHandler? AllSkyStarted;
     public event EventHandler? AllSkyStopping;
     public event EventHandler? AllSkyStopped;
 
-    public bool IsAllSkyRunning { get; private set; }
+    public bool IsRunning { get; private set; }
+    public bool IsStopping { get; private set; }
 
-    public AllSkyScheduler(
-        IProfileProvider profile,
-        ISchedulerFactory schedulerFactory)
+    public AllSkyScheduler(ISchedulerFactory schedulerFactory)
     {
-        _profile = profile;
         _schedulerFactory = schedulerFactory;
     }
 
@@ -74,7 +70,7 @@ public class AllSkyScheduler : SchedulerListenerSupport
         await scheduler.ScheduleJob(findExposureTrigger);
 
         Log.Information("AllSky service started");
-        IsAllSkyRunning = true;
+        IsRunning = true;
         AllSkyStarted?.Invoke(this, EventArgs.Empty);
     }
 
@@ -86,12 +82,15 @@ public class AllSkyScheduler : SchedulerListenerSupport
         if (scheduler.IsShutdown) return;
 
         Log.Information("AllSky service stopping");
+
+        IsStopping = true;
         AllSkyStopping?.Invoke(this, EventArgs.Empty);
 
         await scheduler.Shutdown(waitForJobsToComplete: true);
 
         Log.Information("AllSky service stopped");
-        IsAllSkyRunning = false;
+        IsStopping = false;
+        IsRunning = false;
         AllSkyStopped?.Invoke(this, EventArgs.Empty);
     }
 }

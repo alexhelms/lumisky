@@ -20,19 +20,28 @@ else
 }
 
 @code {
-    bool isAllSkyRunning;
-    bool isStopping;
-    string allSkyStatusMessage = "Stopped";
+    private bool isAllSkyRunning;
+    private bool isStopping;
+    private string allSkyStatusMessage = "Stopped";
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
 
-        isAllSkyRunning = AllSkyScheduler.IsAllSkyRunning;
+        isAllSkyRunning = AllSkyScheduler.IsRunning;
 
         AllSkyScheduler.AllSkyStarted += OnAllSkyStarted;
         AllSkyScheduler.AllSkyStopping += OnAllSkyStopping;
         AllSkyScheduler.AllSkyStopped += OnAllSkyStopped;
+
+        if (AllSkyScheduler.IsRunning)
+        {
+            allSkyStatusMessage = "Running";
+        }
+        else if (AllSkyScheduler.IsStopping)
+        {
+            allSkyStatusMessage = "Stopping";
+        }
     }
 
     public void Dispose()
@@ -45,7 +54,7 @@ else
     private void OnAllSkyStarted(object? sender, EventArgs e)
     {
         allSkyStatusMessage = "Running";
-        isAllSkyRunning = AllSkyScheduler.IsAllSkyRunning;
+        isAllSkyRunning = AllSkyScheduler.IsRunning;
         InvokeAsync(StateHasChanged);
     }
 
@@ -60,7 +69,7 @@ else
     {
         isStopping = false;
         allSkyStatusMessage = "Stopped";
-        isAllSkyRunning = AllSkyScheduler.IsAllSkyRunning;
+        isAllSkyRunning = AllSkyScheduler.IsRunning;
         InvokeAsync(StateHasChanged);
     }
 
