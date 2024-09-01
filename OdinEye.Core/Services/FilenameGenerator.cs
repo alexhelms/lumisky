@@ -26,12 +26,12 @@ public class FilenameGenerator
     public string CreateFilename(string imageType, DateTime timestamp, string extension)
     {
         bool isDay = _sunService.IsDaytime;
-        var nowMinus12 = timestamp.AddHours(-12);
+        var timestampMinus12 = timestamp.AddHours(-12);
         var filename = $"{imageType}_{timestamp:yyyyMMdd}_{timestamp:HHmmss}{extension}";
         var directory = Path.Combine(
             _profile.Current.Capture.DataDirectory,
             imageType,
-            nowMinus12.ToString("yyyyMMdd"),
+            isDay ? timestamp.ToString("yyyyMMdd") : timestampMinus12.ToString("yyyyMMdd"),
             isDay ? "day" : "night");
         var path = Path.Combine(directory, filename);
         return path;
