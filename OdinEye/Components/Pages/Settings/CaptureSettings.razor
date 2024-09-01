@@ -25,6 +25,15 @@
                         <RadzenNumeric TValue="int" @bind-Value="model.CaptureIntervalSeconds" Min="5" Max="3600" />
                     </RadzenFormField>
 
+                    <RadzenFormField Text="Max Exposure [sec]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <ChildContent>
+                            <RadzenNumeric TValue="int" @bind-Value="model.MaxExposureSeconds" Min="5" Max="3600" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">Capture interval used if shorter than max exposure.</RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+
                 </RadzenStack>
             </ChildContent>
         </RadzenFieldset>
@@ -44,6 +53,7 @@
         model.AutoStart = Profile.Current.Capture.AutoStart;
         model.DataDirectory = Profile.Current.Capture.DataDirectory;
         model.CaptureIntervalSeconds = (int)Profile.Current.Capture.CaptureInterval.TotalSeconds;
+        model.MaxExposureSeconds = (int)Profile.Current.Capture.MaxExposureDuration.TotalSeconds;
     }
 
     private void OnSubmit(CaptureSettingsModel model)
@@ -51,6 +61,7 @@
         Profile.Current.Capture.AutoStart = model.AutoStart;
         Profile.Current.Capture.DataDirectory = model.DataDirectory;
         Profile.Current.Capture.CaptureInterval = TimeSpan.FromSeconds(model.CaptureIntervalSeconds);
+        Profile.Current.Capture.MaxExposureDuration = TimeSpan.FromSeconds(model.MaxExposureSeconds);
 
         NotificationService.Notify(new NotificationMessage
         {
@@ -65,5 +76,6 @@
         public bool AutoStart { get; set; }
         public string DataDirectory { get; set; } = string.Empty;
         public int CaptureIntervalSeconds { get; set; }
+        public int MaxExposureSeconds { get; set; }
     }
 }

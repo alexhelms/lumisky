@@ -52,7 +52,9 @@ public class ExposureService
         // TODO: detect day/night switch
 
         bool isDay = _sunService.IsDaytime;
-        TimeSpan maxExposure = _profile.Current.Capture.CaptureInterval;
+        var maxExposureSeconds = Math.Min(_profile.Current.Capture.MaxExposureDuration.TotalSeconds,
+            _profile.Current.Capture.CaptureInterval.TotalSeconds);
+        var maxExposure = TimeSpan.FromSeconds(maxExposureSeconds);
         double targetMedian = _profile.Current.Camera.TargetMedian / ushort.MaxValue;
         double conversionGain = isDay
             ? _profile.Current.Camera.DaytimeElectronGain
