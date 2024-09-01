@@ -118,15 +118,11 @@ public class ImageService
         var radius = _profile.Current.Image.PanoDiameter / 2;
         var angle = _profile.Current.Image.PanoRotation;
 
-        Mat panorama;
-
-        using (Benchmark.Start(elapsed => Log.Information("Create panorama in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-            panorama = Transform.Panorama(mat, xOffset, yOffset, radius, angle);
+        Mat panorama = Transform.Panorama(mat, xOffset, yOffset, radius, angle);
 
         if (_profile.Current.Image.PanoFlipHorizontal)
         {
-            using (Benchmark.Start(elapsed => Log.Information("Panorama flip horizontal in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-                Transform.FlipHorizontal(panorama);
+            Transform.FlipHorizontal(panorama);
         }
 
         return panorama;
@@ -134,14 +130,12 @@ public class ImageService
 
     private AllSkyImage DebayerImage(string filename)
     {
-        using (Benchmark.Start(elapsed => Log.Information("Debayer image in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-            return Debayer.FromFits(filename);
+        return Debayer.FromFits(filename);
     }
 
     private void Stretch(AllSkyImage image)
     {
-        using (Benchmark.Start(elapsed => Log.Information("Image stretch in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-            image.StretchLinked();
+        image.StretchLinked();
     }
 
     private void WhiteBalance(AllSkyImage image)
@@ -155,16 +149,14 @@ public class ImageService
 
         if (rScale == 1 && gScale == 1 && bScale == 1 && rBias == 0 && gBias == 0 && bBias == 0) return;
 
-        using (Benchmark.Start(elapsed => Log.Information("Image white balance in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-            image.WhiteBalance(rScale, gScale, bScale, rBias, gBias, bBias);
+        image.WhiteBalance(rScale, gScale, bScale, rBias, gBias, bBias);
     }
 
     private void Rotate(Mat mat)
     {
         if (_profile.Current.Image.Rotation != 0)
         {
-            using (Benchmark.Start(elapsed => Log.Information("Image rotation in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-                Transform.Rotate(mat, _profile.Current.Image.Rotation);
+            Transform.Rotate(mat, _profile.Current.Image.Rotation);
         }
     }
 
@@ -172,8 +164,7 @@ public class ImageService
     {
         if (_profile.Current.Image.FlipHorizontal)
         {
-            using (Benchmark.Start(elapsed => Log.Information("Image flip horizontal in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-                Transform.FlipHorizontal(mat);
+            Transform.FlipHorizontal(mat);
         }
     }
 
@@ -181,8 +172,7 @@ public class ImageService
     {
         if (_profile.Current.Image.FlipVertical)
         {
-            using (Benchmark.Start(elapsed => Log.Information("Image flip vertical in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-                Transform.FlipVertical(mat);
+            Transform.FlipVertical(mat);
         }
     }
 
@@ -190,16 +180,13 @@ public class ImageService
     {
         if (_profile.Current.Processing.CircleMaskDiameter > 0)
         {
-            using (Benchmark.Start(elapsed => Log.Information("Image circle mask in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-            {
-                int centerX = mat.Cols / 2;
-                int centerY = mat.Rows / 2;
-                Mask.Circle(mat,
-                    x: centerX + _profile.Current.Processing.CircleMaskOffsetX,
-                    y: centerY + _profile.Current.Processing.CircleMaskOffsetY,
-                    diameter: _profile.Current.Processing.CircleMaskDiameter,
-                    blur: _profile.Current.Processing.CircleMaskBlur);
-            }
+            int centerX = mat.Cols / 2;
+            int centerY = mat.Rows / 2;
+            Mask.Circle(mat,
+                x: centerX + _profile.Current.Processing.CircleMaskOffsetX,
+                y: centerY + _profile.Current.Processing.CircleMaskOffsetY,
+                diameter: _profile.Current.Processing.CircleMaskDiameter,
+                blur: _profile.Current.Processing.CircleMaskBlur);
         }
     }
 }

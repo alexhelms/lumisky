@@ -212,16 +212,13 @@ public class ProcessingJob : JobBase
 
             try
             {
-                using (Benchmark.Start(elapsed => Log.Information("Image cardinal overlay in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-                {
-                    await Overlay.DrawCardinalPoints(image,
-                        labels,
-                        fontSize: _profile.Current.Processing.TextSize,
-                        fill: _profile.Current.Processing.TextColor,
-                        strokeFill: _profile.Current.Processing.TextOutlineColor,
-                        strokeWidth: _profile.Current.Processing.TextOutline,
-                        margin: _profile.Current.Processing.TextSize / 2);
-                }
+                await Overlay.DrawCardinalPoints(image,
+                    labels,
+                    fontSize: _profile.Current.Processing.TextSize,
+                    fill: _profile.Current.Processing.TextColor,
+                    strokeFill: _profile.Current.Processing.TextOutlineColor,
+                    strokeWidth: _profile.Current.Processing.TextOutline,
+                    margin: _profile.Current.Processing.TextSize / 2);
             }
             catch (Exception e)
             {
@@ -243,16 +240,13 @@ public class ProcessingJob : JobBase
 
             try
             {
-                using (Benchmark.Start(elapsed => Log.Information("Panorama cardinal overlay in {Elapsed:F3} sec", elapsed.TotalSeconds)))
-                {
-                    await Overlay.DrawCardinalPointsPanorama(panorama,
-                        labels,
-                        fontSize: _profile.Current.Processing.TextSize,
-                        fill: _profile.Current.Processing.TextColor,
-                        strokeFill: _profile.Current.Processing.TextOutlineColor,
-                        strokeWidth: _profile.Current.Processing.TextOutline,
-                        margin: _profile.Current.Processing.TextSize / 2);
-                }
+                await Overlay.DrawCardinalPointsPanorama(panorama,
+                    labels,
+                    fontSize: _profile.Current.Processing.TextSize,
+                    fill: _profile.Current.Processing.TextColor,
+                    strokeFill: _profile.Current.Processing.TextOutlineColor,
+                    strokeWidth: _profile.Current.Processing.TextOutline,
+                    margin: _profile.Current.Processing.TextSize / 2);
             }
             catch (Exception e)
             {
