@@ -115,6 +115,11 @@ public class ProcessingJob : JobBase
 
         Log.Information("Processing completed in {Elapsed:F3} seconds", processTimeElapsed.TotalSeconds);
 
+        if (processTimeElapsed > (_profile.Current.Capture.CaptureInterval - processResult.ExposureDuration))
+        {
+            Log.Warning("Processing time exceeds available time between exposures. Consider reducing your max exposure time.");
+        }
+
         await context.Scheduler.TriggerJob(
             ExportJob.Key,
             new JobDataMap
