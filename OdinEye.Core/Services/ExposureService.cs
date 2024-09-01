@@ -102,6 +102,7 @@ public class ExposureService
         ePerSecNext = Math.Clamp(ePerSecNext, halfPrevious, twicePrevious);
 
         double exposureNextSec = targetMedian * conversionGain / ePerSecNext;
+        exposureNextSec *= ushort.MaxValue; // denormalize
 
         // min/max clamp to prevent runaway
         exposureNextSec = Math.Clamp(exposureNextSec, 1e-6, maxExposure.TotalSeconds);
