@@ -46,79 +46,112 @@
                         </Helper>
                     </RadzenFormField>
 
-                    <RadzenFormField Text="Daytime Gain" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <ChildContent>
-                            <RadzenNumeric @bind-Value="model.DaytimeGain" Min="0" Max="10000" />
-                        </ChildContent>
-                        <Helper>
-                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                Camera gain value for daytime images.
-                            </RadzenText>
-                        </Helper>
-                    </RadzenFormField>
+                    <RadzenRow>
 
-                    <RadzenFormField Text="Daytime Electron Gain [e-/ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <ChildContent>
-                            <RadzenNumeric @bind-Value="model.DaytimeElectronGain" Min="0" Max="20" />
-                        </ChildContent>
-                        <Helper>
-                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                Required for accurate auto exposure.
-                                This value comes from your camera manufacturer datasheet typically as a chart where the X axis
-                                is gain and the Y axis is e-/ADU. Look at the chart for your daytime gain value and input the
-                                corresponding e-/ADU gain as shown on the chart.
-                            </RadzenText>
-                        </Helper>
-                    </RadzenFormField>
+                        <RadzenColumn Size="6">
+                            <RadzenStack Gap="0">
+                                <RadzenText>Daytime</RadzenText>
+                                <RadzenStack Gap="0.5rem">
+                                    <RadzenFormField Text="Gain" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                        <RadzenNumeric @bind-Value="model.DaytimeGain" Min="0" Max="10000" />
+                                    </RadzenFormField>
 
-                    <RadzenFormField Text="Daytime Bias [ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <ChildContent>
-                            <RadzenNumeric @bind-Value="model.DaytimeBias" Min="0" Max="65535" Format="F0" />
-                        </ChildContent>
-                        <Helper>
-                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                The median value of a bias frame at the daytime gain setting.
-                            </RadzenText>
-                        </Helper>
-                    </RadzenFormField>
+                                    <RadzenFormField Text="Electron Gain [e-/ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                        <ChildContent>
+                                            <RadzenNumeric @bind-Value="model.DaytimeElectronGain" Min="0" Max="20" />
+                                        </ChildContent>
+                                        <Helper>
+                                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                                Required for accurate auto exposure.
+                                                This value comes from your camera manufacturer datasheet typically as a chart where the X axis
+                                                is gain and the Y axis is e-/ADU. Look at the chart for your daytime gain value and input the
+                                                corresponding e-/ADU gain as shown on the chart.
+                                            </RadzenText>
+                                        </Helper>
+                                    </RadzenFormField>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenColumn>
 
-                    <RadzenFormField Text="Nighttime Gain" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <ChildContent>
-                            <RadzenNumeric @bind-Value="model.NighttimeGain" Min="0" Max="10000" />
-                        </ChildContent>
-                        <Helper>
-                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                Camera gain value for nighttime images.
-                            </RadzenText>
-                        </Helper>
-                    </RadzenFormField>
+                        <RadzenColumn Size="6">
+                            <RadzenStack Gap="0">
+                                <RadzenText>Nighttime</RadzenText>
+                                <RadzenStack Gap="0.5rem">
+                                    <RadzenFormField Text="Gain" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                        <RadzenNumeric @bind-Value="model.NighttimeGain" Min="0" Max="10000" />
+                                    </RadzenFormField>
 
-                    <RadzenFormField Text="Nighttime Electron Gain [e-/ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <ChildContent>
-                            <RadzenNumeric @bind-Value="model.NighttimeElectronGain" Min="0" Max="20" />
-                        </ChildContent>
-                        <Helper>
-                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                Required for accurate auto exposure.
-                                This value comes from your camera manufacturer datasheet typically as a chart where the X axis
-                                is gain and the Y axis is e-/ADU. Look at the chart for your nighttime gain value and input the
-                                corresponding e-/ADU gain as shown on the chart.
-                            </RadzenText>
-                        </Helper>
-                    </RadzenFormField>
+                                    <RadzenFormField Text="Electron Gain [e-/ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                        <ChildContent>
+                                            <RadzenNumeric @bind-Value="model.NighttimeElectronGain" Min="0" Max="20" />
+                                        </ChildContent>
+                                        <Helper>
+                                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                                Required for accurate auto exposure.
+                                                This value comes from your camera manufacturer datasheet typically as a chart where the X axis
+                                                is gain and the Y axis is e-/ADU. Look at the chart for your nighttime gain value and input the
+                                                corresponding e-/ADU gain as shown on the chart.
+                                            </RadzenText>
+                                        </Helper>
+                                    </RadzenFormField>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenColumn>
 
-                    <RadzenFormField Text="Nighttime Bias [ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <ChildContent>
-                            <RadzenNumeric @bind-Value="model.NighttimeBias" Min="0" Max="65535" Format="F0" />
-                        </ChildContent>
-                        <Helper>
-                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                The median value of a bias frame at the nighttime gain setting.
-                            </RadzenText>
-                        </Helper>
-                    </RadzenFormField>
+                    </RadzenRow>
 
                 </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Bias</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+
+                <RadzenRow>
+
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0">
+                            <RadzenText>Daytime</RadzenText>
+                            <RadzenStack Gap="0.5rem">
+                                <RadzenFormField Text="Red [ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                    <RadzenNumeric @bind-Value="model.DaytimeBiasR" Min="0" Max="65535" Step="1" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Green [ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                    <RadzenNumeric @bind-Value="model.DaytimeBiasG" Min="0" Max="65535" Step="1" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Blue [ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                    <RadzenNumeric @bind-Value="model.DaytimeBiasB" Min="0" Max="65535" Step="1" />
+                                </RadzenFormField>
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="6">
+                        <RadzenStack Gap="0">
+                            <RadzenText>Nighttime</RadzenText>
+                            <RadzenStack Gap="0.5rem">
+                                <RadzenFormField Text="Red [ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                    <RadzenNumeric @bind-Value="model.NighttimeBiasR" Min="0" Max="65535" Step="1" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Green [ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                    <RadzenNumeric @bind-Value="model.NighttimeBiasG" Min="0" Max="65535" Step="1" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Blue [ADU]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                    <RadzenNumeric @bind-Value="model.NighttimeBiasB" Min="0" Max="65535" Step="1" />
+                                </RadzenFormField>
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                </RadzenRow>
+
             </ChildContent>
         </RadzenFieldset>
 
@@ -153,10 +186,14 @@
         model.Offset = Profile.Current.Camera.Offset;
         model.DaytimeGain = Profile.Current.Camera.DaytimeGain;
         model.DaytimeElectronGain = Profile.Current.Camera.DaytimeElectronGain;
-        model.DaytimeBias = Profile.Current.Camera.DaytimeBias;
+        model.DaytimeBiasR = Profile.Current.Camera.DaytimeBiasR * ushort.MaxValue;
+        model.DaytimeBiasG = Profile.Current.Camera.DaytimeBiasG * ushort.MaxValue;
+        model.DaytimeBiasB = Profile.Current.Camera.DaytimeBiasB * ushort.MaxValue;
         model.NighttimeGain = Profile.Current.Camera.NighttimeGain;
         model.NighttimeElectronGain = Profile.Current.Camera.NighttimeElectronGain;
-        model.NighttimeBias = Profile.Current.Camera.NighttimeBias;
+        model.NighttimeBiasR = Profile.Current.Camera.NighttimeBiasR * ushort.MaxValue;
+        model.NighttimeBiasG = Profile.Current.Camera.NighttimeBiasG * ushort.MaxValue;
+        model.NighttimeBiasB = Profile.Current.Camera.NighttimeBiasB * ushort.MaxValue;
         model.FocalLength = Profile.Current.Camera.FocalLength;
     }
 
@@ -168,10 +205,14 @@
         Profile.Current.Camera.Offset = model.Offset;
         Profile.Current.Camera.DaytimeGain = model.DaytimeGain;
         Profile.Current.Camera.DaytimeElectronGain = model.DaytimeElectronGain;
-        Profile.Current.Camera.DaytimeBias = model.DaytimeBias;
+        Profile.Current.Camera.DaytimeBiasR = model.DaytimeBiasR / ushort.MaxValue;
+        Profile.Current.Camera.DaytimeBiasG = model.DaytimeBiasG / ushort.MaxValue;
+        Profile.Current.Camera.DaytimeBiasB = model.DaytimeBiasB / ushort.MaxValue;
         Profile.Current.Camera.NighttimeGain = model.NighttimeGain;
         Profile.Current.Camera.NighttimeElectronGain = model.NighttimeElectronGain;
-        Profile.Current.Camera.NighttimeBias = model.NighttimeBias;
+        Profile.Current.Camera.NighttimeBiasR = model.NighttimeBiasR / ushort.MaxValue;
+        Profile.Current.Camera.NighttimeBiasG = model.NighttimeBiasG / ushort.MaxValue;
+        Profile.Current.Camera.NighttimeBiasB = model.NighttimeBiasB / ushort.MaxValue;
         Profile.Current.Camera.FocalLength = model.FocalLength;
 
         NotificationService.Notify(new NotificationMessage
@@ -190,10 +231,14 @@
         public int Offset { get; set; }
         public int DaytimeGain { get; set; }
         public double DaytimeElectronGain{ get; set; }
-        public double DaytimeBias{ get; set; }
+        public double DaytimeBiasR { get; set; }
+        public double DaytimeBiasG { get; set; }
+        public double DaytimeBiasB { get; set; }
         public int NighttimeGain { get; set; }
         public double NighttimeElectronGain { get; set; }
-        public double NighttimeBias { get; set; }
+        public double NighttimeBiasR { get; set; }
+        public double NighttimeBiasG { get; set; }
+        public double NighttimeBiasB { get; set; }
         public double FocalLength { get; set; }
     }
 }

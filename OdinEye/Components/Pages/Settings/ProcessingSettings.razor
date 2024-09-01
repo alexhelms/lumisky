@@ -8,29 +8,6 @@
 
         <RadzenFieldset>
             <HeaderTemplate>
-                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Bias</strong></RadzenText>
-            </HeaderTemplate>
-            <ChildContent>
-                <RadzenStack>
-
-                    <RadzenFormField Text="Red" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenNumeric @bind-Value="model.WbRedBias" Min="0" Max="1" Step="0.01" Format="0.0000" />
-                    </RadzenFormField>
-
-                    <RadzenFormField Text="Green" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenNumeric @bind-Value="model.WbGreenBias" Min="0" Max="1" Step="0.01" Format="0.0000" />
-                    </RadzenFormField>
-
-                    <RadzenFormField Text="Blue" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenNumeric @bind-Value="model.WbBlueBias" Min="0" Max="1" Step="0.01" Format="0.0000" />
-                    </RadzenFormField>
-
-                </RadzenStack>
-            </ChildContent>
-        </RadzenFieldset>
-
-        <RadzenFieldset>
-            <HeaderTemplate>
                 <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>White Balance</strong></RadzenText>
             </HeaderTemplate>
             <ChildContent>
@@ -191,9 +168,6 @@
         model.WbRedScale = Profile.Current.Processing.WbRedScale;
         model.WbGreenScale = Profile.Current.Processing.WbGreenScale;
         model.WbBlueScale = Profile.Current.Processing.WbBlueScale;
-        model.WbRedBias = Profile.Current.Processing.WbRedBias;
-        model.WbGreenBias = Profile.Current.Processing.WbGreenBias;
-        model.WbBlueBias = Profile.Current.Processing.WbBlueBias;
         model.CircleMaskDiameter = Profile.Current.Processing.CircleMaskDiameter;
         model.CircleMaskOffsetX = Profile.Current.Processing.CircleMaskOffsetX;
         model.CircleMaskOffsetY = Profile.Current.Processing.CircleMaskOffsetY;
@@ -218,9 +192,6 @@
         Profile.Current.Processing.WbRedScale = model.WbRedScale;
         Profile.Current.Processing.WbGreenScale = model.WbGreenScale;
         Profile.Current.Processing.WbBlueScale = model.WbBlueScale;
-        Profile.Current.Processing.WbRedBias = model.WbRedBias;
-        Profile.Current.Processing.WbGreenBias = model.WbGreenBias;
-        Profile.Current.Processing.WbBlueBias = model.WbBlueBias;
         Profile.Current.Processing.CircleMaskDiameter = model.CircleMaskDiameter;
         Profile.Current.Processing.CircleMaskOffsetX = model.CircleMaskOffsetX;
         Profile.Current.Processing.CircleMaskOffsetY = model.CircleMaskOffsetY;

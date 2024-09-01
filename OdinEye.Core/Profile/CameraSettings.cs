@@ -18,13 +18,21 @@ public interface ICameraSettings : IDeviceSettings
 
     double DaytimeElectronGain { get; set; }
 
-    double DaytimeBias { get; set; }
-    
+    double DaytimeBiasR { get; set; }
+
+    double DaytimeBiasG { get; set; }
+
+    double DaytimeBiasB { get; set; }
+
     int NighttimeGain { get; set; }
 
     double NighttimeElectronGain { get; set; }
 
-    double NighttimeBias { get; set; }
+    double NighttimeBiasR { get; set; }
+
+    double NighttimeBiasG { get; set; }
+
+    double NighttimeBiasB { get; set; }
 
     double TargetMedian { get; set; }
 }
@@ -55,10 +63,14 @@ public sealed partial class CameraSettings : Settings, ICameraSettings
         Offset = 0;
         DaytimeGain = 0;
         DaytimeElectronGain = 1;
-        DaytimeBias = 0;
+        DaytimeBiasR = 0;
+        DaytimeBiasG = 0;
+        DaytimeBiasB = 0;
         NighttimeGain = 0;
         NighttimeElectronGain = 1;
-        NighttimeBias = 0;
+        NighttimeBiasR = 0;
+        NighttimeBiasG = 0;
+        NighttimeBiasB = 0;
         TargetMedian = 1000;
     }
 
@@ -71,9 +83,13 @@ public sealed partial class CameraSettings : Settings, ICameraSettings
     [ObservableProperty] int _offset;
     [ObservableProperty] int _daytimeGain;
     [ObservableProperty] double _daytimeElectronGain;
-    [ObservableProperty] double _daytimeBias;
+    [ObservableProperty] double _daytimeBiasR;
+    [ObservableProperty] double _daytimeBiasG;
+    [ObservableProperty] double _daytimeBiasB;
     [ObservableProperty] int _nighttimeGain;
     [ObservableProperty] double _nighttimeElectronGain;
-    [ObservableProperty] double _nighttimeBias;
+    [ObservableProperty] double _nighttimeBiasR;
+    [ObservableProperty] double _nighttimeBiasG;
+    [ObservableProperty] double _nighttimeBiasB;
     [ObservableProperty] double _targetMedian;
 }

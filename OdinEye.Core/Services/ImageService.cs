@@ -37,6 +37,7 @@ public record FitsProcessingResults : IDisposable
 public class ImageService
 {
     private readonly IProfileProvider _profile;
+    private readonly SunService _sunService;
 
     public event EventHandler? NewImage;
     public event EventHandler? NewPanorama;
@@ -46,9 +47,12 @@ public class ImageService
     public Size? LatestImageSize { get; private set; }
     public Size? LatestPanoramaSize { get; private set; }
 
-    public ImageService(IProfileProvider profile)
+    public ImageService(
+        IProfileProvider profile,
+        SunService sunService)
     {
         _profile = profile;
+        _sunService = sunService;
     }
 
     public void SetLatestImage(string path, Size size)
@@ -140,16 +144,19 @@ public class ImageService
 
     private void WhiteBalance(AllSkyImage image)
     {
-        double rScale = Math.Clamp(_profile.Current.Processing.WbRedScale, 0, 1);
-        double gScale = Math.Clamp(_profile.Current.Processing.WbGreenScale, 0, 1);
-        double bScale = Math.Clamp(_profile.Current.Processing.WbBlueScale, 0, 1);
-        double rBias = Math.Clamp(_profile.Current.Processing.WbRedBias, 0, 1);
-        double gBias = Math.Clamp(_profile.Current.Processing.WbGreenBias, 0, 1);
-        double bBias = Math.Clamp(_profile.Current.Processing.WbBlueBias, 0, 1);
+        double biasR = _sunService.IsDaytime ? _profile.Current.Camera.DaytimeBiasR : _profile.Current.Camera.NighttimeBiasR;
+        double biasG = _sunService.IsDaytime ? _profile.Current.Camera.DaytimeBiasG : _profile.Current.Camera.NighttimeBiasG;
+        double biasB = _sunService.IsDaytime ? _profile.Current.Camera.DaytimeBiasB : _profile.Current.Camera.NighttimeBiasB;
+        double scaleR = Math.Clamp(_profile.Current.Processing.WbRedScale, 0, 1);
+        double scaleG = Math.Clamp(_profile.Current.Processing.WbGreenScale, 0, 1);
+        double scaleB = Math.Clamp(_profile.Current.Processing.WbBlueScale, 0, 1);
+        biasR = Math.Clamp(biasR, 0, 1);
+        biasG = Math.Clamp(biasG, 0, 1);
+        biasB = Math.Clamp(biasB, 0, 1);
 
-        if (rScale == 1 && gScale == 1 && bScale == 1 && rBias == 0 && gBias == 0 && bBias == 0) return;
+        if (scaleR == 1 && scaleG == 1 && scaleB == 1 && biasR == 0 && biasG == 0 && biasB == 0) return;
 
-        image.WhiteBalance(rScale, gScale, bScale, rBias, gBias, bBias);
+        image.WhiteBalance(scaleR, scaleG, scaleB, biasR, biasG, biasB);
     }
 
     private void Rotate(Mat mat)

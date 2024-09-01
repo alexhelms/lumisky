@@ -7,9 +7,6 @@ public interface IProcessingSettings : ISettings
     double WbRedScale { get; set; }
     double WbGreenScale { get; set; }
     double WbBlueScale { get; set; }
-    double WbRedBias { get; set; }
-    double WbGreenBias { get; set; }
-    double WbBlueBias { get; set; }
     int CircleMaskDiameter { get; set; }
     int CircleMaskOffsetX { get; set; }
     int CircleMaskOffsetY { get; set; }
@@ -36,9 +33,6 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         WbRedScale = 1.0;
         WbGreenScale = 1.0;
         WbBlueScale = 1.0;
-        WbRedBias = 0;
-        WbGreenBias = 0;
-        WbBlueBias = 0;
         CircleMaskDiameter = 0;
         CircleMaskOffsetX = 0;
         CircleMaskOffsetY = 0;
@@ -61,9 +55,6 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
     [ObservableProperty] double _wbRedScale;
     [ObservableProperty] double _wbGreenScale;
     [ObservableProperty] double _wbBlueScale;
-    [ObservableProperty] double _wbRedBias;
-    [ObservableProperty] double _wbGreenBias;
-    [ObservableProperty] double _wbBlueBias;
     [ObservableProperty] int _circleMaskDiameter;
     [ObservableProperty] int _circleMaskOffsetX;
     [ObservableProperty] int _circleMaskOffsetY;

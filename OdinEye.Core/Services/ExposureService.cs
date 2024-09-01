@@ -60,8 +60,8 @@ public class ExposureService
             ? _profile.Current.Camera.DaytimeElectronGain
             : _profile.Current.Camera.NighttimeElectronGain;
         double bias = isDay
-            ? _profile.Current.Camera.DaytimeBias / ushort.MaxValue
-            : _profile.Current.Camera.NighttimeBias / ushort.MaxValue;
+            ? _profile.Current.Camera.DaytimeBiasG / ushort.MaxValue
+            : _profile.Current.Camera.NighttimeBiasB / ushort.MaxValue;
 
         // Ensure positive, nonzero, negative doesn't make sense
         conversionGain = Math.Clamp(conversionGain, 0.001, double.MaxValue);
