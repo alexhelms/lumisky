@@ -27,7 +27,7 @@ public class ProcessingJob : JobBase
     private readonly FilenameGenerator _filenameGenerator;
     private readonly ExposureService _exposureTrackingService;
 
-    public int RawImageId { get; set; }
+    public string RawImageTempFilename { get; set; } = string.Empty;
 
     public ProcessingJob(
         IProfileProvider profile,
@@ -47,13 +47,9 @@ public class ProcessingJob : JobBase
 
     protected override async Task OnExecute(IJobExecutionContext context)
     {
-        var rawImage = await _dbContext.RawImages
-            .AsNoTracking()
-            .FirstAsync(x => x.Id == RawImageId);
+        Log.Information($"Processing {RawImageTempFilename}");
 
-        Log.Information($"Processing {rawImage.Filename}");
-
-        var rawImageFilInfo = new FileInfo(rawImage.Filename);
+        var rawImageFilInfo = new FileInfo(RawImageTempFilename);
         if (!rawImageFilInfo.Exists)
         {
             Log.Error("File for processing not found {Filename}", rawImageFilInfo.FullName);
@@ -62,18 +58,21 @@ public class ProcessingJob : JobBase
 
         if (rawImageFilInfo.Length == 0)
         {
-            Log.Error("{Filename} is zero length", rawImage.Filename);
+            Log.Error("{Filename} is zero length", rawImageFilInfo.FullName);
             try { rawImageFilInfo.Delete(); } catch { }
             return;
         }
 
         var startTime = Stopwatch.GetTimestamp();
 
-        using var processResult = _imageService.ProcessFits(rawImage.Filename);
+        using var processResult = _imageService.ProcessFits(rawImageFilInfo.FullName);
+
+        // Process, Save, and Persis the Image
         await DrawCardinalOverlayForImage(processResult.Image);
         var imageFilename = SaveImage(processResult.Image, "image", processResult.ExposureUtc);
         await PersistImage(imageFilename, processResult.ExposureUtc);
 
+        // Process, Save, and Persis the Panorama
         string? panoramaFilename = null;
         if (processResult.Panorama is not null)
         {
@@ -82,15 +81,22 @@ public class ProcessingJob : JobBase
             await PersistPanorama(panoramaFilename, processResult.ExposureUtc);
         }
 
+        // Process, Save, and Persis the Raw Image
+        string? rawImageFilename = null;
+        if (_profile.Current.Image.KeepRawImages)
+        {
+            rawImageFilename = SaveRawImage(rawImageFilInfo.FullName, processResult.ExposureUtc);
+            await PersistRawImage(rawImageFilename, processResult.ExposureUtc);
+        }
+        else
+        {
+            rawImageFilInfo.Delete();
+        }
+
         _exposureTrackingService.AddMostRecentStatistics(
             exposure: processResult.ExposureDuration,
             median: processResult.Median,
             gain: processResult.Gain);
-
-        if (!_profile.Current.Image.KeepRawImages)
-        {
-            await DeleteRawImage();
-        }
 
         var processTimeElapsed = Stopwatch.GetElapsedTime(startTime);
         
@@ -113,10 +119,18 @@ public class ProcessingJob : JobBase
             ExportJob.Key,
             new JobDataMap
             {
-                [nameof(ExportJob.RawFilename)] = rawImage.Filename,
+                [nameof(ExportJob.RawFilename)] = rawImageFilename!,
                 [nameof(ExportJob.ImageFilename)] = imageFilename,
                 [nameof(ExportJob.PanoramaFilename)] = panoramaFilename!,
             });
+    }
+
+    private string SaveRawImage(string tempFilename, DateTime timestamp)
+    {
+        var filename = _filenameGenerator.CreateFilename("raw", timestamp, ".fits");
+        Directory.CreateDirectory(Path.GetDirectoryName(filename)!);
+        File.Move(tempFilename, filename, overwrite: true);
+        return filename;
     }
 
     private string SaveImage(Mat uint8Mat, string imageType, DateTime timestamp)
@@ -142,6 +156,19 @@ public class ProcessingJob : JobBase
             throw new Exception("Image failed to save");
 
         return filename;
+    }
+
+    private async Task<int> PersistRawImage(string filename, DateTime timestamp)
+    {
+        var rawImage = new Data.RawImage
+        {
+            Filename = filename,
+            ExposedOn = new DateTimeOffset(timestamp).ToUnixTimeSeconds(),
+        };
+
+        _dbContext.RawImages.Add(rawImage);
+        await _dbContext.SaveChangesAsync();
+        return rawImage.Id;
     }
 
     private async Task PersistImage(string filename, DateTime exposureUtc)
@@ -170,29 +197,6 @@ public class ProcessingJob : JobBase
         await _dbContext.SaveChangesAsync();
 
         Log.Information("Added panorama {Filename}", filename);
-    }
-
-    private async Task DeleteRawImage()
-    {
-        string? filename = null;
-
-        try
-        {
-            var rawImage = await _dbContext.RawImages.FirstAsync(x => x.Id == RawImageId);
-            filename = rawImage.Filename;
-            _dbContext.RawImages.Remove(rawImage);
-            await _dbContext.SaveChangesAsync();
-            var fileInfo = new FileInfo(rawImage.Filename);
-            if (fileInfo.Exists)
-            {
-                fileInfo.Delete();
-                Log.Information("Deleted raw {Filename}", fileInfo.FullName);
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Warning(e, "Error deleting raw image file {Filename}", filename);
-        }
     }
 
     private async Task DrawCardinalOverlayForImage(Mat image)

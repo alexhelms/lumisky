@@ -1,5 +1,4 @@
-﻿using OdinEye.Core.Data;
-using OdinEye.Core.Devices;
+﻿using OdinEye.Core.Devices;
 using OdinEye.Core.Imaging;
 using OdinEye.Core.Profile;
 using OdinEye.Core.Services;
@@ -13,24 +12,18 @@ public class CaptureJob : JobBase
     public static readonly JobKey Key = new(JobConstants.Jobs.Capture, JobConstants.Groups.Allsky);
 
     private readonly IProfileProvider _profile;
-    private readonly AppDbContext _dbContext;
     private readonly DeviceFactory _deviceFactory;
-    private readonly FilenameGenerator _filenameGenerator;
     private readonly SunService _sunService;
     private readonly ExposureService _exposureTrackingService;
 
     public CaptureJob(
         IProfileProvider profile,
-        AppDbContext dbContext,
         DeviceFactory deviceFactory,
-        FilenameGenerator filenameGenerator,
         SunService dayNightService,
         ExposureService exposureTrackingService)
     {
         _profile = profile;
-        _dbContext = dbContext;
         _deviceFactory = deviceFactory;
-        _filenameGenerator = filenameGenerator;
         _sunService = dayNightService;
         _exposureTrackingService = exposureTrackingService;
     }
@@ -50,13 +43,11 @@ public class CaptureJob : JobBase
             var filename = SaveImage(image);
             context.CancellationToken.ThrowIfCancellationRequested();
 
-            int rawImageId = await PersistRawImage(filename, image);
-
             await context.Scheduler.TriggerJob(
                 ProcessingJob.Key,
                 new JobDataMap
                 {
-                    [nameof(ProcessingJob.RawImageId)] = rawImageId,
+                    [nameof(ProcessingJob.RawImageTempFilename)] = filename,
                 });
         }
         finally
@@ -117,23 +108,12 @@ public class CaptureJob : JobBase
     private string SaveImage(AllSkyImage image)
     {
         var timestamp = image.Metadata.ExposureUtc?.ToLocalTime() ?? DateTime.Now;
-        var filename = _filenameGenerator.CreateFilename("raw", timestamp, ".fits");
+
+        // Save the raw image to a temporary path. The processing job will move it as needed.
+        var filename = Path.Join(Path.GetTempPath(), "odineye", $"raw_{Guid.NewGuid():N}.fits");
         Directory.CreateDirectory(Path.GetDirectoryName(filename)!);
 
         image.SaveAsFits(filename, ImageOutputType.UInt16);
         return filename;
-    }
-
-    private async Task<int> PersistRawImage(string filename, AllSkyImage image)
-    {
-        var rawImage = new Data.RawImage
-        {
-            Filename = filename,
-            ExposedOn = new DateTimeOffset(image.Metadata.ExposureUtc.GetValueOrDefault()).ToUnixTimeSeconds(),
-        };
-
-        _dbContext.RawImages.Add(rawImage);
-        await _dbContext.SaveChangesAsync();
-        return rawImage.Id;
     }
 }
