@@ -1,5 +1,4 @@
-﻿using Humanizer;
-using OdinEye.Core.Mathematics;
+﻿using OdinEye.Core.Mathematics;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -684,6 +683,7 @@ public partial class AllSkyImage
         public AutoSCurveOperation(AllSkyImage image, int channel, double median, double contrast)
             : base(image, channel)
         {
+            AcquireWriteLock = true;
             this.median = Math.Clamp(median, 1e-6, 1);
             this.contrast = Math.Clamp(contrast, 1e-6, double.MaxValue);
             inflection = -1 * Math.Log(2) / Math.Log(this.median);
@@ -711,6 +711,50 @@ public partial class AllSkyImage
                         value = Math.Pow(1 - 0.5 * Math.Pow(2 * (1 - Math.Pow(value, inflection)), contrast), 1 / inflection);
                     }
                     rowSpan[x] = (float)value;
+                }
+            }
+        }
+    }
+
+    private class BayerHotPixelCorrectionOperation : BaseRowIntervalOperation
+    {
+        private int thresholdPercent;
+
+        public BayerHotPixelCorrectionOperation(AllSkyImage image, int channel, int thresholdPercent)
+            : base(image, channel)
+        {
+            AcquireWriteLock = true;
+            this.thresholdPercent = thresholdPercent;
+        }
+
+        public override void Invoke(in RowInterval rows)
+        {
+            for (int y = rows.Top; y < rows.Bottom; y++)
+            {
+                // skip the border
+                if (y < 2 || y >= image.Height - 2) continue;
+
+                var prevRowSpan = image.Data.GetRowSpan(y - 2, channel);
+                var thisRowSpan = image.Data.GetRowSpan(y, channel);
+                var nextRowSpan = image.Data.GetRowSpan(y + 2, channel);
+
+                int left = Math.Max(2, rows.Left);
+                int right = Math.Min(image.Width - 2, rows.Right);
+                for (int x = left; x < right; x++)
+                {
+                    // Get NSEW pixel of the same color
+                    float n = prevRowSpan[x];
+                    float s = nextRowSpan[x];
+                    float e = thisRowSpan[x + 2];
+                    float w = thisRowSpan[x - 2];
+                    float c = thisRowSpan[x];
+
+                    float maxValue = OdinEyeMath.Max4(n, s, e, w);
+                    if (c > maxValue + (maxValue * (thresholdPercent / 100.0f)))
+                    {
+                        float average = (n + s + e + w) / 4.0f;
+                        thisRowSpan[x] = (float)average;
+                    }
                 }
             }
         }

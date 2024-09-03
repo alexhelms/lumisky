@@ -26,6 +26,8 @@ public interface IProcessingSettings : ISettings
     string PanoramaCardinal270AzimuthString { get; set; }
     bool AutoSCurve { get; set; }
     double AutoSCurveContrast { get; set; }
+    bool HotPixelCorrection { get; set; }
+    int HotPixelThresholdPercent { get; set; }
 }
 
 public sealed partial class ProcessingSettings : Settings, IProcessingSettings
@@ -54,6 +56,8 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         PanoramaCardinal270AzimuthString = "W";
         AutoSCurve = true;
         AutoSCurveContrast = 2.2;
+        HotPixelCorrection = true;
+        HotPixelThresholdPercent = 25;
     }
 
     [ObservableProperty] double _wbRedScale;
@@ -78,4 +82,6 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
     [ObservableProperty] string _panoramaCardinal270AzimuthString = "W";
     [ObservableProperty] bool _autoSCurve;
     [ObservableProperty] double _autoSCurveContrast;
+    [ObservableProperty] bool _hotPixelCorrection;
+    [ObservableProperty] int _hotPixelThresholdPercent;
 }

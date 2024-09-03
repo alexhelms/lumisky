@@ -14,4 +14,18 @@ public static class OdinEyeMath
         if (c < min) min = c;
         return min;
     }
+
+    /// <summary>
+    /// Find the maximum of 4 numbers.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T Max4<T>(T a, T b, T c, T d)
+        where T : INumber<T>
+    {
+        T max = a;
+        if (b > max) max = b;
+        if (c > max) max = c;
+        if (d > max) max = d;
+        return max;
+    }
 }

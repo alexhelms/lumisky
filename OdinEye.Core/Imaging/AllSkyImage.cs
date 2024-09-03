@@ -467,6 +467,13 @@ public partial class AllSkyImage : IDisposable
         PropCache.Clear();
     }
 
+    public void BayerHotPixelCorrection(int thresholdPercent = 100)
+    {
+        if (Channels != 1) throw new InvalidOperationException($"{nameof(BayerHotPixelCorrection)} only works on 1 channel images");
+        new BayerHotPixelCorrectionOperation(this, 0, thresholdPercent).Run();
+        PropCache.Clear();
+    }
+
     private class PropertyCache
     {
         private readonly Dictionary<(string, int), object> _cache = new();

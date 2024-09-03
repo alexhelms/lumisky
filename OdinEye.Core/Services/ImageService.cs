@@ -77,7 +77,10 @@ public class ImageService
 
         // TODO: CFA-aware hot pixel correction
 
-        using var debayeredImage = DebayerImage(filename);
+        using var rawImage = AllSkyImage.FromFits(filename);
+        RemoveHotPixels(rawImage);
+
+        using var debayeredImage = DebayerImage(rawImage);
 
         // Green median is used for exposure prediction
         var greenMedian = debayeredImage.Median(channel: 1);
@@ -133,9 +136,17 @@ public class ImageService
         return panorama;
     }
 
-    private AllSkyImage DebayerImage(string filename)
+    private void RemoveHotPixels(AllSkyImage image)
     {
-        return Debayer.FromFits(filename);
+        if (_profile.Current.Processing.HotPixelCorrection)
+        {
+            image.BayerHotPixelCorrection(_profile.Current.Processing.HotPixelThresholdPercent);
+        }
+    }
+
+    private AllSkyImage DebayerImage(AllSkyImage image)
+    {
+        return Debayer.FromImage(image);
     }
 
     private void Stretch(AllSkyImage image)

@@ -52,6 +52,35 @@
 
         <RadzenFieldset>
             <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Hot Pixel Correction</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.HotPixelCorrection" />
+                        <RadzenLabel Text="Enable Hot Pixel Correction" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenFormField Text="Threshold Percent" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <ChildContent>
+                            <RadzenNumeric @bind-Value="model.HotPixelThresholdPercent" Min="5" Max="1000" Step="5" Format="F0" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                A hot pixel is corrected if its value is greater than [1 + threshold/100] times the max of its NSEW neighbors.
+                                When corrected, the pixel is replaced with the average of its four neighbors. The neighbors are always of
+                                the same color filter, respecting the CFA.
+                            </RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
                 <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Auto S Curve</strong></RadzenText>
             </HeaderTemplate>
             <ChildContent> 
@@ -212,6 +241,8 @@
         model.PanoramaCardinal270AzimuthString = Profile.Current.Processing.PanoramaCardinal270AzimuthString;
         model.AutoSCurve = Profile.Current.Processing.AutoSCurve;
         model.AutoSCurveContrast = Profile.Current.Processing.AutoSCurveContrast;
+        model.HotPixelCorrection = Profile.Current.Processing.HotPixelCorrection;
+        model.HotPixelThresholdPercent = Profile.Current.Processing.HotPixelThresholdPercent;
     }
 
     private void OnSubmit(ProcessingSettingsModel model)
@@ -238,6 +269,8 @@
         Profile.Current.Processing.PanoramaCardinal270AzimuthString = model.PanoramaCardinal270AzimuthString;
         Profile.Current.Processing.AutoSCurve = model.AutoSCurve;
         Profile.Current.Processing.AutoSCurveContrast = model.AutoSCurveContrast;
+        Profile.Current.Processing.HotPixelCorrection = model.HotPixelCorrection;
+        Profile.Current.Processing.HotPixelThresholdPercent = model.HotPixelThresholdPercent;
 
         NotificationService.Notify(new NotificationMessage
         {
@@ -274,5 +307,7 @@
         public string PanoramaCardinal270AzimuthString { get; set; } = null!;
         public bool AutoSCurve{ get; set; }
         public double AutoSCurveContrast { get; set; }
+        public bool HotPixelCorrection { get; set; }
+        public int HotPixelThresholdPercent { get; set; }
     }
 }
