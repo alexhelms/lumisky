@@ -52,6 +52,31 @@
 
         <RadzenFieldset>
             <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Auto S Curve</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent> 
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.AutoSCurve" />
+                        <RadzenLabel Text="Enable Auto S Curve" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenFormField Text="Contrast" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <ChildContent>
+                            <RadzenNumeric @bind-Value="model.AutoSCurveContrast" Min="1" Max="5" Step="0.1" Format="F2" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">1.0 is no contrast enhancement, default is 2.2.</RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
                 <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Circle Mask</strong></RadzenText>
             </HeaderTemplate>
             <ChildContent>
@@ -185,6 +210,8 @@
         model.PanoramaCardinal90AzimuthString = Profile.Current.Processing.PanoramaCardinal90AzimuthString;
         model.PanoramaCardinal180AzimuthString = Profile.Current.Processing.PanoramaCardinal180AzimuthString;
         model.PanoramaCardinal270AzimuthString = Profile.Current.Processing.PanoramaCardinal270AzimuthString;
+        model.AutoSCurve = Profile.Current.Processing.AutoSCurve;
+        model.AutoSCurveContrast = Profile.Current.Processing.AutoSCurveContrast;
     }
 
     private void OnSubmit(ProcessingSettingsModel model)
@@ -209,6 +236,8 @@
         Profile.Current.Processing.PanoramaCardinal90AzimuthString = model.PanoramaCardinal90AzimuthString;
         Profile.Current.Processing.PanoramaCardinal180AzimuthString = model.PanoramaCardinal180AzimuthString;
         Profile.Current.Processing.PanoramaCardinal270AzimuthString = model.PanoramaCardinal270AzimuthString;
+        Profile.Current.Processing.AutoSCurve = model.AutoSCurve;
+        Profile.Current.Processing.AutoSCurveContrast = model.AutoSCurveContrast;
 
         NotificationService.Notify(new NotificationMessage
         {
@@ -243,5 +272,7 @@
         public string PanoramaCardinal90AzimuthString { get; set; } = null!;
         public string PanoramaCardinal180AzimuthString { get; set; } = null!;
         public string PanoramaCardinal270AzimuthString { get; set; } = null!;
+        public bool AutoSCurve{ get; set; }
+        public double AutoSCurveContrast { get; set; }
     }
 }

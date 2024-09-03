@@ -450,6 +450,21 @@ public partial class AllSkyImage : IDisposable
         WhiteBalance(redScale, greenScale, blueScale, medians[0], medians[1], medians[2]);
     }
 
+    public void AutoSCurve(double contrast = 2.2)
+    {
+        var medians = new double[Channels];
+        for (int c = 0; c < Channels; c++)
+        {
+            medians[c] = Median(c);
+        }
+
+        var minMedian = medians.Min();
+        for (int c = 0; c < Channels; c++)
+        {
+            new AutoSCurveOperation(this, c, minMedian, contrast).Run();
+        }
+    }
+
     private class PropertyCache
     {
         private readonly Dictionary<(string, int), object> _cache = new();

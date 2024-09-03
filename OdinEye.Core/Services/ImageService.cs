@@ -88,6 +88,7 @@ public class ImageService
         Stretch(debayeredImage);
 
         // Nonlinear Operations
+        AutoSCurve(debayeredImage);
         var image = debayeredImage.To8bitMat();
         Rotate(image);
         FlipHorizontal(image);
@@ -140,6 +141,14 @@ public class ImageService
     private void Stretch(AllSkyImage image)
     {
         image.StretchLinked();
+    }
+
+    private void AutoSCurve(AllSkyImage image)
+    {
+        if (_profile.Current.Processing.AutoSCurve)
+        {
+            image.AutoSCurve(_profile.Current.Processing.AutoSCurveContrast);
+        }
     }
 
     private void WhiteBalance(AllSkyImage image)

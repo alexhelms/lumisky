@@ -24,6 +24,8 @@ public interface IProcessingSettings : ISettings
     string PanoramaCardinal90AzimuthString { get; set; }
     string PanoramaCardinal180AzimuthString { get; set; }
     string PanoramaCardinal270AzimuthString { get; set; }
+    bool AutoSCurve { get; set; }
+    double AutoSCurveContrast { get; set; }
 }
 
 public sealed partial class ProcessingSettings : Settings, IProcessingSettings
@@ -50,6 +52,8 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         PanoramaCardinal90AzimuthString = "E";
         PanoramaCardinal180AzimuthString = "S";
         PanoramaCardinal270AzimuthString = "W";
+        AutoSCurve = true;
+        AutoSCurveContrast = 2.2;
     }
 
     [ObservableProperty] double _wbRedScale;
@@ -72,4 +76,6 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
     [ObservableProperty] string _panoramaCardinal90AzimuthString = "E";
     [ObservableProperty] string _panoramaCardinal180AzimuthString = "S";
     [ObservableProperty] string _panoramaCardinal270AzimuthString = "W";
+    [ObservableProperty] bool _autoSCurve;
+    [ObservableProperty] double _autoSCurveContrast;
 }
