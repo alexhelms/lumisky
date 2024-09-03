@@ -463,6 +463,8 @@ public partial class AllSkyImage : IDisposable
         {
             new AutoSCurveOperation(this, c, minMedian, contrast).Run();
         }
+
+        PropCache.Clear();
     }
 
     private class PropertyCache
