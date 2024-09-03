@@ -1,4 +1,5 @@
-﻿using OdinEye.Core.Mathematics;
+﻿using MathNet.Numerics.Statistics;
+using OdinEye.Core.Mathematics;
 using OdinEye.Core.Profile;
 
 namespace OdinEye.Core.Services;
@@ -140,9 +141,11 @@ public class ExposureService
 
         var coeffs = RansacPolynomialRegression.Fit(x, y, 1, new()
         {
-            InlierThreshold = 0.1,
-            MaxIterations = 1000,
-            MinInliers = 3
+            // Inlier threshold tied to Y values because at night the values are very small, <50, but
+            // during the day they are very large, >20e6.
+            InlierThreshold = Math.Log(y.Mean() + 1),
+            MaxIterations = 2000,
+            MinInliers = 2
         });
 
         PredictionCoefficients = coeffs;
