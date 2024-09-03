@@ -12,7 +12,7 @@ public class ExposureService
 
     // TODO: A visualization of the queue on the gui as well as the coefficients for the fits
     private Queue<double> ElectronQueue { get; } = [];
-    private int WindowSize { get; } = 30;
+    private int WindowSize { get; } = 15;
     private TimeSpan ExposureSecNext { get; set; } = DefaultFirstExposure;
 
     public double[] PredictionCoefficients { get; set; } = [];
@@ -84,14 +84,14 @@ public class ExposureService
         // Min 3 points for regression
         if (ElectronQueue.Count > 3)
         {
-            if (ElectronQueue.Count < 10)
+            if (ElectronQueue.Count < 7)
             {
                 // Linear
                 ePerSecNext = PredictNextElectronLinear();
             }
             else
             {
-                // RANSAC parabola (degree 2)
+                // RANSAC
                 ePerSecNext = PredictNextElectronRansac();
             }
         }
@@ -138,9 +138,9 @@ public class ExposureService
         double[] y = ElectronQueue.ToArray();
         double[] w = new double[x.Length];
 
-        var coeffs = RansacPolynomialRegression.Fit(x, y, 2, new()
+        var coeffs = RansacPolynomialRegression.Fit(x, y, 1, new()
         {
-            InlierThreshold = 0.01,
+            InlierThreshold = 0.1,
             MaxIterations = 1000,
             MinInliers = 3
         });
