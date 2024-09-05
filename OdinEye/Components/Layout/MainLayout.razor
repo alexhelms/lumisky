@@ -1,4 +1,6 @@
-﻿@inherits LayoutComponentBase
+﻿@using OdinEye.Core.Utilities
+@inherits LayoutComponentBase
+@inject TooltipService TooltipService
 
 <RadzenComponents @rendermode="InteractiveServer" />
 
@@ -7,7 +9,7 @@
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="width: 100%">
-                <RadzenText TextStyle="TextStyle.H5" class="rz-m-0">OdinEye</RadzenText>
+                <RadzenText TextStyle="TextStyle.H5" class="rz-m-0" MouseEnter="@(args => ShowVersionToolTip(args))">OdinEye</RadzenText>
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceEvenly" Gap="1rem" class="rz-mr-4">
                     <TopBar />
                 </RadzenStack>
@@ -34,4 +36,9 @@
 
 @code {
     bool sidebarExpanded = false;
+
+    private void ShowVersionToolTip(ElementReference element)
+    {
+        TooltipService.Open(element, RuntimeUtil.Version);
+    }
 }
