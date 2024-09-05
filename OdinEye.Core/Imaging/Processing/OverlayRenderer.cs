@@ -199,7 +199,7 @@ public class OverlayRenderer
             .ExecuteAsync();
 
         if (stdout.Length > 0)
-            Log.Information(stdout.ToString());
+            Log.Debug(stdout.ToString());
 
         if (stderr.Length > 0)
             Log.Error(stderr.ToString());
@@ -303,7 +303,7 @@ public class OverlayRenderer
             .ExecuteAsync();
 
         if (stdout.Length > 0)
-            Log.Information(stdout.ToString());
+            Log.Debug(stdout.ToString());
 
         if (stderr.Length > 0)
             Log.Error(stderr.ToString());
