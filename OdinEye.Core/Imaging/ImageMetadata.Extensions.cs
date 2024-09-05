@@ -25,6 +25,7 @@ public static class ImageMetadataExtensions
                 "SITELAT" => ParseLatitude,
                 "SITELON" => ParseLongitude,
                 "SITEELV" => ParseElevation,
+                "SUNALT" => ParseSunAltitude,
                 _ => _ => { },
             };
 
@@ -119,6 +120,12 @@ public static class ImageMetadataExtensions
             if (entry is FloatHeaderEntry floatEntry)
                 metadata.Elevation = floatEntry.Value;
         }
+
+        void ParseSunAltitude(IHeaderEntry entry)
+        {
+            if (entry is FloatHeaderEntry floatEntry)
+                metadata.SunAltitude = floatEntry.Value;
+        }
     }
 
     public static IEnumerable<IHeaderEntry> ToFitsHeaderEntries(this ImageMetadata metadata)
@@ -149,6 +156,9 @@ public static class ImageMetadataExtensions
         double? elevation = metadata.Elevation.HasValue
             ? Math.Round(metadata.Elevation.Value, 1)
             : null;
+        double? sunAltitude = metadata.SunAltitude.HasValue
+            ? Math.Round(metadata.SunAltitude.Value, 2)
+            : null;
 
         yield return CreateEntry("DATE", dateUtc, "Observation date, UTC");
         yield return CreateEntry("DATE-OBS", dateUtc, "Observation date, UTC");
@@ -170,6 +180,7 @@ public static class ImageMetadataExtensions
         yield return CreateEntry("SITEELV", elevation, "[m] Elevation");
         yield return CreateEntry("FOCALLEN", metadata.FocalLength, "[mm] Focal length");
         yield return CreateEntry("BAYERPAT", metadata.BayerPattern?.ToString(), "Bayer pattern");
+        yield return CreateEntry("SUNALT", sunAltitude, "[deg] Sun altitude");
     }
 
     private static IHeaderEntry? CreateEntry<T>(string keyword, T? value, string? comment = null)

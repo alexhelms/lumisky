@@ -40,9 +40,9 @@
     <None Update="Fonts\RobotoMono-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-	  <None Update="python\overlay.py">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+    <None Update="python\overlay.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="runtimes\linux-x64\native\libcvextern.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

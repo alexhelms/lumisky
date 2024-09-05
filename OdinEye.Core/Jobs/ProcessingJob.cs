@@ -1,7 +1,6 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Microsoft.EntityFrameworkCore;
 using OdinEye.Core.Data;
 using OdinEye.Core.DomainEvents;
 using OdinEye.Core.Imaging;
@@ -9,7 +8,6 @@ using OdinEye.Core.Imaging.Processing;
 using OdinEye.Core.Primitives;
 using OdinEye.Core.Profile;
 using OdinEye.Core.Services;
-using OdinEye.Core.Utilities;
 using Quartz;
 using SlimMessageBus;
 using System.Diagnostics;
@@ -49,54 +47,55 @@ public class ProcessingJob : JobBase
     {
         Log.Information($"Processing {RawImageTempFilename}");
 
-        var rawImageFilInfo = new FileInfo(RawImageTempFilename);
-        if (!rawImageFilInfo.Exists)
+        var rawImageFileInfo = new FileInfo(RawImageTempFilename);
+        if (!rawImageFileInfo.Exists)
         {
-            Log.Error("File for processing not found {Filename}", rawImageFilInfo.FullName);
+            Log.Error("File for processing not found {Filename}", rawImageFileInfo.FullName);
             return;
         }
 
-        if (rawImageFilInfo.Length == 0)
+        if (rawImageFileInfo.Length == 0)
         {
-            Log.Error("{Filename} is zero length", rawImageFilInfo.FullName);
-            try { rawImageFilInfo.Delete(); } catch { }
+            Log.Error("{Filename} is zero length", rawImageFileInfo.FullName);
+            try { rawImageFileInfo.Delete(); } catch { }
             return;
         }
 
         var startTime = Stopwatch.GetTimestamp();
 
-        using var processResult = _imageService.ProcessFits(rawImageFilInfo.FullName);
+        using var processResult = _imageService.ProcessFits(rawImageFileInfo.FullName);
+        var exposureUtc = processResult.Metadata.ExposureUtc ?? DateTime.Now;
 
         // Process, Save, and Persis the Image
-        await DrawCardinalOverlayForImage(processResult.Image);
-        var imageFilename = SaveImage(processResult.Image, "image", processResult.ExposureUtc);
-        await PersistImage(imageFilename, processResult.ExposureUtc);
+        await DrawImageOverlays(processResult.Image, processResult.Metadata);
+        var imageFilename = SaveImage(processResult.Image, "image", exposureUtc);
+        await PersistImage(imageFilename, exposureUtc);
 
         // Process, Save, and Persis the Panorama
         string? panoramaFilename = null;
         if (processResult.Panorama is not null)
         {
-            await DrawCardinalOverlayForPanorama(processResult.Panorama);
-            panoramaFilename = SaveImage(processResult.Panorama, "panorama", processResult.ExposureUtc);
-            await PersistPanorama(panoramaFilename, processResult.ExposureUtc);
+            await DrawPanoramaOverlays(processResult.Panorama);
+            panoramaFilename = SaveImage(processResult.Panorama, "panorama", exposureUtc);
+            await PersistPanorama(panoramaFilename, exposureUtc);
         }
 
         // Process, Save, and Persis the Raw Image
         string? rawImageFilename = null;
         if (_profile.Current.Image.KeepRawImages)
         {
-            rawImageFilename = SaveRawImage(rawImageFilInfo.FullName, processResult.ExposureUtc);
-            await PersistRawImage(rawImageFilename, processResult.ExposureUtc);
+            rawImageFilename = SaveRawImage(rawImageFileInfo.FullName, exposureUtc);
+            await PersistRawImage(rawImageFilename, exposureUtc);
         }
         else
         {
-            rawImageFilInfo.Delete();
+            rawImageFileInfo.Delete();
         }
 
         _exposureTrackingService.AddMostRecentStatistics(
-            exposure: processResult.ExposureDuration,
+            exposure: processResult.Metadata.ExposureDuration.GetValueOrDefault(),
             median: processResult.Median,
-            gain: processResult.Gain);
+            gain: processResult.Metadata.Gain.GetValueOrDefault());
 
         var processTimeElapsed = Stopwatch.GetElapsedTime(startTime);
         
@@ -115,7 +114,7 @@ public class ProcessingJob : JobBase
 
         Log.Information("Processing completed in {Elapsed:F3} seconds", processTimeElapsed.TotalSeconds);
 
-        if (processTimeElapsed > (_profile.Current.Capture.CaptureInterval - processResult.ExposureDuration))
+        if (processTimeElapsed > (_profile.Current.Capture.CaptureInterval - processResult.Metadata.ExposureDuration.GetValueOrDefault()))
         {
             Log.Warning("Processing time exceeds available time between exposures. Consider reducing your max exposure time.");
         }
@@ -205,59 +204,18 @@ public class ProcessingJob : JobBase
         Log.Information("Added panorama {Filename}", filename);
     }
 
-    private async Task DrawCardinalOverlayForImage(Mat image)
+    private async Task DrawImageOverlays(Mat image, ImageMetadata metadata)
     {
-        if (_profile.Current.Processing.DrawCardinalOverlay)
-        {
-            string[] labels = [
-                _profile.Current.Processing.CardinalTopString,
-                _profile.Current.Processing.CardinalBottomString,
-                _profile.Current.Processing.CardinalRightString,
-                _profile.Current.Processing.CardinalLeftString,
-            ];
-
-            try
-            {
-                await Overlay.DrawCardinalPoints(image,
-                    labels,
-                    fontSize: _profile.Current.Processing.TextSize,
-                    fill: _profile.Current.Processing.TextColor,
-                    strokeFill: _profile.Current.Processing.TextOutlineColor,
-                    strokeWidth: _profile.Current.Processing.TextOutline,
-                    margin: _profile.Current.Processing.TextSize / 2);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error drawing cardinal point overlay on image");
-            }
-        }
+        var renderer = new OverlayRenderer(_profile);
+        await renderer.DrawImageOverlays(image, metadata);
     }
 
-    private async Task DrawCardinalOverlayForPanorama(Mat panorama)
+    private async Task DrawPanoramaOverlays(Mat panorama)
     {
         if (_profile.Current.Processing.DrawCardinalOverlay)
         {
-            string[] labels = [
-                _profile.Current.Processing.PanoramaCardinal0AzimuthString,
-                _profile.Current.Processing.PanoramaCardinal90AzimuthString,
-                _profile.Current.Processing.PanoramaCardinal180AzimuthString,
-                _profile.Current.Processing.PanoramaCardinal270AzimuthString,
-            ];
-
-            try
-            {
-                await Overlay.DrawCardinalPointsPanorama(panorama,
-                    labels,
-                    fontSize: _profile.Current.Processing.TextSize,
-                    fill: _profile.Current.Processing.TextColor,
-                    strokeFill: _profile.Current.Processing.TextOutlineColor,
-                    strokeWidth: _profile.Current.Processing.TextOutline,
-                    margin: _profile.Current.Processing.TextSize / 2);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error drawing cardinal point overlay on panorama");
-            }
+            var renderer = new OverlayRenderer(_profile);
+            await renderer.DrawPanoramaOverlays(panorama);
         }
     }
 }

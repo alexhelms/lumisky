@@ -102,6 +102,8 @@ public class CaptureJob : JobBase
         if (image is null)
             throw new NullReferenceException("Image is null");
 
+        image.Metadata.SunAltitude = _sunService.GetSunAltitude(image.Metadata.ExposureUtc ?? DateTime.Now);
+
         return image;
     }
 

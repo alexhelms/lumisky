@@ -151,5 +151,12 @@ public class ImageMetadata
         set => SetMetadata(x => x.Elevation, value);
     }
 
+    [Metadata]
+    public double? SunAltitude
+    {
+        get => GetMetadata(x => x.SunAltitude);
+        set => SetMetadata(x => x.SunAltitude, value);
+    }
+
     #endregion
 }

@@ -1,23 +1,17 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
 using OdinEye.Core.Imaging;
 using OdinEye.Core.Imaging.Processing;
-using OdinEye.Core.Memory;
 using OdinEye.Core.Primitives;
 using OdinEye.Core.Profile;
-using OdinEye.Core.Utilities;
 
 namespace OdinEye.Core.Services;
 
 public record FitsProcessingResults : IDisposable
 {
-    public required DateTime ExposureUtc { get; set; }
-    public required TimeSpan ExposureDuration { get; set; }
+    public required ImageMetadata Metadata { get; set; }
     public required double Median { get; set; }
-    public required int Gain { get; set; }
     public required Mat Image { get; set; }
-
     public required Mat? Panorama { get; set; }
 
     ~FitsProcessingResults()
@@ -106,10 +100,8 @@ public class ImageService
 
         return new FitsProcessingResults
         {
-            ExposureUtc = debayeredImage.Metadata.ExposureUtc ?? DateTime.Now,
-            ExposureDuration = debayeredImage.Metadata.ExposureDuration ?? TimeSpan.Zero,
+            Metadata = rawImage.Metadata,
             Median = greenMedian,
-            Gain = debayeredImage.Metadata.Gain ?? 0,
             Image = image,
             Panorama = panorama,
         };

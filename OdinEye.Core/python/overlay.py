@@ -1,38 +1,61 @@
-import argparse
+import sys
+import json
+import traceback
+from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename', type=str)
-    parser.add_argument('width', type=int)
-    parser.add_argument('height', type=int)
-    parser.add_argument('font', type=str)
-    parser.add_argument('text', type=str)
-    parser.add_argument('size', type=int)
-    parser.add_argument('x', type=str, default='0', nargs='?')
-    parser.add_argument('y', type=str, default='0', nargs='?')
-    parser.add_argument('--fill', type=str, default='#ffffff')
-    parser.add_argument('--stroke_fill', type=str, default='#000000')
-    parser.add_argument('--stroke_width', type=int, default=0)
-    args = parser.parse_args()
 
-    with open(args.filename, 'rb') as f:
+@dataclass
+class TextOverlay:
+    x: int
+    y: int
+    text: str
+    font_size: int = 30
+    text_fill: str = '#ffffff'
+    text_anchor: str = 'mm'
+    stroke_fill: str = '#000000'
+    stroke_width: int = 0
+
+
+@dataclass
+class Config:
+    data_filename: str
+    image_width: int
+    image_height: int
+    font_filename: str
+    text_overlays: list[TextOverlay]
+
+
+if __name__ == '__main__':
+    # load json from stdin
+    try:
+        json_obj = json.load(sys.stdin)
+        config = Config(**json_obj)
+        config.text_overlays = [TextOverlay(**overlay) for overlay in config.text_overlays]
+        print(config)
+    except:
+        traceback.print_exc()
+        sys.exit(1)
+
+    # load image data in memory
+    with open(config.data_filename, 'rb') as f:
         data = f.read()
 
-    with Image.frombuffer('RGB', (args.width, args.height), data) as im:
-        font = ImageFont.truetype(args.font, args.size)
-        draw = ImageDraw.Draw(im)
-        fill = ImageColor.getcolor(args.fill, 'RGB')
-        stroke_fill = ImageColor.getcolor(args.stroke_fill, 'RGB')
+    # create a PIL image
+    with Image.frombuffer('RGB', (config.image_width, config.image_height), data) as im:
+        # draw each overlay
+        for overlay in config.text_overlays:
+            try:
+                draw = ImageDraw.Draw(im)
+                font = ImageFont.truetype(config.font_filename, overlay.font_size)
+                text_fill = ImageColor.getcolor(overlay.text_fill, 'RGB')
+                stroke_fill = ImageColor.getcolor(overlay.stroke_fill, 'RGB')
+                draw.text((overlay.x, overlay.y), overlay.text, font=font, fill=text_fill, anchor=overlay.text_anchor,
+                          stroke_width=overlay.stroke_width, stroke_fill=overlay.stroke_fill)
+            except:
+                # skip overlays that cause an exception
+                print(f'error drawing overlay: {overlay.text}', file=sys.stderr)
+                traceback.print_exc()
 
-        #  tilde is uncommon enough
-        join_char = '~'
-        xs = [int(s) for s in args.x.split(join_char)]
-        ys = [int(s) for s in args.y.split(join_char)]
-        texts = args.text.split(join_char)
-
-        for x, y, text in zip(xs, ys, texts):
-            draw.text((x, y), text, font=font, fill=fill, anchor='mm', stroke_width=args.stroke_width, stroke_fill=stroke_fill)
-
-        with open(args.filename, 'wb') as f:
+        with open(config.data_filename, 'wb') as f:
             f.write(im.tobytes())

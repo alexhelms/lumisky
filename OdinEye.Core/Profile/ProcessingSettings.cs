@@ -1,4 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using OdinEye.Core.Imaging.Processing;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 
 namespace OdinEye.Core.Profile;
 
@@ -28,10 +31,21 @@ public interface IProcessingSettings : ISettings
     double AutoSCurveContrast { get; set; }
     bool HotPixelCorrection { get; set; }
     int HotPixelThresholdPercent { get; set; }
+    ObservableCollection<TextOverlay> TextOverlays { get; set; }
 }
 
 public sealed partial class ProcessingSettings : Settings, IProcessingSettings
 {
+    protected override void HookEvents()
+    {
+        ((INotifyCollectionChanged)TextOverlays).CollectionChanged += OnCollectionChanged;
+    }
+
+    protected override void UnhookEvents()
+    {
+        ((INotifyCollectionChanged)TextOverlays).CollectionChanged -= OnCollectionChanged;
+    }
+
     protected override void Reset()
     {
         WbRedScale = 1.0;
@@ -58,6 +72,7 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         AutoSCurveContrast = 2.2;
         HotPixelCorrection = true;
         HotPixelThresholdPercent = 25;
+        TextOverlays = [];
     }
 
     [ObservableProperty] double _wbRedScale;
@@ -84,4 +99,18 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
     [ObservableProperty] double _autoSCurveContrast;
     [ObservableProperty] bool _hotPixelCorrection;
     [ObservableProperty] int _hotPixelThresholdPercent;
+    [ObservableProperty] ObservableCollection<TextOverlay> _textOverlays = [];
+}
+
+public record TextOverlay
+{
+    public OverlayVariable Variable { get; set; }
+    public string? Format { get; set; }
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int FontSize { get; set; } = 30;
+    public string Color { get; set; } = "#ffffff";
+    public TextAnchor Anchor { get; set; }
+    public string StrokeColor { get; set; } = "#000000";
+    public int StrokeWidth { get; set; } = 2;
 }
