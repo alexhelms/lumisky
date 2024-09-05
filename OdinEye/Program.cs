@@ -41,7 +41,8 @@ public class Program
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}",
                     path: Path.Combine(OdinEyePaths.Logs, "odineye.log"),
                     rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 7)
+                    retainedFileCountLimit: 7,
+                    hooks: services.GetRequiredService<CaptureLogFilePathHook>())
                 .WriteTo.ChannelSink(services.GetRequiredService<LogChannel>()));
 
             builder.Services.ConfigureOdinEyeCore();
@@ -58,6 +59,7 @@ public class Program
                 .PersistKeysToDbContext<AppDbContext>();
 
             builder.Services.AddSingleton<LogChannel>();
+            builder.Services.AddTransient<CaptureLogFilePathHook>();
 
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddScoped<IdentityUserAccessor>();
