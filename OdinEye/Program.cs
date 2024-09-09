@@ -72,8 +72,7 @@ public class Program
                     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
                 })
                 .AddIdentityCookies();
-
-            builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite());
+            
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<AppUser>(options => options.SignIn.RequireConfirmedAccount = true)

@@ -15,7 +15,7 @@ public class Panorama
     public string Filename { get; set; } = null!;
 
     /// <summary>
-    /// Unix timestamp, seconds.
+    /// UTC unix timestamp, seconds.
     /// </summary>
     public long ExposedOn { get; set; }
 }

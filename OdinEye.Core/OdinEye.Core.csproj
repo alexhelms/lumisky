@@ -26,10 +26,12 @@
     <PackageReference Include="Nito.AsyncEx" />
     <PackageReference Include="Quartz" />
     <PackageReference Include="Quartz.Extensions.DependencyInjection" />
+    <PackageReference Include="Quartz.Extensions.Hosting" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="SlimMessageBus" />
     <PackageReference Include="SlimMessageBus.Host.Memory" />
-    <PackageReference Include="SunCalcNet" />
+    <PackageReference Include="SunCalcSharp" />
+    <PackageReference Include="Xabe.FFmpeg" />
   </ItemGroup>
 
   <ItemGroup>

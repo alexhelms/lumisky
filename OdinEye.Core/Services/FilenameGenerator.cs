@@ -1,4 +1,5 @@
-﻿using OdinEye.Core.Imaging;
+﻿using OdinEye.Core.Data;
+using OdinEye.Core.Imaging;
 using OdinEye.Core.Profile;
 
 namespace OdinEye.Core.Services;
@@ -23,7 +24,7 @@ public class FilenameGenerator
         _ => throw new NotImplementedException(),
     };
 
-    public string CreateFilename(string imageType, DateTime timestamp, string extension)
+    public string CreateImageFilename(string imageType, DateTime timestamp, string extension)
     {
         bool isDay = _sunService.IsDaytime;
         var timestampMinus12 = timestamp.AddHours(-12);
@@ -33,6 +34,21 @@ public class FilenameGenerator
             imageType,
             isDay ? timestamp.ToString("yyyyMMdd") : timestampMinus12.ToString("yyyyMMdd"),
             isDay ? "day" : "night");
+        var path = Path.Combine(directory, filename);
+        return path;
+    }
+
+    public string CreateTimelapseFilename(GenerationKind generationKind, DateTime timestamp, DateTime begin, DateTime end)
+    {
+        var kind = generationKind switch
+        {
+            GenerationKind.Timelapse => "timelapse",
+            GenerationKind.PanoramaTimelapse => "panorama",
+            _ => throw new NotImplementedException()
+        };
+
+        var directory = Path.Combine(_profile.Current.Capture.DataDirectory, "video", kind);
+        var filename = $"{kind}_{timestamp:yyyyMMdd-HHmmss}_{begin:yyyyMMdd-HHmmss}_to_{end:yyyyMMdd-HHmmss}.mp4";
         var path = Path.Combine(directory, filename);
         return path;
     }

@@ -1,7 +1,7 @@
 ﻿@using Microsoft.EntityFrameworkCore
 @using OdinEye.Controllers
 @using OdinEye.Core.Services
-@using OdinEye.Core.Profile;
+@using OdinEye.Core.Profile
 @implements IDisposable
 @inject IProfileProvider Profile
 @inject AppDbContext DbContext
@@ -21,7 +21,7 @@ else
         <Columns>
             <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
                 <Template Context="rawImage">
-                    <RadzenLink Path="@($"/api/image/download/raw?ts={rawImage.ExposedOn}")" Target="_blank">
+                    <RadzenLink Path="@($"/api/image/download/raw?ts={rawImage.ExposedOn}")">
                         <RadzenButton Icon="download" Size="ButtonSize.Small" />
                     </RadzenLink>
                 </Template>
@@ -64,11 +64,11 @@ else
     {
         if (Profile.Current.Image.KeepRawImages)
         {
-            if (grid is not null)
-                InvokeAsync(grid.RefreshDataAsync);
-
             rawImagesAvailable = true;
             InvokeAsync(StateHasChanged);
+
+            if (grid is not null)
+                InvokeAsync(grid.RefreshDataAsync);
         }
     }
 }

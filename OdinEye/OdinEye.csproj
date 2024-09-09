@@ -33,6 +33,7 @@
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="SlimMessageBus" />
     <PackageReference Include="SlimMessageBus.Host.Memory" />
+    <PackageReference Include="System.Linq.Dynamic.Core" />
   </ItemGroup>
 
   <ItemGroup>

@@ -109,8 +109,6 @@ public class CaptureJob : JobBase
 
     private string SaveImage(AllSkyImage image)
     {
-        var timestamp = image.Metadata.ExposureUtc?.ToLocalTime() ?? DateTime.Now;
-
         // Save the raw image to a temporary path. The processing job will move it as needed.
         var filename = Path.Join(Path.GetTempPath(), "odineye", $"raw_{Guid.NewGuid():N}.fits");
         Directory.CreateDirectory(Path.GetDirectoryName(filename)!);

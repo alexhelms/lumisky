@@ -19,7 +19,7 @@ else
         <Columns>
             <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
                 <Template Context="panorama">
-                    <RadzenLink Path="@($"/api/image/download/panorama?ts={panorama.ExposedOn}")" Target="_blank">
+                    <RadzenLink Path="@($"/api/image/download/panorama?ts={panorama.ExposedOn}")">
                         <RadzenButton Icon="download" Size="ButtonSize.Small" />
                     </RadzenLink>
                 </Template>

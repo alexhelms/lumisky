@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OdinEye.Core.Data;
 
-[Index(nameof(ExposedOn))]
-public class Image
+public class Timelapse
 {
     public int Id { get; set; }
 
@@ -17,5 +15,10 @@ public class Image
     /// <summary>
     /// UTC unix timestamp, seconds.
     /// </summary>
-    public long ExposedOn { get; set; }
+    public long RangeBegin { get; set; }
+
+    /// <summary>
+    /// UTC unix timestamp, seconds.
+    /// </summary>
+    public long RangeEnd { get; set; }
 }

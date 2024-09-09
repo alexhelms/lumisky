@@ -4,7 +4,6 @@
 @implements IDisposable
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-@inject NavigationManager Navigation
 @inject ImageService ImageService
 @page "/"
 
@@ -125,7 +124,7 @@
                 await module.InvokeVoidAsync("createPanoViewer");
                 await module.InvokeVoidAsync("updatePanoViewer", latestPanoramaUrl, size.Width, size.Height);
             }
-            
+
             prevPanoramaUrl = latestPanoramaUrl;
         }
         else

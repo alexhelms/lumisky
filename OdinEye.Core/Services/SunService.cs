@@ -1,5 +1,5 @@
 ﻿using OdinEye.Core.Profile;
-using SunCalcNet;
+using SunCalcSharp;
 
 namespace OdinEye.Core.Services;
 
@@ -16,7 +16,7 @@ public class SunService
 
     public bool IsNighttime => GetSunAltitude() <= DayNightTransitionAltitude;
 
-    public double DayNightTransitionAltitude => _profile.Current.Capture.DayNightTransitionAltitude;
+    public double DayNightTransitionAltitude => -6; // Dusk/Dawn
 
     public double GetSunAltitude()
         => GetSunAltitude(DateTime.Now);
@@ -38,7 +38,13 @@ public class SunService
         ArgumentOutOfRangeException.ThrowIfGreaterThan(latitude, 90);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(longitude, 180);
 
-        var position = SunCalc.GetSunPosition(date, latitude, longitude);
+        var position = SunCalc.GetPosition(date, latitude, longitude);
         return position.Altitude * 180.0 / Math.PI;
     }
+
+    public SunTimes GetSunTimes(DateOnly date, double latitude, double longitude) =>
+        SunCalc.GetTimes(new DateTime(date, TimeOnly.MinValue), latitude, longitude);
+
+    public SunTimes GetSunTimes(DateOnly date) => GetSunTimes(date, _profile.Current.Location.Latitude, _profile.Current.Location.Longitude);
+
 }

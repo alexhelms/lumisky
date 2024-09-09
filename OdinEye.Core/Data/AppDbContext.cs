@@ -14,6 +14,9 @@ public class AppDbContext : IdentityDbContext<AppUser>, IDataProtectionKeyContex
     public DbSet<Image> Images { get; set; }
     public DbSet<RawImage> RawImages { get; set; }
     public DbSet<Panorama> Panoramas { get; set; }
+    public DbSet<Generation> Generations { get; set; }
+    public DbSet<Timelapse> Timelapses { get; set; }
+    public DbSet<PanoramaTimelapse> PanoramaTimelapses { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -29,7 +32,23 @@ public class AppDbContext : IdentityDbContext<AppUser>, IDataProtectionKeyContex
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<RawImage>()
+           .Property(x => x.CreatedOn)
+           .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
         modelBuilder.Entity<Image>()
+           .Property(x => x.CreatedOn)
+           .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        modelBuilder.Entity<Panorama>()
+           .Property(x => x.CreatedOn)
+           .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        modelBuilder.Entity<Timelapse>()
+           .Property(x => x.CreatedOn)
+           .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        modelBuilder.Entity<Generation>()
            .Property(x => x.CreatedOn)
            .HasDefaultValueSql("CURRENT_TIMESTAMP");
     }

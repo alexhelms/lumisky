@@ -24,6 +24,7 @@
     <PackageVersion Include="Nito.AsyncEx" Version="5.1.2" />
     <PackageVersion Include="Quartz" Version="3.13.0" />
     <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.13.0" />
+    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.13.0" />
     <PackageVersion Include="Radzen.Blazor" Version="5.1.2" />
     <PackageVersion Include="Serilog" Version="4.0.1" />
     <PackageVersion Include="Serilog.AspNetCore" Version="8.0.2" />
@@ -31,14 +32,13 @@
     <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageVersion Include="SixLabors.Fonts" Version="2.0.4" />
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.5" />
-    <PackageVersion Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
+    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.4.5" />
     <PackageVersion Include="SlimMessageBus" Version="2.0.3" />
     <PackageVersion Include="SlimMessageBus.Host.Memory" Version="2.5.1" />
-    <PackageVersion Include="SunCalcNet" Version="1.2.2" />
+    <PackageVersion Include="SunCalcSharp" Version="1.0.5" />
+    <PackageVersion Include="Xabe.FFmpeg" Version="5.2.6" />
     <!-- Dev Tools -->
-    <PackageVersion Include="TurnerSoftware.BuildVersioning" Version="0.5.0" />
+    <!--<PackageVersion Include="TurnerSoftware.BuildVersioning" Version="0.5.0" />-->
     <!-- Test Tools -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />

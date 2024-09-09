@@ -1,6 +1,7 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Microsoft.EntityFrameworkCore;
 using OdinEye.Core.Data;
 using OdinEye.Core.DomainEvents;
 using OdinEye.Core.Imaging;
@@ -20,7 +21,7 @@ public class ProcessingJob : JobBase
     
     private readonly IProfileProvider _profile;
     private readonly IMessageBus _bus;
-    private readonly AppDbContext _dbContext;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
     private readonly ImageService _imageService;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly ExposureService _exposureTrackingService;
@@ -30,14 +31,14 @@ public class ProcessingJob : JobBase
     public ProcessingJob(
         IProfileProvider profile,
         IMessageBus bus,
-        AppDbContext dbContext,
+        IDbContextFactory<AppDbContext> dbContextFactory,
         ImageService imageService,
         FilenameGenerator filenameGenerator,
         ExposureService exposureTrackingService)
     {
         _profile = profile;
         _bus = bus;
-        _dbContext = dbContext;
+        _dbContextFactory = dbContextFactory;
         _imageService = imageService;
         _filenameGenerator = filenameGenerator;
         _exposureTrackingService = exposureTrackingService;
@@ -119,6 +120,8 @@ public class ProcessingJob : JobBase
             Log.Warning("Processing time exceeds available time between exposures. Consider reducing your max exposure time.");
         }
 
+        context.CancellationToken.ThrowIfCancellationRequested();
+
         await context.Scheduler.TriggerJob(
             ExportJob.Key,
             new JobDataMap
@@ -131,7 +134,7 @@ public class ProcessingJob : JobBase
 
     private string SaveRawImage(string tempFilename, DateTime timestamp)
     {
-        var filename = _filenameGenerator.CreateFilename("raw", timestamp, ".fits");
+        var filename = _filenameGenerator.CreateImageFilename("raw", timestamp, ".fits");
         Directory.CreateDirectory(Path.GetDirectoryName(filename)!);
         File.Move(tempFilename, filename, overwrite: true);
         return filename;
@@ -139,7 +142,7 @@ public class ProcessingJob : JobBase
 
     private string SaveImage(Mat uint8Mat, string imageType, DateTime timestamp)
     {
-        var filename = _filenameGenerator.CreateFilename(imageType, timestamp, _filenameGenerator.ImageExtension);
+        var filename = _filenameGenerator.CreateImageFilename(imageType, timestamp, _filenameGenerator.ImageExtension);
         Directory.CreateDirectory(Path.GetDirectoryName(filename)!);
 
         var encoderParameters = new List<KeyValuePair<ImwriteFlags, int>>();
@@ -162,16 +165,17 @@ public class ProcessingJob : JobBase
         return filename;
     }
 
-    private async Task PersistRawImage(string filename, DateTime timestamp)
+    private async Task PersistRawImage(string filename, DateTime exposureUtc)
     {
         var rawImage = new Data.RawImage
         {
             Filename = filename,
-            ExposedOn = new DateTimeOffset(timestamp).ToUnixTimeSeconds(),
+            ExposedOn = new DateTimeOffset(exposureUtc).ToUnixTimeSeconds(),
         };
 
-        _dbContext.RawImages.Add(rawImage);
-        await _dbContext.SaveChangesAsync();
+        using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.RawImages.Add(rawImage);
+        await dbContext.SaveChangesAsync();
 
         Log.Information("Added raw image {Filename}", filename);
     }
@@ -184,8 +188,9 @@ public class ProcessingJob : JobBase
             ExposedOn = new DateTimeOffset(exposureUtc).ToUnixTimeSeconds(),
         };
 
-        _dbContext.Images.Add(newImage);
-        await _dbContext.SaveChangesAsync();
+        using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.Images.Add(newImage);
+        await dbContext.SaveChangesAsync();
 
         Log.Information("Added image {Filename}", filename);
     }
@@ -198,8 +203,9 @@ public class ProcessingJob : JobBase
             ExposedOn = new DateTimeOffset(exposureUtc).ToUnixTimeSeconds(),
         };
 
-        _dbContext.Panoramas.Add(newImage);
-        await _dbContext.SaveChangesAsync();
+        using var dbContext = _dbContextFactory.CreateDbContext();
+        dbContext.Panoramas.Add(newImage);
+        await dbContext.SaveChangesAsync();
 
         Log.Information("Added panorama {Filename}", filename);
     }

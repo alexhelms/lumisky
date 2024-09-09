@@ -18,6 +18,7 @@ public interface IProfile : INotifyPropertyChanged, INotifyPropertyChanging
     IImageSettings Image { get; }
     ILocationSettings Location { get; }
     IProcessingSettings Processing { get; }
+    IGenerationSettings Generation { get; }
 }
 
 public sealed partial class Profile : Settings, IProfile
@@ -42,6 +43,7 @@ public sealed partial class Profile : Settings, IProfile
                 new InterfaceConverter<IImageSettings, ImageSettings>(),
                 new InterfaceConverter<ILocationSettings, LocationSettings>(),
                 new InterfaceConverter<IProcessingSettings, ProcessingSettings>(),
+                new InterfaceConverter<IGenerationSettings, GenerationSettings>(),
             },
         };
 
@@ -54,6 +56,7 @@ public sealed partial class Profile : Settings, IProfile
         Image.PropertyChanged += OnPropertyChanged;
         Location.PropertyChanged += OnPropertyChanged;
         Processing.PropertyChanged += OnPropertyChanged;
+        Generation.PropertyChanged += OnPropertyChanged;
     }
 
     protected override void UnhookEvents()
@@ -65,6 +68,7 @@ public sealed partial class Profile : Settings, IProfile
         Image.PropertyChanged -= OnPropertyChanged;
         Location.PropertyChanged -= OnPropertyChanged;
         Processing.PropertyChanged -= OnPropertyChanged;
+        Generation.PropertyChanged -= OnPropertyChanged;
     }
 
     protected override void Reset()
@@ -79,6 +83,7 @@ public sealed partial class Profile : Settings, IProfile
         Image = new ImageSettings();
         Location = new LocationSettings();
         Processing = new ProcessingSettings();
+        Generation = new GenerationSettings();
     }
 
     [ObservableProperty] string _name = "default";
@@ -91,4 +96,5 @@ public sealed partial class Profile : Settings, IProfile
     [ObservableProperty] IImageSettings _image = new ImageSettings();
     [ObservableProperty] ILocationSettings _location = new LocationSettings();
     [ObservableProperty] IProcessingSettings _processing = new ProcessingSettings();
+    [ObservableProperty] IGenerationSettings _generation = new GenerationSettings();
 }

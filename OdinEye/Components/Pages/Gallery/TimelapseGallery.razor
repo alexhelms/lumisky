@@ -1,0 +1,78 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using OdinEye.Controllers
+@using OdinEye.Core.DomainEvents
+@using OdinEye.Core.Services
+@using OdinEye.Core.Profile
+@implements IDisposable
+@inject IProfileProvider Profile
+@inject AppDbContext DbContext
+@inject GenerationService GenerationService
+
+@if (!timelapsesAvailable)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+        <RadzenText>No Timelapses Available</RadzenText>
+    </RadzenRow>
+}
+else
+{
+    <RadzenDataGrid @ref=grid TItem="Timelapse" Data="@timelapses" AllowFiltering="true" AllowColumnResize="true"
+                    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+        <Columns>
+            <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
+                <Template Context="timelapse">
+                    <RadzenLink Path="@($"/api/video/download/timelapse?id={timelapse.Id}")">
+                        <RadzenButton Icon="download" Size="ButtonSize.Small" />
+                    </RadzenLink>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Timelapse.Filename)" Title="Filename">
+                <Template Context="timelapse">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body1" class="rz-m-0">@Path.GetFileName(timelapse.Filename)</RadzenText>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Timelapse.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending">
+                <Template Context="timelapse">
+                    @timelapse.CreatedOn.ToLocalTime().ToString("G")
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code
+{
+    RadzenDataGrid<Timelapse>? grid;
+    IQueryable<Timelapse>? timelapses;
+    bool timelapsesAvailable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        timelapses = DbContext.Timelapses;
+        timelapsesAvailable = await DbContext.Timelapses.AnyAsync();
+
+        GenerationService.Complete += OnGenerationComplete;
+    }
+
+    public void Dispose()
+    {
+        GenerationService.Complete -= OnGenerationComplete;
+    }
+
+    private void OnGenerationComplete(object? sender, GenerationComplete message)
+    {
+        InvokeAsync(async () =>
+        {
+            timelapsesAvailable = true;
+            StateHasChanged();
+
+            if (grid is not null)
+            {
+                await grid.RefreshDataAsync();
+            }
+        });
+    }
+}

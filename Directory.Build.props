@@ -31,8 +31,8 @@
     <DefineConstants>Linux</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!--<ItemGroup Condition="'$(Configuration)'=='Release'">
     <PackageReference Include="TurnerSoftware.BuildVersioning" />
-  </ItemGroup>
+  </ItemGroup>-->
     
 </Project>

@@ -58,6 +58,8 @@ public class FindExposureJob : JobBase
 
             while (true)
             {
+                context.CancellationToken.ThrowIfCancellationRequested();
+
                 var median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
                 _exposureService.AddMostRecentStatistics(exposureParameters.Duration, median, gain);
 
@@ -98,9 +100,11 @@ public class FindExposureJob : JobBase
             }
         }
 
+        context.CancellationToken.ThrowIfCancellationRequested();
+
         if (success)
         {
-            var allSkyPeriodicTrigger = TriggerBuilder.Create()
+            var trigger = TriggerBuilder.Create()
                 .WithIdentity(TriggerKeys.ScheduledAllsky)
                 .ForJob(CaptureJob.Key)
                 .WithSimpleSchedule(o => o
@@ -108,7 +112,7 @@ public class FindExposureJob : JobBase
                     .RepeatForever())
                 .Build();
 
-            await context.Scheduler.ScheduleJob(allSkyPeriodicTrigger);
+            await context.Scheduler.ScheduleJob(trigger);
         }
     }
 
@@ -134,6 +138,7 @@ public class FindExposureJob : JobBase
                     exposureParameters.Duration.TotalSeconds, exposureParameters.Gain);
 
         using var image = await camera.TakeImageAsync(exposureParameters, token);
+        token.ThrowIfCancellationRequested();
         if (image is null)
             throw new NullReferenceException("Image is null");
 
