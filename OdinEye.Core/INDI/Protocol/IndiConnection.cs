@@ -91,12 +91,7 @@ public partial class IndiConnection
             _hostname = hostname;
             _port = port;
             _client = new TcpClient();
-            _client.Client.SendTimeout = 10000;
-            _client.Client.NoDelay = true;
-            _client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-            _client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 5);
-            _client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 5);
-            _client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, 5);
+            _client.SendTimeout = 10000;
 
             await _client.ConnectAsync(hostname, port, cts.Token);
 

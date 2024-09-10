@@ -10,7 +10,6 @@
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Emgu.CV" />
     <PackageReference Include="Emgu.CV.runtime.windows" Condition=" '$(IsWindows)' == 'true' " />
-    <!--<PackageReference Include="Emgu.CV.runtime.ubuntu-x64" Condition=" '$(IsLinux)' == 'true' " />-->
     <PackageReference Include="FluentFTP" />
     <PackageReference Include="MathNet.Numerics" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
@@ -45,19 +44,25 @@
     <None Update="python\overlay.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="runtimes\linux-arm64\native\libcvextern.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="runtimes\linux-arm64\native\libcfitsio.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="runtimes\linux-x64\native\libcvextern.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="runtimes\linux-x64\native\libcfitsio.so" Condition=" '$(IsLinux)' == 'true' ">
+    <None Update="runtimes\linux-x64\native\libcfitsio.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-	  <None Update="runtimes\win-x64\native\cfitsio.dll" Condition=" '$(IsWindows)' == 'true' ">
+	  <None Update="runtimes\win-x64\native\cfitsio.dll">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="runtimes\win-x64\native\pthreadVC3.dll" Condition=" '$(IsWindows)' == 'true' ">
+	  <None Update="runtimes\win-x64\native\pthreadVC3.dll">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="runtimes\win-x64\native\zlib1.dll" Condition=" '$(IsWindows)' == 'true' ">
+	  <None Update="runtimes\win-x64\native\zlib1.dll">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
