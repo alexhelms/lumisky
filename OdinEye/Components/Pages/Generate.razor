@@ -85,12 +85,16 @@
                 </EmptyTemplate>
                 <Columns>
                     <RadzenDataGridColumn Property="@nameof(GenerationJob.Kind)" Title="Type" TextAlign="TextAlign.Center" Width="180px" />
-                    <RadzenDataGridColumn Property="@nameof(GenerationJob.Created)" Title="Created" FormatString="{0:yyyy-MM-dd HH:mm:ss}" TextAlign="TextAlign.Center" Width="180px" />
+                    <RadzenDataGridColumn Property="@nameof(GenerationJob.Created)" Title="Created" TextAlign="TextAlign.Center" Width="180px">
+                        <Template Context="item">
+                            @item.Created.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                        </Template>
+                    </RadzenDataGridColumn>
                     <RadzenDataGridColumn Property="@nameof(GenerationJob.Started)" Title="Started" TextAlign="TextAlign.Center" Width="180px">
                         <Template Context="item">
                             @if (item.Started.HasValue)
                             {
-                                @item.Started.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                                @item.Started.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
                             }
                             else
                             {
@@ -102,7 +106,7 @@
                         <Template Context="item">
                             @if (item.Finished.HasValue)
                             {
-                                @item.Finished.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                                @item.Finished.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
                             }
                             else
                             {
