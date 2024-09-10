@@ -74,7 +74,23 @@ public class GenerationService
         {
             [nameof(TimelapseJob.GenerationId)] = generation.Id,
         };
-        await scheduler.TriggerJob(TimelapseJob.Key, jobData);
+
+        var trigger = await scheduler.GetTrigger(TriggerKeys.Timelapse);
+        if (trigger is null)
+        {
+            trigger = TriggerBuilder.Create()
+                .WithIdentity(TriggerKeys.Timelapse)
+                .ForJob(TimelapseJob.Key)
+                .UsingJobData(jobData)
+                .StartNow()
+                .Build();
+
+            await scheduler.ScheduleJob(trigger);
+        }
+        else
+        {
+            await scheduler.TriggerJob(TimelapseJob.Key, jobData);
+        }
     }
 
     public async Task GeneratePanoramaTimelapse(DateTime beginUtc, DateTime endUtc)
@@ -102,7 +118,23 @@ public class GenerationService
         {
             [nameof(PanoramaTimelapseJob.GenerationId)] = generation.Id,
         };
-        await scheduler.TriggerJob(PanoramaTimelapseJob.Key, jobData);
+
+        var trigger = await scheduler.GetTrigger(TriggerKeys.PanoramaTimelapse);
+        if (trigger is null)
+        {
+            trigger = TriggerBuilder.Create()
+                .WithIdentity(TriggerKeys.PanoramaTimelapse)
+                .ForJob(PanoramaTimelapseJob.Key)
+                .UsingJobData(jobData)
+                .StartNow()
+                .Build();
+
+            await scheduler.ScheduleJob(trigger);
+        }
+        else
+        {
+            await scheduler.TriggerJob(PanoramaTimelapseJob.Key, jobData);
+        }
     }
 
     public async Task CancelGeneration(int id)

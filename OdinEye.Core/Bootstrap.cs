@@ -6,6 +6,7 @@ using OdinEye.Core.Jobs;
 using OdinEye.Core.Profile;
 using OdinEye.Core.Services;
 using Quartz;
+using Quartz.Impl.Matchers;
 using SlimMessageBus.Host;
 using SlimMessageBus.Host.Memory;
 
@@ -98,7 +99,7 @@ public static class Bootstrap
                 .WithSimpleSchedule(o => o
                     .WithInterval(TimeSpan.FromMinutes(1))
                     .RepeatForever())
-                .StartAt(DateTimeOffset.Now.AddSeconds(5))
+                .StartAt(DateTimeOffset.UtcNow.AddSeconds(5))
                 .Build();
 
             await scheduler.ScheduleJob(dayNightTrigger);
@@ -117,6 +118,8 @@ public static class Bootstrap
             q.UseInMemoryStore();
             q.InterruptJobsOnShutdown = true;
             q.InterruptJobsOnShutdownWithWait = true;
+
+            q.AddTriggerListener<GenerationJobLimiter>(GroupMatcher<TriggerKey>.GroupEquals(JobConstants.Groups.Generation));
 
             q.AddJob<DayNightJob>(c => c
                 .WithIdentity(DayNightJob.Key)
