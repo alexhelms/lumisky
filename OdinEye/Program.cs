@@ -12,7 +12,7 @@ namespace OdinEye;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -84,7 +84,7 @@ public class Program
 
             var app = builder.Build();
 
-            Bootstrap.UseOdinEyeCore(app.Services);
+            await Bootstrap.UseOdinEyeCore(app.Services);
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -111,7 +111,7 @@ public class Program
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
 
-            app.Run();
+            await app.RunAsync();
         }
         catch (Exception e)
         {

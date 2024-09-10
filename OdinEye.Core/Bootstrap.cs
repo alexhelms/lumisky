@@ -18,8 +18,6 @@ public static class Bootstrap
         services.AddDbContext<AppDbContext>(options => options.UseSqlite());
         services.AddDbContextFactory<AppDbContext>(options => options.UseSqlite(), lifetime: ServiceLifetime.Scoped);
 
-        services.AddHostedService<DayNightWatcherBackgroundService>();
-
         services.AddSingleton<IProfileProvider, ProfileProvider>();
         services.AddSingleton<DeviceFactory>();
         services.AddSingleton<AllSkyScheduler>();
@@ -37,7 +35,7 @@ public static class Bootstrap
         services.ConfigureScheduler();
     }
 
-    public static void UseOdinEyeCore(IServiceProvider provider)
+    public static async Task UseOdinEyeCore(IServiceProvider provider)
     {
         try
         {
@@ -45,7 +43,7 @@ public static class Bootstrap
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             if (dbContext.Database.GetPendingMigrations().Any())
             {
-                dbContext.Database.Migrate();
+                await dbContext.Database.MigrateAsync();
             }
         }
         catch (Exception e)
@@ -85,7 +83,30 @@ public static class Bootstrap
         if (profile.Current.Capture.AutoStart)
         {
             var allSkyScheduler = provider.GetRequiredService<AllSkyScheduler>();
-            _ = Task.Run(allSkyScheduler.Start);
+            await allSkyScheduler.Start();
+        }
+
+        try
+        {
+            // Start maintenance jobs
+            var schedulerFactory = provider.GetRequiredService<ISchedulerFactory>();
+            var scheduler = await schedulerFactory.GetScheduler();
+
+            var dayNightTrigger = TriggerBuilder.Create()
+                .WithIdentity(TriggerKeys.DayNight)
+                .ForJob(DayNightJob.Key)
+                .WithSimpleSchedule(o => o
+                    .WithInterval(TimeSpan.FromMinutes(1))
+                    .RepeatForever())
+                .StartAt(DateTimeOffset.Now.AddSeconds(5))
+                .Build();
+
+            await scheduler.ScheduleJob(dayNightTrigger);
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(e, "Fatal error starting maintenance jobs");
+            throw;
         }
     }
 
@@ -96,6 +117,11 @@ public static class Bootstrap
             q.UseInMemoryStore();
             q.InterruptJobsOnShutdown = true;
             q.InterruptJobsOnShutdownWithWait = true;
+
+            q.AddJob<DayNightJob>(c => c
+                .WithIdentity(DayNightJob.Key)
+                .StoreDurably()
+                .Build());
 
             q.AddJob<TimelapseJob>(c => c
                 .WithIdentity(TimelapseJob.Key)

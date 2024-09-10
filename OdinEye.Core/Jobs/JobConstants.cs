@@ -12,21 +12,25 @@ public static class JobConstants
         public const string Export = "export-job";
         public const string Timelapse = "timelapse-job";
         public const string PanoramaTimelapse = "panorama-timelapse-job";
+        public const string DayNightJob = "day-night-job";
     }
 
     public static class Triggers
     {
         public const string ScheduledAllsky = "scheduled-allsky-trigger";
+        public const string DayNight = "day-night-trigger";
     }
 
     public static class Groups
     {
         public const string Allsky = "allsky";
         public const string Generation = "generation";
+        public const string Maintenance = "maintenance";
     }
 }
 
 public static class TriggerKeys
 {
     public static readonly TriggerKey ScheduledAllsky = new(JobConstants.Triggers.ScheduledAllsky, JobConstants.Groups.Allsky);
+    public static readonly TriggerKey DayNight = new(JobConstants.Triggers.DayNight, JobConstants.Groups.Maintenance);
 }
