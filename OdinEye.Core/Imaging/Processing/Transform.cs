@@ -33,16 +33,21 @@ public static class Transform
         Rotate(fisheyeImage, angle + 90);
 
         var fisheyeBounds = new Rectangle(0, 0, image.Cols, image.Rows);
-        var equirectBounds = new Rectangle(
-            x: 0,
-            y: 0,
-            width: (int)(2 * Math.PI * radius + 0.5),
-            height: (int)(Math.PI * radius + 0.5));
 
+        // Width must be even number for ffmpeg
+        var equirectWidth = (int)(2 * Math.PI * radius + 0.5);
+        if (equirectWidth % 2 == 1)
+            equirectWidth--;
+
+        // Height must be even number for ffmpeg
+        var equirectHeight = (int)(Math.PI * radius + 0.5);
+        if (equirectHeight % 2 == 1)
+            equirectHeight--;
 
         int centerX = (int)(fisheyeBounds.Width / 2 + xOffset);
         int centerY = (int)(fisheyeBounds.Height / 2 + yOffset);
         
+        var equirectBounds = new Rectangle(0, 0, equirectWidth, equirectHeight);
         var panoImage = new Mat(equirectBounds.Height, equirectBounds.Width, DepthType.Cv8U, 3);
 
         var op = new PanoramaOperation(
