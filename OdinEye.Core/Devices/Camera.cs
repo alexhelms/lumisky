@@ -114,8 +114,12 @@ public class IndiCamera : ICamera, IDisposable
 
             await _device.Set<IndiSwitch>("CCD_TRANSFER_FORMAT", ["FORMAT_FITS", "FORMAT_NATIVE"], [true, false]);
             await _device.Set<IndiNumber>("CCD_BINNING", ["HOR_BIN", "VER_BIN"], [1, 1]);
-            await _device.Set<IndiNumber>("CCD_CONTROLS", "Gain", gain);
-            await _device.Set<IndiNumber>("CCD_CONTROLS", "Offset", offset);
+
+            if (HasGain)
+                await _device.Set<IndiNumber>("CCD_CONTROLS", "Gain", gain);
+
+            if (HasOffset)
+                await _device.Set<IndiNumber>("CCD_CONTROLS", "Offset", offset);
 
             var exposureStart = DateTime.UtcNow;
             await _device.Set<IndiNumber>("CCD_EXPOSURE", "CCD_EXPOSURE_VALUE", exposure, timeout, token);
@@ -147,6 +151,14 @@ public class IndiCamera : ICamera, IDisposable
                 image.Metadata.Latitude = _profile.Current.Location.Latitude;
                 image.Metadata.Longitude = _profile.Current.Location.Longitude;
                 image.Metadata.Elevation = _profile.Current.Location.Elevation;
+
+                if (BayerPattern == BayerPattern.None)
+                {
+                    // Images must have a bayer pattern. Monochrome is not supported
+                    // so pick a default bayer pattern.
+                    image.Metadata.BayerPattern = BayerPattern.RGGB;
+                }
+
                 return image;
             }
         }
@@ -185,15 +197,37 @@ public class IndiCamera : ICamera, IDisposable
         ExposureMin = TimeSpan.FromSeconds(indiExposure.Min);
         ExposureMax = TimeSpan.FromSeconds(indiExposure.Max);
 
-        var indiGain = _device.Get<IndiNumber>("CCD_CONTROLS", "Gain");
-        Gain = (int)indiGain.Value;
-        GainMin = (int)indiGain.Min;
-        GainMax = (int)indiGain.Max;
+        if (_device.TryGet<IndiNumber>("CCD_CONTROLS", "Gain", out var indiGain))
+        {
+            HasGain = true;
+            Gain = (int)indiGain!.Value;
+            GainMin = (int)indiGain.Min;
+            GainMax = (int)indiGain.Max;
+        }
+        else
+        {
+            Log.Warning("INDI property CCD_CONTROLS:Gain not found");
+            HasGain = false;
+            Gain = 0;
+            GainMin = 0;
+            GainMax = 0;
+        }
 
-        var indiOffset = _device.Get<IndiNumber>("CCD_CONTROLS", "Offset");
-        Offset = (int)indiOffset.Value;
-        OffsetMin = (int)indiOffset.Min;
-        OffsetMax = (int)indiOffset.Max;
+        if (_device.TryGet<IndiNumber>("CCD_CONTROLS", "Offset", out var indiOffset))
+        {
+            HasOffset = true;
+            Offset = (int)indiOffset!.Value;
+            OffsetMin = (int)indiOffset.Min;
+            OffsetMax = (int)indiOffset.Max;
+        }
+        else
+        {
+            Log.Warning("INDI property CCD_CONTROLS:Offset not found");
+            HasOffset = false;
+            Offset = 0;
+            OffsetMin = 0;
+            OffsetMax = 0;
+        }
 
         var indiPixelSize = _device.Get<IndiNumber>("CCD_INFO", "CCD_PIXEL_SIZE");
         PixelSize = indiPixelSize.Value;
@@ -205,6 +239,7 @@ public class IndiCamera : ICamera, IDisposable
         }
         else
         {
+            Log.Warning("Monochrome cameras are not supported. The image will be debayered as RGGB.");
             BayerPattern = BayerPattern.None;
         }
     }
@@ -223,6 +258,8 @@ public class IndiCamera : ICamera, IDisposable
 
     public string Name => _profile.Current.Camera.Name;
     public bool IsConnected { get; private set; }
+    public bool HasGain { get; private set; }
+    public bool HasOffset { get; private set; }
     public TimeSpan ExposureMin { get; private set; }
     public TimeSpan ExposureMax { get; private set; }
     public int Gain { get; private set; }
