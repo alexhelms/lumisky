@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-preview-noble AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-preview-bookworm-slim AS base
 USER app
 WORKDIR /app
 EXPOSE 8080
@@ -15,15 +15,14 @@ RUN apt-get update -y \
     python3-pil \
     ffmpeg \
     libgeotiff5 \
-    libhdf5-103-1t64 \
-    libgstreamermm-1.0-1 \
+    libgtk-3-0 \
     vtk9
 RUN mkdir /odineye \
     && chmod 755 /odineye \
     && chown app:app /odineye
 USER app
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0-preview-noble AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-preview-bookworm-slim AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Directory.Packages.props", "."]

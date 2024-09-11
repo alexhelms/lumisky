@@ -1,10 +1,10 @@
 services:
   odineye:
     container_name: "odineye"
-    build:
-      context: .
-      dockerfile: ./OdinEye/Dockerfile
+    image: ghcr.io/alexhelms/odineye:latest
     restart: unless-stopped
+    pull_policy: always
+    user: 1654:1654
     volumes:
       - odineye-data:/odineye
     network_mode: host
