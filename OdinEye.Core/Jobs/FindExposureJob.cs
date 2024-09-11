@@ -120,11 +120,11 @@ public class FindExposureJob : JobBase
     {
         var camera = _deviceFactory.CreateCamera();
         if (camera is null)
-            throw new NullReferenceException("Camera is null");
+            throw new NullReferenceException("Could not create camera.");
 
         bool connected = await camera.ConnectAsync(token);
         if (!connected)
-            throw new NotConnectedException();
+            throw new NotConnectedException($"{camera.Name} failed to connect. Check settings and try again.");
 
         return camera;
     }
@@ -140,7 +140,7 @@ public class FindExposureJob : JobBase
         using var image = await camera.TakeImageAsync(exposureParameters, token);
         token.ThrowIfCancellationRequested();
         if (image is null)
-            throw new NullReferenceException("Image is null");
+            throw new NullReferenceException("Image capture failed.");
 
         using var debayeredImage = Debayer.FromImage(image);
         double greenMedian = debayeredImage.Median(channel: 1);

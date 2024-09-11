@@ -27,7 +27,14 @@ public class IndiCamera : ICamera, IDisposable
     private void ThrowIfNotConnected()
     {
         if (!IsConnected)
-            throw new NotConnectedException();
+        {
+            var name = _profile.Current.Camera.Name;
+            if (string.IsNullOrWhiteSpace(name))
+                name = $"{_profile.Current.Camera.IndiHostname}:{_profile.Current.Camera.IndiPort}";
+            if (string.IsNullOrWhiteSpace(name))
+                name = "Indi Camera";
+            throw new NotConnectedException($"{name} not connected");
+        }
     }
 
     public async Task<bool> ConnectAsync(CancellationToken token = default)

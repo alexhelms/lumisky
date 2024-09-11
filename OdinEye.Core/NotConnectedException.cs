@@ -3,6 +3,7 @@
 public class NotConnectedException : Exception
 {
     public NotConnectedException()
+        : this("Device not connected.")
     {
     }
 

@@ -27,6 +27,7 @@ public static class Bootstrap
         services.AddTransient<FilenameGenerator>();
         services.AddSingleton<ExposureService>();
         services.AddSingleton<GenerationService>();
+        services.AddSingleton<NotificationService>();
 
         services.AddSlimMessageBus(config => config
             .WithProviderMemory()
@@ -120,6 +121,8 @@ public static class Bootstrap
             q.InterruptJobsOnShutdownWithWait = true;
 
             q.AddTriggerListener<GenerationJobLimiter>(GroupMatcher<TriggerKey>.GroupEquals(JobConstants.Groups.Generation));
+
+            q.AddJobListener<JobExceptionListener>(GroupMatcher<JobKey>.GroupEquals(JobConstants.Groups.Allsky));
 
             q.AddJob<DayNightJob>(c => c
                 .WithIdentity(DayNightJob.Key)

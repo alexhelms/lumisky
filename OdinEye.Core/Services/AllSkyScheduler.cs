@@ -7,6 +7,7 @@ namespace OdinEye.Core.Services;
 public class AllSkyScheduler
 {
     private readonly ISchedulerFactory _schedulerFactory;
+    private readonly NotificationService _notificationService;
 
     public event EventHandler? AllSkyStarted;
     public event EventHandler? AllSkyStopping;
@@ -15,9 +16,12 @@ public class AllSkyScheduler
     public bool IsRunning { get; private set; }
     public bool IsStopping { get; private set; }
 
-    public AllSkyScheduler(ISchedulerFactory schedulerFactory)
+    public AllSkyScheduler(
+        ISchedulerFactory schedulerFactory,
+        NotificationService notificationService)
     {
         _schedulerFactory = schedulerFactory;
+        _notificationService = notificationService;
     }
 
     public async Task Start()

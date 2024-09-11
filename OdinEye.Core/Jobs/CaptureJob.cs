@@ -73,11 +73,11 @@ public class CaptureJob : JobBase
     {
         var camera = _deviceFactory.CreateCamera();
         if (camera is null)
-            throw new NullReferenceException("Camera is null");
+            throw new NullReferenceException("Could not create camera.");
 
         bool connected = await camera.ConnectAsync(token);
         if (!connected)
-            throw new NotConnectedException();
+            throw new NotConnectedException($"{camera.Name} failed to connect. Check settings and try again.");
 
         return camera;
     }
@@ -100,7 +100,7 @@ public class CaptureJob : JobBase
         var image = await camera.TakeImageAsync(exposureParameters, token);
         token.ThrowIfCancellationRequested();
         if (image is null)
-            throw new NullReferenceException("Image is null");
+            throw new NullReferenceException("Image capture failed.");
 
         image.Metadata.SunAltitude = _sunService.GetSunAltitude(image.Metadata.ExposureUtc ?? DateTime.Now);
 

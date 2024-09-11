@@ -20,9 +20,15 @@ public abstract class JobBase : IJob
                 OnCompletion(context);
             }
             catch (OperationCanceledException) { /* ignore */ }
-            catch (Exception e) when (e is not JobExecutionException)
+            catch (Exception e)
             {
+                Log.Error("Job Error: {Message}", e.Message);
+
                 OnException(context);
+                
+                if (e is JobExecutionException)
+                    throw;
+
                 throw new JobExecutionException(e.Message, e, refireImmediately: RetryJobOnException);
             }
         }

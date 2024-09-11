@@ -1,6 +1,8 @@
 ﻿@using OdinEye.Core.Services
 @implements IDisposable
 @inject AllSkyScheduler AllSkyScheduler
+@inject OdinEye.Core.Services.NotificationService NotificationService
+@inject Radzen.NotificationService RadzenNotificationService 
 
 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
     @if (isStopping)
@@ -33,6 +35,7 @@ else
         AllSkyScheduler.AllSkyStarted += OnAllSkyStarted;
         AllSkyScheduler.AllSkyStopping += OnAllSkyStopping;
         AllSkyScheduler.AllSkyStopped += OnAllSkyStopped;
+        NotificationService.Message += OnMessage;
 
         if (AllSkyScheduler.IsRunning)
         {
@@ -49,6 +52,7 @@ else
         AllSkyScheduler.AllSkyStarted -= OnAllSkyStarted;
         AllSkyScheduler.AllSkyStopping -= OnAllSkyStopping;
         AllSkyScheduler.AllSkyStopped -= OnAllSkyStopped;
+        NotificationService.Message -= OnMessage;
     }
 
     private void OnAllSkyStarted(object? sender, EventArgs e)
@@ -71,6 +75,28 @@ else
         allSkyStatusMessage = "Stopped";
         isAllSkyRunning = AllSkyScheduler.IsRunning;
         InvokeAsync(StateHasChanged);
+    }
+
+    private void OnMessage(object? sender, OdinEye.Core.Services.NotificationMessage message)
+    {
+        InvokeAsync(() =>
+        {
+            var notification = new Radzen.NotificationMessage
+            {
+                Severity = message.Type switch
+                {
+                    NotificationType.Info => NotificationSeverity.Info,
+                    NotificationType.Success => NotificationSeverity.Success,
+                    NotificationType.Warning => NotificationSeverity.Warning,
+                    NotificationType.Error => NotificationSeverity.Error,
+                    _ => NotificationSeverity.Info,
+                },
+                Summary = message.Summary,
+                Detail = message.Detail,
+            };
+
+            RadzenNotificationService.Notify(notification);
+        });
     }
 
     private async Task StartAllSky()
