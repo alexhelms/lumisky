@@ -30,7 +30,6 @@
     <PackageReference Include="SlimMessageBus" />
     <PackageReference Include="SlimMessageBus.Host.Memory" />
     <PackageReference Include="SunCalcSharp" />
-    <PackageReference Include="Xabe.FFmpeg" />
   </ItemGroup>
 
   <ItemGroup>

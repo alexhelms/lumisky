@@ -4,10 +4,11 @@ using OdinEye.Core.DomainEvents;
 using OdinEye.Core.IO;
 using OdinEye.Core.Profile;
 using OdinEye.Core.Services;
+using OdinEye.Core.Video;
 using Quartz;
 using SlimMessageBus;
+using System.Diagnostics;
 using System.Text;
-using Xabe.FFmpeg;
 
 namespace OdinEye.Core.Jobs;
 
@@ -55,6 +56,7 @@ public class PanoramaTimelapseJob : JobBase
             await _messageBus.Publish(new GenerationStarting { Id = GenerationId });
 
             SetupFfmpegPath();
+            SetupFfprobePath();
 
             // Get the begin and end range
             var (begin, end) = await GetBeginAndEndTimestamps();
@@ -74,29 +76,12 @@ public class PanoramaTimelapseJob : JobBase
             if (panoramas.Count == 0)
                 throw new JobExecutionException($"No panoramas between {beginLocal:s} and {endLocal:s}");
 
-            var conversion = FFmpeg.Conversions
-                .New()
-                .SetPriority(System.Diagnostics.ProcessPriorityClass.BelowNormal);
-
-            conversion.OnDataReceived += async (sender, args) =>
+            var progress = new Progress<FfmpegProgress>(async p =>
             {
-                stdout.Append(args.Data);
-
-                int frameNumber = 0;
-                if (args.Data is { } && args.Data.StartsWith("frame"))
-                {
-                    // frame=  198 fps= 21 q=29.0 size=  145920KiB time=00:00:03.26 bitrate=365931.7kbits/s speed=0.35x
-                    var split = args.Data.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    if (split.Length == 3)
-                    {
-                        int.TryParse(split[1], out frameNumber);
-                    }
-                }
-
-                int progress = (int)((double)frameNumber / panoramas.Count * 100.0);
+                int progress = (int)((double)p.Frame / panoramas.Count * 100.0);
                 await PersistGenerationProgress(progress);
                 await _messageBus.Publish(new GenerationProgress { Id = GenerationId });
-            };
+            });
 
             using var tempDir = new TemporaryDirectory();
             string outputFilename = BuildOutputFilename(panoramas, tempDir.Path, beginLocal, endLocal);
@@ -106,7 +91,12 @@ public class PanoramaTimelapseJob : JobBase
 
             Log.Information("Creating panorama timelapse between {Begin:s} and {End:s}, {FrameCount} frames", beginLocal, endLocal, panoramas.Count);
             Log.Information("ffmpeg {Arguments}", args);
-            var result = await conversion.Start(args, context.CancellationToken);
+
+            var ffmpeg = new Ffmpeg(ProcessPriorityClass.BelowNormal);
+            await ffmpeg.Run(args, progress, context.CancellationToken);
+            if (!string.IsNullOrWhiteSpace(ffmpeg.Output))
+                Log.Debug(ffmpeg.Output);
+            
             context.CancellationToken.ThrowIfCancellationRequested();
 
             await PersistGenerationProgress(100);
@@ -116,12 +106,7 @@ public class PanoramaTimelapseJob : JobBase
             await PersistTimelapse(beginLocal, endLocal, outputFilename);
             await PersistGenerationAsSuccess(outputFilename);
 
-            Log.Information("Panorama timelapse finished in {Elapsed:F3} seconds", result.Duration.TotalSeconds);
-        }
-        catch (Xabe.FFmpeg.Exceptions.ConversionException)
-        {
-            Log.Debug(stdout.ToString());
-            throw;
+            Log.Information("Panorama timelapse finished in {Elapsed:F3} seconds", ffmpeg.Elapsed.TotalSeconds);
         }
         catch (Exception e)
         {
@@ -141,7 +126,16 @@ public class PanoramaTimelapseJob : JobBase
         if (!ffmpegFileInfo.Exists)
             throw new FileNotFoundException($"ffmpeg not found at {_profile.Current.Generation.FfmpegPath}", _profile.Current.Generation.FfmpegPath);
 
-        FFmpeg.SetExecutablesPath(ffmpegFileInfo.DirectoryName);
+        Ffmpeg.SetFfmpegPath(ffmpegFileInfo.FullName);
+    }
+
+    private void SetupFfprobePath()
+    {
+        var ffprobeFileInfo = new FileInfo(_profile.Current.Generation.FfprobePath);
+        if (!ffprobeFileInfo.Exists)
+            throw new FileNotFoundException($"ffprobe not found at {_profile.Current.Generation.FfprobePath}", _profile.Current.Generation.FfprobePath);
+
+        Ffprobe.SetFfprobePath(ffprobeFileInfo.FullName);
     }
 
     private async Task<(long, long)> GetBeginAndEndTimestamps()
@@ -156,8 +150,8 @@ public class PanoramaTimelapseJob : JobBase
         string imageListFilename = CreateFileList(panoramas, tempPath);
         string encoder = _profile.Current.Generation.PanoramaCodec switch
         {
-            Profile.VideoCodec.H264 => "libx264",
-            Profile.VideoCodec.H265 => "libx265",
+            VideoCodec.H264 => "libx264",
+            VideoCodec.H265 => "libx265",
             _ => "libx264",
         };
 
@@ -268,8 +262,11 @@ public class PanoramaTimelapseJob : JobBase
         if (!fileInfo.Exists)
             throw new FileNotFoundException("Output panorama timelapse not found", filename);
 
-        var mediaInfo = await FFmpeg.GetMediaInfo(filename);
-        if (mediaInfo.Size == 0)
-            throw new InvalidOperationException("Output panorama timelapse is malformed");
+        var isCodec = _profile.Current.Generation.TimelapseCodec == VideoCodec.H264
+            ? Ffprobe.IsH264(filename)
+            : Ffprobe.IsH265(filename);
+
+        if (!await isCodec)
+            throw new InvalidOperationException("Output timelapse is malformed");
     }
 }
