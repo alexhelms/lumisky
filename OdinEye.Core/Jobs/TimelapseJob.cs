@@ -67,10 +67,12 @@ public class TimelapseJob : JobBase
             List<Image> images = [];
             using (var dbContext = _dbContextFactory.CreateDbContext())
             {
-                images = await dbContext.Images
+                var tmpImages = await dbContext.Images
                     .AsNoTracking()
                     .Where(img => begin <= img.ExposedOn && img.ExposedOn <= end)
                     .ToListAsync();
+
+                images = tmpImages.Where(img => File.Exists(img.Filename)).ToList();
             }
 
             if (images.Count == 0)
@@ -94,15 +96,23 @@ public class TimelapseJob : JobBase
 
             var ffmpeg = new Ffmpeg(ProcessPriorityClass.BelowNormal);
             await ffmpeg.Run(args, progress, context.CancellationToken);
-            if (!string.IsNullOrWhiteSpace(ffmpeg.Output))
-                Log.Debug(ffmpeg.Output);
-
             context.CancellationToken.ThrowIfCancellationRequested();
 
             await PersistGenerationProgress(100);
             await _messageBus.Publish(new GenerationProgress { Id = GenerationId });
-            
-            await VerifyOutput(outputFilename);
+
+            try
+            {
+                await VerifyOutput(outputFilename);
+            }
+            catch
+            {
+                Log.Error(ffmpeg.Output);
+                File.Delete(outputFilename);
+                throw;
+            }
+
+            // Only save if the output is good
             await PersistTimelapse(beginLocal, endLocal, outputFilename);
             await PersistGenerationAsSuccess(outputFilename);
 

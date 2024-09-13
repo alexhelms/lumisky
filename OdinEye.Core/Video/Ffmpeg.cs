@@ -107,9 +107,6 @@ public class Ffmpeg
 
             // Wait for the readers to exit
             await Task.WhenAll(stdoutReader).ConfigureAwait(false);
-
-            if (!result.IsSuccess)
-                Log.Error(Output);
         }
         finally
         {

@@ -44,6 +44,28 @@ public static class Ffprobe
         return streamInfo.Contains("codec_name=hevc");
     }
 
+    public static async Task<(int, int)> GetWidthAndHeight(string filename, CancellationToken token = default)
+    {
+        CheckFfprobePath();
+
+        string arguments = $"-v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x \"{filename}\"";
+
+        var result = await Cli.Wrap(_ffprobePath)
+            .WithArguments(arguments)
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteBufferedAsync(token);
+
+        var split = result.StandardOutput.Split('x');
+        if (split.Length == 2)
+        {
+            int.TryParse(split[0], out var width);
+            int.TryParse(split[1], out var height);
+            return (width, height);
+        }
+
+        return (0, 0);
+    }
+
     private static async Task<string> GetStream0Info(string filename, CancellationToken token = default)
     {
         CheckFfprobePath();

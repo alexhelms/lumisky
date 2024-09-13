@@ -67,10 +67,12 @@ public class PanoramaTimelapseJob : JobBase
             List<Panorama> panoramas = [];
             using (var dbContext = _dbContextFactory.CreateDbContext())
             {
-                panoramas = await dbContext.Panoramas
+                var tmpPanoramas = await dbContext.Panoramas
                     .AsNoTracking()
                     .Where(img => begin <= img.ExposedOn && img.ExposedOn <= end)
                     .ToListAsync();
+
+                panoramas = tmpPanoramas.Where(img => File.Exists(img.Filename)).ToList();
             }
 
             if (panoramas.Count == 0)
@@ -94,15 +96,23 @@ public class PanoramaTimelapseJob : JobBase
 
             var ffmpeg = new Ffmpeg(ProcessPriorityClass.BelowNormal);
             await ffmpeg.Run(args, progress, context.CancellationToken);
-            if (!string.IsNullOrWhiteSpace(ffmpeg.Output))
-                Log.Debug(ffmpeg.Output);
-            
             context.CancellationToken.ThrowIfCancellationRequested();
 
             await PersistGenerationProgress(100);
             await _messageBus.Publish(new GenerationProgress { Id = GenerationId });
 
-            await VerifyOutput(outputFilename);
+            try
+            {
+                await VerifyOutput(outputFilename);
+            }
+            catch
+            {
+                Log.Error(ffmpeg.Output);
+                File.Delete(outputFilename);
+                throw;
+            }
+            
+            // Only save if the output is good
             await PersistTimelapse(beginLocal, endLocal, outputFilename);
             await PersistGenerationAsSuccess(outputFilename);
 
@@ -161,10 +171,11 @@ public class PanoramaTimelapseJob : JobBase
         argsBuilder.AppendFormat("-i \"{0}\" ", imageListFilename);
 
         // Height must be divisible by 2 per libx264/libx265
+        // Double the height of the video and pad with black
         if (_profile.Current.Generation.PanoramaWidth > 0)
-            argsBuilder.AppendFormat("-vf \"scale={0}:-2\" ", _profile.Current.Generation.PanoramaWidth);
+            argsBuilder.AppendFormat("-vf \"scale={0}:-2,pad=iw:2*ih:ih:0:black\" ", _profile.Current.Generation.PanoramaWidth);
         else
-            argsBuilder.Append("-vf \"scale=iw:-2\" ");
+            argsBuilder.Append("-vf \"scale=iw:-2,pad=iw:2*ih:ih:0:black\" ");
 
         argsBuilder.AppendFormat("-c:v {0} ", encoder);
         argsBuilder.Append("-preset slow ");

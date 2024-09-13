@@ -1,13 +1,13 @@
 {
-  "name": "@photo-sphere-viewer/core",
+  "name": "@photo-sphere-viewer/video-plugin",
   "version": "5.10.0",
-  "description": "A JavaScript library to display 360° panoramas",
+  "description": "Photo Sphere Viewer plugin to add video controls.",
   "keywords": [
     "photosphere",
     "panorama",
     "threejs"
   ],
-  "homepage": "https://photo-sphere-viewer.js.org",
+  "homepage": "https://photo-sphere-viewer.js.org/plugins/video.html",
   "repository": {
     "type": "git",
     "url": "git://github.com/mistic100/Photo-Sphere-Viewer.git"
@@ -18,19 +18,12 @@
     "email": "contact@git.strangeplanet.fr",
     "homepage": "https://www.strangeplanet.fr"
   },
-  "contributors": [
-    {
-      "name": "Jérémy Heleine",
-      "email": "jeremy.heleine@gmail.com",
-      "homepage": "https://jeremyheleine.me"
-    }
-  ],
   "main": "index.cjs",
   "module": "index.module.js",
   "types": "index.d.ts",
   "style": "index.css",
   "sass": "index.scss",
-  "dependencies": {
-    "three": "^0.167.0"
+  "peerDependencies": {
+    "@photo-sphere-viewer/core": "5.10.0"
   }
 }

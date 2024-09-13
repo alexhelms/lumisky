@@ -1099,7 +1099,7 @@ declare class DataHelper extends AbstractService {
     /**
      * Parse the pose angles of the pano data
      */
-    cleanPanoramaPose(panoData: PanoData): SphereCorrection;
+    cleanPanoramaPose(panoData: PanoData): SphereCorrection<number>;
     /**
      * Update the panorama options if the panorama files contains "InitialView" metadata
      */
@@ -1205,6 +1205,11 @@ declare class TextureLoader extends AbstractService {
  * Photo Sphere Viewer controller
  */
 declare class Viewer extends TypedEventTarget<ViewerEvents> {
+    /**
+     * Change the order in which the panoData and sphereCorrection angles are applied from 'ZXY' to 'YXZ'
+     * Will default to `true` in version 5.11
+     */
+    static useNewAnglesOrder: boolean;
     readonly state: ViewerState;
     readonly config: ParsedViewerConfig;
     readonly parent: HTMLElement;
@@ -1516,7 +1521,7 @@ type AnimateOptions = Partial<ExtendedPosition> & {
  * Crop information of an equirectangular panorama
  */
 type PanoData = {
-    isEquirectangular: true;
+    isEquirectangular?: true;
     fullWidth: number;
     fullHeight: number;
     croppedWidth: number;
@@ -1643,7 +1648,11 @@ type ClickData = {
     /**
      * Original element which received the click
      */
-    target: HTMLElement;
+    target?: HTMLElement;
+    /**
+     * Original event which triggered the click
+     */
+    originalEvent?: Event;
     /**
      * List of THREE scenes objects under the mouse
      */
@@ -1811,11 +1820,19 @@ declare function removeClasses(element: Element, className: string): void;
  */
 declare function hasParent(el: HTMLElement, parent: Element): boolean;
 /**
- * Gets the closest parent (can by itself)
+ * Gets the closest parent matching the selector (can by itself)
  */
 declare function getClosest(el: HTMLElement, selector: string): HTMLElement | null;
 /**
- * Gets the position of an element in the viewer without reflow
+ * Returns the first element of the event' composedPath
+ */
+declare function getEventTarget(e: Event): HTMLElement | null;
+/**
+ * Returns the first element of the event's composedPath matching the selector
+ */
+declare function getMatchingTarget(e: Event, selector: string): HTMLElement | null;
+/**
+ * Gets the position of an element in the viewport without reflow
  * Will gives the same result as getBoundingClientRect() as soon as there are no CSS transforms
  */
 declare function getPosition(el: HTMLElement): Point;
@@ -2048,6 +2065,10 @@ declare function checkStylesheet(element: HTMLElement, name: string): void;
  * Checks that a dependency version is the same as the core
  */
 declare function checkVersion(name: string, version: string, coreVersion: string): void;
+/**
+ * Checks if the viewer is not used insude a closed shadow DOM
+ */
+declare function checkClosedShadowDom(el: Node): void;
 
 /**
  * Options for {@link Animation}
@@ -2293,6 +2314,7 @@ type index_TouchData = TouchData;
 declare const index_addClasses: typeof addClasses;
 declare const index_angle: typeof angle;
 declare const index_applyEulerInverse: typeof applyEulerInverse;
+declare const index_checkClosedShadowDom: typeof checkClosedShadowDom;
 declare const index_checkStylesheet: typeof checkStylesheet;
 declare const index_checkVersion: typeof checkVersion;
 declare const index_cleanCssPosition: typeof cleanCssPosition;
@@ -2310,6 +2332,8 @@ declare const index_getAngle: typeof getAngle;
 declare const index_getClosest: typeof getClosest;
 declare const index_getConfigParser: typeof getConfigParser;
 declare const index_getElement: typeof getElement;
+declare const index_getEventTarget: typeof getEventTarget;
+declare const index_getMatchingTarget: typeof getMatchingTarget;
 declare const index_getPosition: typeof getPosition;
 declare const index_getShortestArc: typeof getShortestArc;
 declare const index_getStyleProperty: typeof getStyleProperty;
@@ -2337,7 +2361,7 @@ declare const index_throttle: typeof throttle;
 declare const index_toggleClass: typeof toggleClass;
 declare const index_wrap: typeof wrap;
 declare namespace index {
-  export { index_Animation as Animation, type index_AnimationOptions as AnimationOptions, type index_ConfigParser as ConfigParser, type index_ConfigParsers as ConfigParsers, index_Dynamic as Dynamic, index_MultiDynamic as MultiDynamic, index_Slider as Slider, index_SliderDirection as SliderDirection, type index_SliderUpdateData as SliderUpdateData, type index_TouchData as TouchData, index_addClasses as addClasses, index_angle as angle, index_applyEulerInverse as applyEulerInverse, index_checkStylesheet as checkStylesheet, index_checkVersion as checkVersion, index_cleanCssPosition as cleanCssPosition, index_clone as clone, index_createTexture as createTexture, index_cssPositionIsOrdered as cssPositionIsOrdered, index_dasherize as dasherize, index_deepEqual as deepEqual, index_deepmerge as deepmerge, index_distance as distance, index_exitFullscreen as exitFullscreen, index_firstNonNull as firstNonNull, index_getAbortError as getAbortError, index_getAngle as getAngle, index_getClosest as getClosest, index_getConfigParser as getConfigParser, index_getElement as getElement, index_getPosition as getPosition, index_getShortestArc as getShortestArc, index_getStyleProperty as getStyleProperty, index_getTouchData as getTouchData, index_getXMPValue as getXMPValue, index_greatArcDistance as greatArcDistance, index_hasParent as hasParent, index_invertResolvableBoolean as invertResolvableBoolean, index_isAbortError as isAbortError, index_isEmpty as isEmpty, index_isExtendedPosition as isExtendedPosition, index_isFullscreenEnabled as isFullscreenEnabled, index_isNil as isNil, index_isPlainObject as isPlainObject, index_logWarn as logWarn, index_parseAngle as parseAngle, index_parsePoint as parsePoint, index_parseSpeed as parseSpeed, index_removeClasses as removeClasses, index_requestFullscreen as requestFullscreen, index_resolveBoolean as resolveBoolean, index_speedToDuration as speedToDuration, index_sum as sum, index_throttle as throttle, index_toggleClass as toggleClass, index_wrap as wrap };
+  export { index_Animation as Animation, type index_AnimationOptions as AnimationOptions, type index_ConfigParser as ConfigParser, type index_ConfigParsers as ConfigParsers, index_Dynamic as Dynamic, index_MultiDynamic as MultiDynamic, index_Slider as Slider, index_SliderDirection as SliderDirection, type index_SliderUpdateData as SliderUpdateData, type index_TouchData as TouchData, index_addClasses as addClasses, index_angle as angle, index_applyEulerInverse as applyEulerInverse, index_checkClosedShadowDom as checkClosedShadowDom, index_checkStylesheet as checkStylesheet, index_checkVersion as checkVersion, index_cleanCssPosition as cleanCssPosition, index_clone as clone, index_createTexture as createTexture, index_cssPositionIsOrdered as cssPositionIsOrdered, index_dasherize as dasherize, index_deepEqual as deepEqual, index_deepmerge as deepmerge, index_distance as distance, index_exitFullscreen as exitFullscreen, index_firstNonNull as firstNonNull, index_getAbortError as getAbortError, index_getAngle as getAngle, index_getClosest as getClosest, index_getConfigParser as getConfigParser, index_getElement as getElement, index_getEventTarget as getEventTarget, index_getMatchingTarget as getMatchingTarget, index_getPosition as getPosition, index_getShortestArc as getShortestArc, index_getStyleProperty as getStyleProperty, index_getTouchData as getTouchData, index_getXMPValue as getXMPValue, index_greatArcDistance as greatArcDistance, index_hasParent as hasParent, index_invertResolvableBoolean as invertResolvableBoolean, index_isAbortError as isAbortError, index_isEmpty as isEmpty, index_isExtendedPosition as isExtendedPosition, index_isFullscreenEnabled as isFullscreenEnabled, index_isNil as isNil, index_isPlainObject as isPlainObject, index_logWarn as logWarn, index_parseAngle as parseAngle, index_parsePoint as parsePoint, index_parseSpeed as parseSpeed, index_removeClasses as removeClasses, index_requestFullscreen as requestFullscreen, index_resolveBoolean as resolveBoolean, index_speedToDuration as speedToDuration, index_sum as sum, index_throttle as throttle, index_toggleClass as toggleClass, index_wrap as wrap };
 }
 
 /**

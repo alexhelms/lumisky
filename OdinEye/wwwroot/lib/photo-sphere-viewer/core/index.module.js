@@ -1,5 +1,5 @@
 /*!
- * Photo Sphere Viewer 5.9.0
+ * Photo Sphere Viewer 5.10.0
  * @copyright 2014-2015 Jérémy Heleine
  * @copyright 2015-2024 Damien "Mistic" Sorel
  * @licence MIT (https://opensource.org/licenses/MIT)
@@ -149,6 +149,7 @@ __export(utils_exports, {
   addClasses: () => addClasses,
   angle: () => angle,
   applyEulerInverse: () => applyEulerInverse,
+  checkClosedShadowDom: () => checkClosedShadowDom,
   checkStylesheet: () => checkStylesheet,
   checkVersion: () => checkVersion,
   cleanCssPosition: () => cleanCssPosition,
@@ -166,6 +167,8 @@ __export(utils_exports, {
   getClosest: () => getClosest,
   getConfigParser: () => getConfigParser,
   getElement: () => getElement,
+  getEventTarget: () => getEventTarget,
+  getMatchingTarget: () => getMatchingTarget,
   getPosition: () => getPosition,
   getShortestArc: () => getShortestArc,
   getStyleProperty: () => getStyleProperty,
@@ -287,6 +290,20 @@ function getClosest(el, selector) {
   } while (test);
   return null;
 }
+function getEventTarget(e) {
+  return e?.composedPath()[0] || null;
+}
+function getMatchingTarget(e, selector) {
+  if (!e) {
+    return null;
+  }
+  return e.composedPath().find((el) => {
+    if (!(el instanceof HTMLElement) && !(el instanceof SVGElement)) {
+      return false;
+    }
+    return el.matches(selector);
+  });
+}
 function getPosition(el) {
   let x = 0;
   let y = 0;
@@ -296,6 +313,8 @@ function getPosition(el) {
     y += test.offsetTop - test.scrollTop + test.clientTop;
     test = test.offsetParent;
   }
+  x -= window.scrollX;
+  y -= window.scrollY;
   return { x, y };
 }
 function getStyleProperty(elt, varname) {
@@ -710,6 +729,15 @@ function checkVersion(name, version, coreVersion) {
   if (version && version !== coreVersion) {
     console.error(`PhotoSphereViewer: @photo-sphere-viewer/${name} is in version ${version} but @photo-sphere-viewer/core is in version ${coreVersion}`);
   }
+}
+function checkClosedShadowDom(el) {
+  do {
+    if (el instanceof ShadowRoot && el.mode === "closed") {
+      console.error(`PhotoSphereViewer: closed shadow DOM detected, the viewer might not work as expected`);
+      return;
+    }
+    el = el.parentNode;
+  } while (el);
 }
 
 // src/utils/Animation.ts
@@ -1608,7 +1636,7 @@ function adapterInterop(adapter) {
   if (adapter) {
     for (const [, p] of [["_", adapter], ...Object.entries(adapter)]) {
       if (p.prototype instanceof AbstractAdapter) {
-        checkVersion(p.id, p.VERSION, "5.9.0");
+        checkVersion(p.id, p.VERSION, "5.10.0");
         return p;
       }
     }
@@ -2252,7 +2280,7 @@ var EquirectangularAdapter = class extends AbstractAdapter {
   }
 };
 EquirectangularAdapter.id = "equirectangular";
-EquirectangularAdapter.VERSION = "5.9.0";
+EquirectangularAdapter.VERSION = "5.10.0";
 EquirectangularAdapter.supportsDownload = true;
 
 // src/adapters/DualFisheyeAdapter.ts
@@ -2307,7 +2335,7 @@ var DualFisheyeAdapter = class extends EquirectangularAdapter {
   }
 };
 DualFisheyeAdapter.id = "dual-fisheye";
-DualFisheyeAdapter.VERSION = "5.9.0";
+DualFisheyeAdapter.VERSION = "5.10.0";
 
 // src/components/AbstractComponent.ts
 var AbstractComponent = class _AbstractComponent {
@@ -2834,7 +2862,7 @@ var MenuButton = class extends AbstractButton {
       content: MENU_TEMPLATE(this.viewer.navbar.collapsed, this.viewer.config.lang.menu),
       noMargin: true,
       clickHandler: (target) => {
-        const li = target ? getClosest(target, "li") : void 0;
+        const li = target ? getClosest(target, ".psv-panel-menu-item") : void 0;
         const buttonId = li ? li.dataset[BUTTON_DATA] : void 0;
         if (buttonId) {
           this.viewer.navbar.getButton(buttonId).onClick();
@@ -3194,7 +3222,7 @@ function pluginInterop(plugin) {
   if (plugin) {
     for (const [, p] of [["_", plugin], ...Object.entries(plugin)]) {
       if (p.prototype instanceof AbstractPlugin) {
-        checkVersion(p.id, p.VERSION, "5.9.0");
+        checkVersion(p.id, p.VERSION, "5.10.0");
         return p;
       }
     }
@@ -4047,11 +4075,11 @@ var Panel = class extends AbstractComponent {
     toggleClass(this.content, "psv-panel-content--no-margin", config.noMargin === true);
     if (config.clickHandler) {
       this.state.clickHandler = (e) => {
-        config.clickHandler(e.target);
+        config.clickHandler(getEventTarget(e));
       };
       this.state.keyHandler = (e) => {
         if (e.key === KEY_CODES.Enter) {
-          config.clickHandler(e.target);
+          config.clickHandler(getEventTarget(e));
         }
       };
       this.content.addEventListener("click", this.state.clickHandler);
@@ -4832,7 +4860,7 @@ var EventsHandler = class extends AbstractService {
         this.__onFullscreenChange();
         break;
     }
-    if (!getClosest(evt.target, "." + CAPTURE_EVENTS_CLASS)) {
+    if (!getMatchingTarget(evt, "." + CAPTURE_EVENTS_CLASS)) {
       switch (evt.type) {
         case "mousedown":
           this.__onMouseDown(evt);
@@ -4922,7 +4950,7 @@ var EventsHandler = class extends AbstractService {
    */
   __onMouseUp(evt) {
     if (this.step.is(Step.CLICK, Step.MOVING)) {
-      this.__stopMove(evt.clientX, evt.clientY, evt.target, evt.button === 2);
+      this.__stopMove(evt.clientX, evt.clientY, evt, evt.button === 2);
     }
   }
   /**
@@ -4946,7 +4974,7 @@ var EventsHandler = class extends AbstractService {
       if (!this.data.longtouchTimeout) {
         this.data.longtouchTimeout = setTimeout(() => {
           const touch = evt.touches[0];
-          this.__stopMove(touch.clientX, touch.clientY, touch.target, true);
+          this.__stopMove(touch.clientX, touch.clientY, evt, true);
           this.data.longtouchTimeout = null;
         }, LONGTOUCH_DELAY);
       }
@@ -4972,7 +5000,7 @@ var EventsHandler = class extends AbstractService {
         this.__stopMove(this.data.mouseX, this.data.mouseY);
       } else if (evt.touches.length === 0) {
         const touch = evt.changedTouches[0];
-        this.__stopMove(touch.clientX, touch.clientY, touch.target);
+        this.__stopMove(touch.clientX, touch.clientY, evt);
       }
     }
   }
@@ -5093,7 +5121,7 @@ var EventsHandler = class extends AbstractService {
    * Stops the movement
    * @description If the move threshold was not reached a click event is triggered, otherwise an animation is launched to simulate inertia
    */
-  __stopMove(clientX, clientY, target, rightclick = false) {
+  __stopMove(clientX, clientY, event, rightclick = false) {
     if (this.step.is(Step.MOVING)) {
       if (this.config.moveInertia) {
         this.__logMouseMove(clientX, clientY);
@@ -5104,7 +5132,7 @@ var EventsHandler = class extends AbstractService {
       }
     } else {
       if (this.step.is(Step.CLICK) && !this.__moveThresholdReached(clientX, clientY)) {
-        this.__doClick(clientX, clientY, target, rightclick);
+        this.__doClick(clientX, clientY, event, rightclick);
       }
       this.step.remove(Step.CLICK);
       if (!this.step.is(Step.INERTIA)) {
@@ -5157,7 +5185,7 @@ var EventsHandler = class extends AbstractService {
   /**
    * Triggers an event with all coordinates when a simple click is performed
    */
-  __doClick(clientX, clientY, target, rightclick = false) {
+  __doClick(clientX, clientY, event, rightclick = false) {
     const boundingRect = this.viewer.container.getBoundingClientRect();
     const viewerX = clientX - boundingRect.left;
     const viewerY = clientY - boundingRect.top;
@@ -5167,7 +5195,8 @@ var EventsHandler = class extends AbstractService {
       const sphericalCoords = this.viewer.dataHelper.vector3ToSphericalCoords(sphereIntersection.point);
       const data = {
         rightclick,
-        target,
+        originalEvent: event,
+        target: getEventTarget(event),
         clientX,
         clientY,
         viewerX,
@@ -5202,7 +5231,7 @@ var EventsHandler = class extends AbstractService {
    * Trigger events for observed THREE objects
    */
   __handleObjectsEvents(evt) {
-    if (!isEmpty(this.state.objectsObservers) && hasParent(evt.target, this.viewer.container)) {
+    if (!isEmpty(this.state.objectsObservers) && evt.composedPath().includes(this.viewer.container)) {
       const viewerPos = getPosition(this.viewer.container);
       const viewerPoint = {
         x: evt.clientX - viewerPos.x,
@@ -5509,7 +5538,16 @@ var Renderer = class extends AbstractService {
    */
   setPanoramaPose(panoData, mesh = this.mesh) {
     const cleanCorrection = this.viewer.dataHelper.cleanPanoramaPose(panoData);
-    mesh.rotation.set(-cleanCorrection.tilt, -cleanCorrection.pan, -cleanCorrection.roll, "ZXY");
+    const i = (cleanCorrection.pan ? 1 : 0) + (cleanCorrection.tilt ? 1 : 0) + (cleanCorrection.roll ? 1 : 0);
+    if (!Viewer.useNewAnglesOrder && i > 1) {
+      logWarn(`'panoData' Euler angles will change in version 5.11.0.`);
+      logWarn(`Set 'Viewer.useNewAnglesOrder = true;' to remove this warning (you might have to adapt your poseHeading/posePitch/poseRoll parameters).`);
+    }
+    if (Viewer.useNewAnglesOrder) {
+      mesh.rotation.set(cleanCorrection.tilt, cleanCorrection.pan, cleanCorrection.roll, "YXZ");
+    } else {
+      mesh.rotation.set(-cleanCorrection.tilt, -cleanCorrection.pan, -cleanCorrection.roll, "ZXY");
+    }
   }
   /**
    * Applies a SphereCorrection to a Group
@@ -5517,7 +5555,16 @@ var Renderer = class extends AbstractService {
    */
   setSphereCorrection(sphereCorrection, group = this.meshContainer) {
     const cleanCorrection = this.viewer.dataHelper.cleanSphereCorrection(sphereCorrection);
-    group.rotation.set(cleanCorrection.tilt, cleanCorrection.pan, cleanCorrection.roll, "ZXY");
+    const i = (cleanCorrection.pan ? 1 : 0) + (cleanCorrection.tilt ? 1 : 0) + (cleanCorrection.roll ? 1 : 0);
+    if (!Viewer.useNewAnglesOrder && i > 1) {
+      logWarn(`'sphereCorrection' Euler angles will change in version 5.11.0.`);
+      logWarn(`Set 'Viewer.useNewAnglesOrder = true;' to remove this warning (you might have to adapt your pan/tilt/roll parameters).`);
+    }
+    if (Viewer.useNewAnglesOrder) {
+      group.rotation.set(cleanCorrection.tilt, cleanCorrection.pan, cleanCorrection.roll, "YXZ");
+    } else {
+      group.rotation.set(cleanCorrection.tilt, cleanCorrection.pan, cleanCorrection.roll, "ZXY");
+    }
   }
   /**
    * Performs transition between the current and a new texture
@@ -6082,6 +6129,7 @@ var Viewer = class extends TypedEventTarget {
     this.container = document.createElement("div");
     this.container.classList.add("psv-container");
     this.parent.appendChild(this.container);
+    checkClosedShadowDom(this.parent);
     checkStylesheet(this.container, "core");
     this.state = new ViewerState();
     this.config = getViewerConfig(config);
@@ -6642,9 +6690,14 @@ var Viewer = class extends TypedEventTarget {
     return this.stopAnimation();
   }
 };
+/**
+ * Change the order in which the panoData and sphereCorrection angles are applied from 'ZXY' to 'YXZ'
+ * Will default to `true` in version 5.11
+ */
+Viewer.useNewAnglesOrder = false;
 
 // src/index.ts
-var VERSION = "5.9.0";
+var VERSION = "5.10.0";
 export {
   AbstractAdapter,
   AbstractButton,
