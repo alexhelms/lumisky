@@ -1,4 +1,4 @@
-﻿import { Viewer, EquirectangularAdapter } from '@photo-sphere-viewer/core';
+﻿import { Viewer, EquirectangularAdapter } from '/lib/photo-sphere-viewer/core/index.module.js';
 
 let viewer = null;
 
@@ -9,7 +9,8 @@ export function createPanoViewer() {
             adapter: [EquirectangularAdapter, {
                 backgroundColor: '#000000'
             }],
-            defaultZoomLvl: 0
+            defaultZoomLvl: 0,
+            defaultPitch: 0.75,
         });
     }
 }
@@ -22,7 +23,7 @@ export async function updatePanoViewer(url, width, height) {
                 fullHeight: height,
                 croppedWidth: width,
                 croppedHeight: height / 2
-            }
+            },
         });
     }
 }
