@@ -17,6 +17,7 @@ else
                     FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
                     FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
+
             <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
                 <Template Context="image">
                     <RadzenLink Path="@($"/api/image/download/image?ts={image.ExposedOn}")">
@@ -24,6 +25,7 @@ else
                     </RadzenLink>
                 </Template>
             </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Title="View" Width="75px" TextAlign="TextAlign.Center">
                 <Template Context="image">
                     <RadzenLink Path="@($"/api/image/view/image?ts={image.ExposedOn}")" Target="_blank">
@@ -31,6 +33,7 @@ else
                     </RadzenLink>
                 </Template>
             </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Property="@nameof(Image.Filename)" Title="Filename">
                 <Template Context="image">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
@@ -38,11 +41,13 @@ else
                     </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Property="@nameof(Image.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending">
                 <Template Context="image">
                     @DateTimeOffset.FromUnixTimeSeconds(image.ExposedOn).ToLocalTime().ToString("G")
                 </Template>
             </RadzenDataGridColumn>
+
         </Columns>
     </RadzenDataGrid>
 }

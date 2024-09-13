@@ -454,3 +454,6 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 dist/
+
+# Except videojs dist
+!/OdinEye/wwwroot/lib/video.js/dist

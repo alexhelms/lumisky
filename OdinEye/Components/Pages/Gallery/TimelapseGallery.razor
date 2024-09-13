@@ -4,6 +4,7 @@
 @using OdinEye.Core.Services
 @using OdinEye.Core.Profile
 @implements IDisposable
+@inject NavigationManager NavigationManager
 @inject IProfileProvider Profile
 @inject AppDbContext DbContext
 @inject GenerationService GenerationService
@@ -20,6 +21,7 @@ else
                     FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
                     FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
+
             <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
                 <Template Context="timelapse">
                     <RadzenLink Path="@($"/api/video/download/timelapse?id={timelapse.Id}")">
@@ -27,6 +29,13 @@ else
                     </RadzenLink>
                 </Template>
             </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="Play" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="timelapse">
+                    <RadzenButton Icon="play_arrow" Size="ButtonSize.Small" Click="@(() => OnPlayClick(timelapse.Id))" />
+                </Template>
+            </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Property="@nameof(Timelapse.Filename)" Title="Filename">
                 <Template Context="timelapse">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
@@ -34,11 +43,13 @@ else
                     </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Property="@nameof(Timelapse.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending">
                 <Template Context="timelapse">
                     @timelapse.CreatedOn.ToLocalTime().ToString("G")
                 </Template>
             </RadzenDataGridColumn>
+
         </Columns>
     </RadzenDataGrid>
 }
@@ -74,5 +85,10 @@ else
                 await grid.RefreshDataAsync();
             }
         });
+    }
+
+    private void OnPlayClick(int id)
+    {
+        NavigationManager.NavigateTo($"/video/timelapse/{id}", true);
     }
 }

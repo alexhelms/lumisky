@@ -30,6 +30,6 @@
         "build/three.module.js",
         "build/three.cjs"
       ]
-    },
+    }
   ]
 }

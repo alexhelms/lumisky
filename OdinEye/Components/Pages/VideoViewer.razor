@@ -1,0 +1,98 @@
+﻿@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject AppDbContext DbContext
+@page "/video/timelapse/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Timelapse</PageTitle>
+
+<HeadContent>
+    <link rel="stylesheet" href="@Assets["lib/video.js/dist/video-js.css"]" />
+    <style>
+        #player {
+            display: block;
+            width: calc(100vw - 116px);
+            height: calc(100vh - 200px);
+        }
+    </style>
+</HeadContent>
+
+<div>
+    <video id="player" controls class="video-js"></video>
+</div>
+
+<script src="@Assets["lib/video.js/dist/video.js"]"></script>
+<script>
+    function loadPlayer(id, options) {
+        disposePlayer(id);
+        videojs(id, options);
+    }
+
+    function disposePlayer(id) {
+        const player = videojs.getPlayer(id);
+        if (player) {
+            player.dispose();
+        }
+    }
+</script>
+
+@code {
+    private bool initialized;
+    private string? videoUrl;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var timelapse = await DbContext.Timelapses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == Id);
+
+        if (timelapse is null)
+        {
+            NavigationManager.NavigateTo("/404");
+            return;
+        }
+
+        if (!File.Exists(timelapse.Filename))
+        {
+            NavigationManager.NavigateTo("/404");
+            return;
+        }
+
+        videoUrl = $"/api/video/download/timelapse?id={Id}";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("loadPlayer", "player", new
+            {
+                autoplay = true,
+                controls = true,
+                loop = true,
+                preload = "auto",
+                playbackRates = new[] { 0.25, 0.5, 1, 1.5, 2},
+                sources = new[]
+                {
+                    new { type = "video/mp4", src = videoUrl },
+                },
+            });
+
+            initialized = true;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (initialized)
+                await JS.InvokeVoidAsync("disposePlayer", "player");
+        }
+        catch (JSDisconnectedException) { }
+    }
+}

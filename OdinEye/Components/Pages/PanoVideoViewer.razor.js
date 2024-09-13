@@ -4,7 +4,7 @@ import { VideoPlugin } from '/lib/photo-sphere-viewer/video-plugin/index.module.
 
 let videoViewer = null;
 
-export function createPanoVideoViewer(url, width, height) {
+export function createPanoVideoViewer(url) {
     if (videoViewer === null) {
         videoViewer = new Viewer({
             container: document.querySelector('#video-viewer'),
