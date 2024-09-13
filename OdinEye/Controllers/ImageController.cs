@@ -34,6 +34,8 @@ public class ImageController : Controller
             _ => "application/octet-stream",
         };
 
+        HttpContext.Response.Headers.Append("Cache-Control", "max-age=31536000");
+
         if (downloadFile)
         {
             return PhysicalFile(fileInfo.FullName, contentType, filename);
