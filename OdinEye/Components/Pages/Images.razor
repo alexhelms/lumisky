@@ -10,7 +10,7 @@
 <PageTitle>Images</PageTitle>
 
 <HeadContent>
-    <link rel="stylesheet" href="lib/photo-sphere-viewer/core/index.css" />
+    <link rel="stylesheet" href="@Assets["lib/photo-sphere-viewer/core/index.css"]" />
     <style>
         .rz-tabview-panels {
             display: flex;
@@ -38,6 +38,10 @@
             display: block;
             width: calc(100vw - 160px);
             height: calc(100vh - 200px);
+        }
+
+        .psv-loader {
+            display: none;
         }
     </style>
 </HeadContent>
@@ -115,8 +119,7 @@
         }
 
         if (selectedTabIndex == Pano3dTabIndex &&
-            latestPanoramaUrl is not null &&
-            latestPanoramaUrl != prevPanoramaUrl)
+            latestPanoramaUrl is not null)
         {
             if (module is not null)
             {
