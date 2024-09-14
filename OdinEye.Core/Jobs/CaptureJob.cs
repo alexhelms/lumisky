@@ -26,6 +26,8 @@ public class CaptureJob : JobBase
         _deviceFactory = deviceFactory;
         _sunService = dayNightService;
         _exposureTrackingService = exposureTrackingService;
+
+        RetryJobOnException = true;
     }
 
     protected override async Task OnExecute(IJobExecutionContext context)
