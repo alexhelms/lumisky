@@ -104,7 +104,8 @@ public class CaptureJob : JobBase
         if (image is null)
             throw new NullReferenceException("Image capture failed.");
 
-        image.Metadata.SunAltitude = _sunService.GetSunAltitude(image.Metadata.ExposureUtc ?? DateTime.Now);
+        var (alt, _) = _sunService.GetPosition(image.Metadata.ExposureUtc ?? DateTime.UtcNow);
+        image.Metadata.SunAltitude = alt;
 
         return image;
     }

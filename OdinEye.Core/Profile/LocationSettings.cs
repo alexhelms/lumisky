@@ -8,6 +8,7 @@ public interface ILocationSettings : ISettings
     double Latitude { get; set; }
     double Longitude { get; set; }
     double Elevation { get; set; }
+    double TransitionSunAltitude { get; set; }
 }
 
 public sealed partial class LocationSettings : Settings, ILocationSettings
@@ -18,10 +19,12 @@ public sealed partial class LocationSettings : Settings, ILocationSettings
         Latitude = 0;
         Longitude = 0;
         Elevation = 0;
+        TransitionSunAltitude = -6;
     }
 
     [ObservableProperty] string _location = string.Empty;
     [ObservableProperty] double _latitude;
     [ObservableProperty] double _longitude;
     [ObservableProperty] double _elevation;
+    [ObservableProperty] double _transitionSunAltitude;
 }

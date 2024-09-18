@@ -69,7 +69,7 @@
 
                         </RadzenStack>
                     </RadzenFieldset>
-                    <RadzenButton ButtonType="ButtonType.Submit" Size="ButtonSize.Medium" Icon="save" Text="Generate" />
+                    <RadzenButton ButtonType="ButtonType.Submit" Size="ButtonSize.Medium" Icon="bolt" Text="Generate" />
                 </RadzenStack>
             </RadzenTemplateForm>
         </RadzenColumn>
@@ -370,9 +370,31 @@
         return end > start;
     }
 
-    private TimeOnly GetDawn(DateOnly date) => TimeOnly.FromDateTime(SunService.GetSunTimes(date).Dawn.GetValueOrDefault().ToLocalTime());
+    private TimeOnly GetDawn(DateOnly date)
+    {
+        var sunTimes = SunService.GetRiseSetTime(new DateTime(date, TimeOnly.MinValue));
+        if (sunTimes is not null)
+        {
+            return TimeOnly.FromDateTime(sunTimes.Rise.ToLocalTime());
+        }
+        else
+        {
+            return TimeOnly.FromDateTime(DateTime.Now);
+        }
+    }
 
-    private TimeOnly GetDusk(DateOnly date) => TimeOnly.FromDateTime(SunService.GetSunTimes(date).Dusk.GetValueOrDefault().ToLocalTime());
+    private TimeOnly GetDusk(DateOnly date)
+    {
+        var sunTimes = SunService.GetRiseSetTime(new DateTime(date, TimeOnly.MinValue));
+        if (sunTimes is not null)
+        {
+            return TimeOnly.FromDateTime(sunTimes.Set.ToLocalTime());
+        }
+        else
+        {
+            return TimeOnly.FromDateTime(DateTime.Now);
+        }
+    }
 
     private string StateToString(GenerationState state) => state switch
     {

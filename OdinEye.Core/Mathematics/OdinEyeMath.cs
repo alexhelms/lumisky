@@ -5,6 +5,10 @@ namespace OdinEye.Core.Mathematics;
 
 public static class OdinEyeMath
 {
+    public const double SiderealDayInHours = 23.9344696;
+    public const double Deg2Rad = Math.PI / 180;
+    public const double Rad2Deg = 180 / Math.PI;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T Min3<T>(T a, T b, T c)
         where T : INumber<T>

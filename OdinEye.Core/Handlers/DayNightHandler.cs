@@ -6,8 +6,8 @@ using SlimMessageBus;
 namespace OdinEye.Core.Handlers;
 
 public class DayNightHandler :
-    IConsumer<BecomingDaytimeEvent>,
-    IConsumer<BecomingNighttimeEvent>
+    IConsumer<NightToDayEvent>,
+    IConsumer<DayToNightEvent>
 {
     private static readonly string SourceContextName = "DayNightHandler";
 
@@ -25,82 +25,81 @@ public class DayNightHandler :
         _generationService = generationService;
     }
 
-    public async Task OnHandle(BecomingDaytimeEvent message)
+    public async Task OnHandle(NightToDayEvent message)
     {
         using var _ = Serilog.Context.LogContext.PushProperty("SourceContext", SourceContextName);
-        var todayPositions = _sunService.GetSunTimes(DateOnly.FromDateTime(DateTime.Now));
 
-        // This shouldn't happen because the event shouldn't happen if it is not becoming daytime.
-        // Log this improbable event.
-        if (!todayPositions.Dusk.HasValue)
+        var utcNow = DateTime.UtcNow;
+        var utcNowDate = DateOnly.FromDateTime(utcNow);
+
+        DateTime nightBegin;
+        DateTime nightEnd;
+
+        var sunTime = _sunService.GetRiseSetTime(utcNow, _profile.Current.Location.TransitionSunAltitude);
+        if (sunTime is not null)
         {
-            Log.Warning("Location does not have dusk.");
-            return;
+            // Today's set time minus 1 day is close enough
+            nightBegin = sunTime.Set.AddDays(-1);
+            nightEnd = utcNow;
         }
-
-        // This shouldn't happen because the event shouldn't happen if it is not becoming daytime.
-        // Log this improbable event.
-        if (!todayPositions.Dawn.HasValue)
+        else
         {
-            Log.Warning("Location does not have dawn.");
-            return;
+            // Worst case, the beginning is 1 day ago.
+            nightBegin = utcNow.AddDays(-1);
+            nightEnd = utcNow;
         }
-
-        // Note: ignoring the minor time error by using todays dusk instead of yesterday.
-        var duskUtc = todayPositions.Dusk.Value;
-        var dawnUtc = todayPositions.Dawn.Value;
-        var duskLocal = duskUtc.ToLocalTime();
-        var dawnLocal = dawnUtc.ToLocalTime();
 
         if (_profile.Current.Generation.EnableNighttimeTimelapse)
         {
-            Log.Information("Creating nighttime timelapse from {YesterdayDusk:G} to {TodayDawn:G}", duskLocal, dawnLocal);
-            await _generationService.GenerateTimelapse(duskUtc, dawnUtc);
+            Log.Information("Creating nighttime timelapse from {NightBegin:G} to {NightEnd:G}",
+                nightBegin.ToLocalTime(), nightEnd.ToLocalTime());
+            await _generationService.GenerateTimelapse(nightBegin, nightEnd);
         }
 
         if (_profile.Current.Generation.EnableNighttimePanorama)
         {
-            Log.Information("Creating nighttime panorama timelapse from {YesterdayDusk:G} to {TodayDawn:G}", duskLocal, dawnLocal);
-            await _generationService.GeneratePanoramaTimelapse(duskUtc, dawnUtc);
+            Log.Information("Creating nighttime panorama timelapse from {NightBegin:G} to {NightEnd:G}",
+                nightBegin.ToLocalTime(), nightEnd.ToLocalTime());
+            await _generationService.GeneratePanoramaTimelapse(nightBegin, nightEnd);
         }
     }
 
-    public async Task OnHandle(BecomingNighttimeEvent message)
+    public async Task OnHandle(DayToNightEvent message)
     {
         using var _ = Serilog.Context.LogContext.PushProperty("SourceContext", SourceContextName);
-        var todayPositions = _sunService.GetSunTimes(DateOnly.FromDateTime(DateTime.Now));
 
-        // This shouldn't happen because the event shouldn't happen if it is not becoming nighttime.
-        // Log this improbable event.
-        if (!todayPositions.Dawn.HasValue)
+        var utcNow = DateTime.UtcNow;
+        var utcNowDate = DateOnly.FromDateTime(utcNow);
+
+        DateTime dayBegin;
+        DateTime dayEnd;
+
+        var sunTime = _sunService.GetRiseSetTime(utcNow, _profile.Current.Location.TransitionSunAltitude);
+        if (sunTime is not null)
         {
-            Log.Warning("Location does not have dawn.");
-            return;
+            // Today's rise time is close enough
+            dayBegin = sunTime.Rise;
+            dayEnd = utcNow;
         }
-
-        // This shouldn't happen because the event shouldn't happen if it is not becoming nighttime.
-        // Log this improbable event.
-        if (!todayPositions.Dusk.HasValue)
+        else
         {
-            Log.Warning("Location does not have dusk.");
-            return;
+            // Worst case, the beginning is 1 day ago.
+            dayBegin = utcNow.AddDays(-1);
+            dayEnd = utcNow;
         }
-
-        var duskUtc = todayPositions.Dusk.Value;
-        var dawnUtc = todayPositions.Dawn.Value;
-        var duskLocal = duskUtc.ToLocalTime();
-        var dawnLocal = dawnUtc.ToLocalTime();
 
         if (_profile.Current.Generation.EnableDaytimeTimelapse)
         {
-            Log.Information("Creating daytime timelapse from {TodayDawn:G} to {TodayDusk:G}", dawnLocal, duskLocal);
-            await _generationService.GenerateTimelapse(dawnUtc, duskUtc);
+            Log.Information("Creating daytime timelapse from {DayBegin:G} to {DayEnd:G}",
+                dayBegin.ToLocalTime(), dayEnd.ToLocalTime());
+            await _generationService.GenerateTimelapse(dayBegin, dayEnd);
         }
 
         if (_profile.Current.Generation.EnableDaytimePanorama)
         {
-            Log.Information("Creating daytime panorama timelapse from {TodayDawn:G} to {TodayDusk:G}", dawnLocal, duskLocal);
-            await _generationService.GeneratePanoramaTimelapse(dawnUtc, duskUtc);
+            Log.Information("Creating daytime panorama timelapse from {DayBegin:G} to {DayEnd:G}",
+                dayBegin.ToLocalTime(), dayEnd.ToLocalTime());
+            await _generationService.GeneratePanoramaTimelapse(dayBegin, dayEnd);
         }
     }
 }

@@ -35,7 +35,6 @@
     <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.4.5" />
     <PackageVersion Include="SlimMessageBus" Version="2.0.3" />
     <PackageVersion Include="SlimMessageBus.Host.Memory" Version="2.5.1" />
-    <PackageVersion Include="SunCalcSharp" Version="1.0.5" />
     <!-- Dev Tools -->
     <!--<PackageVersion Include="TurnerSoftware.BuildVersioning" Version="0.5.0" />-->
     <!-- Test Tools -->

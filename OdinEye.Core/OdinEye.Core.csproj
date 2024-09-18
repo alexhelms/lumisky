@@ -29,7 +29,6 @@
     <PackageReference Include="Serilog" />
     <PackageReference Include="SlimMessageBus" />
     <PackageReference Include="SlimMessageBus.Host.Memory" />
-    <PackageReference Include="SunCalcSharp" />
   </ItemGroup>
 
   <ItemGroup>
