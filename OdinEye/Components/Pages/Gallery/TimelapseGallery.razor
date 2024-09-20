@@ -7,6 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject IProfileProvider Profile
 @inject AppDbContext DbContext
+@inject ImageService ImageService
 @inject GenerationService GenerationService
 
 @if (!timelapsesAvailable)
@@ -44,9 +45,15 @@ else
                 </Template>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn Property="@nameof(Timelapse.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending">
+            <RadzenDataGridColumn Property="@nameof(Timelapse.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending" Width="160px" TextAlign="TextAlign.Center">
                 <Template Context="timelapse">
                     @timelapse.CreatedOn.ToLocalTime().ToString("G")
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="Delete" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="timelapse">
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" Click="@(() => OnDelete(timelapse))" @onclick:stopPropagation="true" />
                 </Template>
             </RadzenDataGridColumn>
 
@@ -90,5 +97,12 @@ else
     private void OnPlayClick(int id)
     {
         NavigationManager.NavigateTo($"/video/timelapse/{id}", true);
+    }
+
+    private async Task OnDelete(Timelapse timelapse)
+    {
+        await ImageService.DeleteTimelapse(timelapse.Id);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
     }
 }

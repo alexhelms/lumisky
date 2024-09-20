@@ -163,4 +163,13 @@ public class GenerationService
             }
         }
     }
+
+    public async Task DeleteGeneration(int id)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Generations
+            .Where(g => g.Id == id)
+            .ExecuteDeleteAsync();
+    }
 }

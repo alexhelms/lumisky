@@ -42,9 +42,15 @@ else
                 </Template>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn Property="@nameof(Image.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending">
+            <RadzenDataGridColumn Property="@nameof(Image.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending" Width="160px" TextAlign="TextAlign.Center">
                 <Template Context="image">
                     @DateTimeOffset.FromUnixTimeSeconds(image.ExposedOn).ToLocalTime().ToString("G")
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="Delete" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="image">
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" Click="@(() => OnDelete(image))" @onclick:stopPropagation="true" />
                 </Template>
             </RadzenDataGridColumn>
 
@@ -77,5 +83,12 @@ else
 
         imagesAvailable = true;
         InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnDelete(Image image)
+    {
+        await ImageService.DeleteImage(image.Id);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
     }
 }

@@ -19,6 +19,7 @@ else
                     FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
                     FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
+
             <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
                 <Template Context="rawImage">
                     <RadzenLink Path="@($"/api/image/download/raw?ts={rawImage.ExposedOn}")">
@@ -26,6 +27,7 @@ else
                     </RadzenLink>
                 </Template>
             </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Property="@nameof(RawImage.Filename)" Title="Filename">
                 <Template Context="rawImage">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
@@ -33,11 +35,19 @@ else
                     </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn Property="@nameof(RawImage.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending">
+
+            <RadzenDataGridColumn Property="@nameof(RawImage.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending" Width="160px" TextAlign="TextAlign.Center">
                 <Template Context="rawImage">
                     @DateTimeOffset.FromUnixTimeSeconds(rawImage.ExposedOn).ToLocalTime().ToString("G")
                 </Template>
             </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="Delete" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="rawImage">
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" Click="@(() => OnDelete(rawImage))" @onclick:stopPropagation="true" />
+                </Template>
+            </RadzenDataGridColumn>
+
         </Columns>
     </RadzenDataGrid>
 }
@@ -70,5 +80,12 @@ else
             if (grid is not null)
                 InvokeAsync(grid.RefreshDataAsync);
         }
+    }
+
+    private async Task OnDelete(RawImage rawImage)
+    {
+        await ImageService.DeleteRawImage(rawImage.Id);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
     }
 }

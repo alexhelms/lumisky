@@ -156,6 +156,7 @@
                                 {
                                     <RadzenButton Icon="download" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" Click="@(() => OnDownloadOutput(item))" @onclick:stopPropagation="true" />
                                 }
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" Click="@(() => OnDelete(item))" @onclick:stopPropagation="true" />
                             </RadzenStack>
                         </Template>
                     </RadzenDataGridColumn>
@@ -326,6 +327,12 @@
                 await JS.InvokeVoidAsync("open", $"/api/video/download/panorama?id={id}", "_blank");
             }
         }
+    }
+
+    private async Task OnDelete(GenerationJob item)
+    {
+        await GenerationService.DeleteGeneration(item.Id);
+        await dataGrid.RefreshDataAsync();
     }
 
     private async Task OnSubmit(GenerateForm data)

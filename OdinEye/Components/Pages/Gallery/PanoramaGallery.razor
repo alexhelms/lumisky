@@ -17,6 +17,7 @@ else
                     FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
                     FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
+
             <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
                 <Template Context="panorama">
                     <RadzenLink Path="@($"/api/image/download/panorama?ts={panorama.ExposedOn}")">
@@ -24,6 +25,7 @@ else
                     </RadzenLink>
                 </Template>
             </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Title="View" Width="75px" TextAlign="TextAlign.Center">
                 <Template Context="panorama">
                     <RadzenLink Path="@($"/api/image/view/panorama?ts={panorama.ExposedOn}")" Target="_blank">
@@ -31,6 +33,7 @@ else
                     </RadzenLink>
                 </Template>
             </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Property="@nameof(Panorama.Filename)" Title="Filename">
                 <Template Context="panorama">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
@@ -38,11 +41,19 @@ else
                     </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn Property="@nameof(Panorama.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending">
+
+            <RadzenDataGridColumn Property="@nameof(Panorama.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending" Width="160px" TextAlign="TextAlign.Center">
                 <Template Context="panorama">
                     @DateTimeOffset.FromUnixTimeSeconds(panorama.ExposedOn).ToLocalTime().ToString("G")
                 </Template>
             </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="Delete" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="panorama">
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" Click="@(() => OnDelete(panorama))" @onclick:stopPropagation="true" />
+                </Template>
+            </RadzenDataGridColumn>
+
         </Columns>
     </RadzenDataGrid>
 }
@@ -72,5 +83,12 @@ else
 
         panoramasAvailable = true;
         InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnDelete(Panorama panorama)
+    {
+        await ImageService.DeletePanorama(panorama.Id);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
     }
 }

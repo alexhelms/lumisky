@@ -1,5 +1,8 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using OdinEye.Core.Data;
 using OdinEye.Core.Imaging;
 using OdinEye.Core.Imaging.Processing;
 using OdinEye.Core.Primitives;
@@ -31,6 +34,7 @@ public record FitsProcessingResults : IDisposable
 public class ImageService
 {
     private readonly IProfileProvider _profile;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly SunService _sunService;
 
     public event EventHandler? NewImage;
@@ -43,9 +47,11 @@ public class ImageService
 
     public ImageService(
         IProfileProvider profile,
+        IServiceScopeFactory serviceScopeFactory,
         SunService sunService)
     {
         _profile = profile;
+        _serviceScopeFactory = serviceScopeFactory;
         _sunService = sunService;
     }
 
@@ -61,6 +67,97 @@ public class ImageService
         LatestPanoramaPath = path;
         LatestPanoramaSize = size;
         NewPanorama?.Invoke(this, EventArgs.Empty);
+    }
+
+    public async Task DeleteRawImage(int id)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var rawImage = await dbContext.RawImages.FirstOrDefaultAsync(x => x.Id == id);
+        if (rawImage is not null)
+        {
+            dbContext.RawImages.Remove(rawImage);
+            if (await dbContext.SaveChangesAsync() > 0)
+            {
+                TryDeleteFile(rawImage.Filename);
+            }
+        }
+    }
+
+    public async Task DeleteImage(int id)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var image = await dbContext.Images.FirstOrDefaultAsync(x => x.Id == id);
+        if (image is not null)
+        {
+            dbContext.Images.Remove(image);
+            if (await dbContext.SaveChangesAsync() > 0)
+            {
+                TryDeleteFile(image.Filename);
+            }
+        }
+    }
+
+    public async Task DeletePanorama(int id)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var panorama = await dbContext.Panoramas.FirstOrDefaultAsync(x => x.Id == id);
+        if (panorama is not null)
+        {
+            dbContext.Panoramas.Remove(panorama);
+            if (await dbContext.SaveChangesAsync() > 0)
+            {
+                TryDeleteFile(panorama.Filename);
+            }
+        }
+    }
+
+    public async Task DeleteTimelapse(int id)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var timelapse = await dbContext.Timelapses.FirstOrDefaultAsync(x => x.Id == id);
+        if (timelapse is not null)
+        {
+            dbContext.Timelapses.Remove(timelapse);
+            if (await dbContext.SaveChangesAsync() > 0)
+            {
+                TryDeleteFile(timelapse.Filename);
+            }
+        }
+    }
+
+    public async Task DeletePanoramaTimelapse(int id)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var panoramaTimelapse = await dbContext.PanoramaTimelapses.FirstOrDefaultAsync(x => x.Id == id);
+        if (panoramaTimelapse is not null)
+        {
+            dbContext.PanoramaTimelapses.Remove(panoramaTimelapse);
+            if (await dbContext.SaveChangesAsync() > 0)
+            {
+                TryDeleteFile(panoramaTimelapse.Filename);
+            }
+        }
+    }
+
+    private void TryDeleteFile(string filename)
+    {
+        try
+        {
+            File.Delete(filename);
+        }
+        catch (FileNotFoundException)
+        {
+            Log.Warning("Tried to delete {Filename} but it was not found", filename);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Exception deleting file");
+        }
     }
 
     public FitsProcessingResults ProcessFits(string filename)
