@@ -1,18 +1,18 @@
 services:
-  odineye:
-    container_name: "odineye"
-    image: ghcr.io/alexhelms/odineye:latest
+  lumisky:
+    container_name: "lumisky"
+    image: ghcr.io/alexhelms/lumisky:latest
     restart: unless-stopped
     pull_policy: always
     user: 1654:1654
     volumes:
-      - odineye-data:/odineye
+      - lumisky-data:/lumisky
     network_mode: host
     ports:
       - 8080:8080
     environment:
       TZ: "America/Phoenix"
-      ODINEYE_PATH: "/odineye"
+      LUMISKY_PATH: "/lumisky"
 
   indiserver:
     container_name: "indiserver"
@@ -40,5 +40,5 @@ services:
     ]
 
 volumes:
-  odineye-data:
+  lumisky-data:
   indi_server-config:

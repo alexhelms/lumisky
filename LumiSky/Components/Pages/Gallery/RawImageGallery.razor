@@ -1,0 +1,91 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using LumiSky.Controllers
+@using LumiSky.Core.Services
+@using LumiSky.Core.Profile
+@implements IDisposable
+@inject IProfileProvider Profile
+@inject AppDbContext DbContext
+@inject ImageService ImageService
+
+@if (!rawImagesAvailable)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+        <RadzenText>No Raw Images Available</RadzenText>
+    </RadzenRow>
+}
+else
+{
+    <RadzenDataGrid @ref=grid TItem="RawImage" Data="@rawImages" AllowFiltering="true" AllowColumnResize="true"
+                    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+        <Columns>
+
+            <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
+                <Template Context="rawImage">
+                    <RadzenLink Path="@($"/api/image/download/raw?ts={rawImage.ExposedOn}")">
+                        <RadzenButton Icon="download" Size="ButtonSize.Small" />
+                    </RadzenLink>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Property="@nameof(RawImage.Filename)" Title="Filename">
+                <Template Context="rawImage">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body1" class="rz-m-0">@Path.GetFileName(rawImage.Filename)</RadzenText>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Property="@nameof(RawImage.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending" Width="160px" TextAlign="TextAlign.Center">
+                <Template Context="rawImage">
+                    @DateTimeOffset.FromUnixTimeSeconds(rawImage.ExposedOn).ToLocalTime().ToString("G")
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="Delete" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="rawImage">
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" Click="@(() => OnDelete(rawImage))" @onclick:stopPropagation="true" />
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    RadzenDataGrid<RawImage>? grid;
+    IQueryable<RawImage>? rawImages;
+    bool rawImagesAvailable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        rawImages = DbContext.RawImages;
+        rawImagesAvailable = await DbContext.RawImages.AnyAsync();
+
+        ImageService.NewImage += OnNewImage;
+    }
+
+    public void Dispose()
+    {
+        ImageService.NewImage -= OnNewImage;
+    }
+
+    private void OnNewImage(object? sender, EventArgs e)
+    {
+        if (Profile.Current.Image.KeepRawImages)
+        {
+            rawImagesAvailable = true;
+            InvokeAsync(StateHasChanged);
+
+            if (grid is not null)
+                InvokeAsync(grid.RefreshDataAsync);
+        }
+    }
+
+    private async Task OnDelete(RawImage rawImage)
+    {
+        await ImageService.DeleteRawImage(rawImage.Id);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
+    }
+}

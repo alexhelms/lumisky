@@ -1,0 +1,80 @@
+﻿@using LumiSky.Core.Profile
+@inject IProfileProvider Profile
+@inject NotificationService NotificationService
+
+<RadzenTemplateForm TItem="LocationSettingsModel" Data="@model" Submit="OnSubmit">
+    <RadzenStack>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Location</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+                    <RadzenFormField Text="Name" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenTextBox @bind-Value="model.Location" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Latitude [deg]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric TValue="double" @bind-Value="model.Latitude" Min="-90" Max="90" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Longitude [deg]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric TValue="double" @bind-Value="model.Longitude" Min="-180" Max="180" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Elevation [m]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric TValue="double" @bind-Value="model.Elevation" Min="-1000" Max="10000" />
+                    </RadzenFormField>
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenRow>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+        </RadzenRow>
+
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    private LocationSettingsModel model = new();
+
+    protected override void OnInitialized()
+    {
+        model.Location = Profile.Current.Location.Location;
+        model.Latitude = Profile.Current.Location.Latitude;
+        model.Longitude = Profile.Current.Location.Longitude;
+        model.Elevation = Profile.Current.Location.Elevation;
+    }
+
+    private void OnSubmit(LocationSettingsModel model)
+    {
+        Profile.Current.Location.Location = model.Location ?? string.Empty;
+        Profile.Current.Location.Latitude = model.Latitude;
+        Profile.Current.Location.Longitude = model.Longitude;
+        Profile.Current.Location.Elevation = model.Elevation;
+
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Duration = 2000,
+            Summary = "Saved!",
+        });
+    }
+
+    private double ConvertDouble(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return 0;
+        if (double.TryParse(s, out var value)) return value;
+        return 0;
+    }
+
+    public record LocationSettingsModel
+    {
+        public string? Location { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double Elevation { get; set; }
+    }
+}

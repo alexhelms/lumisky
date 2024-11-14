@@ -1,18 +1,18 @@
 services:
-  odineye:
-    container_name: "odineye"
+  lumisky:
+    container_name: "lumisky"
     build:
       context: .
-      dockerfile: ./OdinEye/Dockerfile
+      dockerfile: ./LumiSky/Dockerfile
     restart: unless-stopped
     volumes:
-      - odineye-data:/odineye
+      - lumisky-data:/lumisky
     network_mode: host
     ports:
       - 8080:8080
     environment:
       TZ: "America/Phoenix"
-      ODINEYE_PATH: "/odineye"
+      LUMISKY_PATH: "/lumisky"
 
   indiserver:
     container_name: "indiserver"
@@ -40,5 +40,5 @@ services:
     ]
 
 volumes:
-  odineye-data:
+  lumisky-data:
   indi_server-config:

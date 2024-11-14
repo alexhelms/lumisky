@@ -1,4 +1,4 @@
-# OdinEye
+# LumiSky
 
 Astronomy allsky web server.
 
@@ -13,8 +13,8 @@ docker compose -f dev.docker-compose.yml up --build
 ## Build the container to be pushed
 
 ```
-docker build -t registry.local.sdso.space/odineye:latest -f OdinEye/Dockerfile .
-docker push registry.local.sdso.space/odineye:latest
+docker build -t registry.local.sdso.space/lumisky:latest -f LumiSky/Dockerfile .
+docker push registry.local.sdso.space/lumisky:latest
 ```
 
 ## Compiling cfitsio for Linux
