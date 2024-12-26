@@ -11,6 +11,7 @@ using SlimMessageBus.Host;
 using SlimMessageBus.Host.Memory;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using LumiSky.Core.IO.Fits;
 
 namespace LumiSky.Core;
 
@@ -89,6 +90,16 @@ public static class Bootstrap
             throw;
         }
 
+        try
+        {
+            VerifyNativeDependencies(provider);
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(e, "Fatal error verifying native dependencies");
+            throw;
+        }
+
         if (profile.Current.Capture.AutoStart)
         {
             var allSkyScheduler = provider.GetRequiredService<AllSkyScheduler>();
@@ -148,6 +159,15 @@ public static class Bootstrap
         });
 
         services.AddQuartzHostedService();
+    }
+
+    private static void VerifyNativeDependencies(IServiceProvider provider)
+    {
+        // Invoking this calls the static ctor which checks cfitsio for reentrancy flag.
+        _ = FitsFile.Native.FitsIsReentrant();
+
+        // Invoking this calls down to the opencv native binary.
+        _ = Emgu.CV.CvInvoke.BuildInformation;
     }
 
     private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
