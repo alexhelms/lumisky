@@ -92,7 +92,7 @@ public static class Bootstrap
 
         try
         {
-            VerifyNativeDependencies(provider);
+            await VerifyNativeDependencies(provider);
         }
         catch (Exception e)
         {
@@ -161,13 +161,15 @@ public static class Bootstrap
         services.AddQuartzHostedService();
     }
 
-    private static void VerifyNativeDependencies(IServiceProvider provider)
+    private static async Task VerifyNativeDependencies(IServiceProvider provider)
     {
         // Invoking this calls the static ctor which checks cfitsio for reentrancy flag.
         _ = FitsFile.Native.FitsIsReentrant();
 
         // Invoking this calls down to the opencv native binary.
         _ = Emgu.CV.CvInvoke.BuildInformation;
+
+        await Python.Initialize();
     }
 
     private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)

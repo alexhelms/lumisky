@@ -3,7 +3,6 @@ using Emgu.CV;
 using LumiSky.Core.IO;
 using LumiSky.Core.Memory;
 using LumiSky.Core.Profile;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 
@@ -12,7 +11,6 @@ namespace LumiSky.Core.Imaging.Processing;
 public class OverlayRenderer
 {
     private static string FontPath;
-    private static string PythonExecutable;
     private static string PythonOverlayRendererPath;
 
     private readonly IProfileProvider _profile;
@@ -22,10 +20,6 @@ public class OverlayRenderer
         var assembly = typeof(OverlayRenderer).Assembly;
         var directory = Path.GetDirectoryName(assembly.Location)!;
         FontPath = Path.Combine(directory, "Fonts", "RobotoMono-Regular.ttf");
-        var defaultPythonExecutable = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? "python"
-            : "/usr/bin/python3";
-        PythonExecutable = Environment.GetEnvironmentVariable("PYTHONEXE") ?? defaultPythonExecutable;
         PythonOverlayRendererPath = Path.Combine(directory, "python", "overlay.py");
     }
 
@@ -189,7 +183,7 @@ public class OverlayRenderer
 
         var stdout = new StringBuilder(512);
         var stderr = new StringBuilder(512);
-        var result = await Cli.Wrap(PythonExecutable)
+        var result = await Cli.Wrap(Python.PythonExecutablePath)
             .WithArguments(c => c
                 .Add($"\"{PythonOverlayRendererPath}\"", escape: false))
             .WithStandardInputPipe(PipeSource.FromString(json))
@@ -293,7 +287,7 @@ public class OverlayRenderer
 
         var stdout = new StringBuilder(512);
         var stderr = new StringBuilder(512);
-        var result = await Cli.Wrap(PythonExecutable)
+        var result = await Cli.Wrap(Python.PythonExecutablePath)
             .WithArguments(c => c
                 .Add($"\"{PythonOverlayRendererPath}\"", escape: false))
             .WithStandardInputPipe(PipeSource.FromString(json))
