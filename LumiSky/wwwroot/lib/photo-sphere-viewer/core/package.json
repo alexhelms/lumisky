@@ -1,6 +1,6 @@
 {
   "name": "@photo-sphere-viewer/core",
-  "version": "5.10.0",
+  "version": "5.11.4",
   "description": "A JavaScript library to display 360° panoramas",
   "keywords": [
     "photosphere",
@@ -25,12 +25,27 @@
       "homepage": "https://jeremyheleine.me"
     }
   ],
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.mts",
+        "default": "./index.module.js"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./index.cjs"
+      }
+    },
+    "./index.css": "./index.css",
+    "./index.scss": "./index.scss"
+  },
   "main": "index.cjs",
   "module": "index.module.js",
   "types": "index.d.ts",
   "style": "index.css",
   "sass": "index.scss",
   "dependencies": {
-    "three": "^0.167.0"
-  }
+    "three": "^0.169.0"
+  },
+  "peerDependencies": {}
 }

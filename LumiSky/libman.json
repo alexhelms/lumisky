@@ -1,34 +1,33 @@
 {
   "version": "1.0",
-  "defaultProvider": "unpkg",
+  "defaultProvider": "jsdelivr",
   "libraries": [
     {
-      "provider": "jsdelivr",
-      "library": "@photo-sphere-viewer/core@5.10.0",
+      "library": "@photo-sphere-viewer/core@5.11.4",
       "destination": "wwwroot/lib/photo-sphere-viewer/core/"
     },
     {
-      "provider": "jsdelivr",
-      "library": "@photo-sphere-viewer/video-plugin@5.10.0",
+      "library": "@photo-sphere-viewer/video-plugin@5.11.4",
       "destination": "wwwroot/lib/photo-sphere-viewer/video-plugin/"
     },
     {
-      "provider": "jsdelivr",
-      "library": "@photo-sphere-viewer/equirectangular-video-adapter@5.10.0",
+      "library": "@photo-sphere-viewer/equirectangular-video-adapter@5.11.4",
       "destination": "wwwroot/lib/photo-sphere-viewer/equirectangular-video-adapter/"
     },
     {
-      "library": "three@0.168.0",
+      "library": "video.js@8.21.0",
+      "destination": "wwwroot/lib/video.js/",
+      "files": [
+        "dist/video.min.js",
+        "dist/video-js.min.css"
+      ]
+    },
+    {
+      "library": "three@0.169.0",
       "destination": "wwwroot/lib/three/",
       "files": [
-        "LICENSE",
-        "package.json",
-        "README.md",
         "build/three.webgpu.min.js",
-        "build/three.webgpu.js",
-        "build/three.module.min.js",
-        "build/three.module.js",
-        "build/three.cjs"
+        "build/three.module.min.js"
       ]
     }
   ]

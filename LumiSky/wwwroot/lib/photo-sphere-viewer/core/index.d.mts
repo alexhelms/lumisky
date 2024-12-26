@@ -1,15 +1,11 @@
-import { Mesh, Vector3, Renderer as Renderer$1, Raycaster, Vector2, Intersection, Euler, WebGLRenderer, Object3D, Texture, WebGLRendererParameters, BufferGeometry, Material } from 'three';
+import { Mesh, Vector3, Renderer as Renderer$1, Raycaster, Vector2, Intersection, Euler, WebGLRenderer, Object3D, Texture, WebGLRendererParameters, SphereGeometry, MeshBasicMaterial } from 'three';
 
-/**
- * Default duration of the transition between panoramas
- */
-declare const DEFAULT_TRANSITION = 1500;
 /**
  *  Minimum duration of the animations created with {@link Viewer#animate}
  */
 declare const ANIMATION_MIN_DURATION = 500;
 /**
- * Number of pixels bellow which a mouse move will be considered as a click
+ * Number of pixels below which a mouse move will be considered as a click
  */
 declare const MOVE_THRESHOLD = 4;
 /**
@@ -29,10 +25,6 @@ declare const TWOFINGERSOVERLAY_DELAY = 100;
  */
 declare const CTRLZOOM_TIMEOUT = 2000;
 /**
- * Duration of the mouse position history used to compute inertia
- */
-declare const INERTIA_WINDOW = 300;
-/**
  * Radius of the SphereGeometry, Half-length of the BoxGeometry
  */
 declare const SPHERE_RADIUS = 10;
@@ -45,7 +37,7 @@ declare const VIEWER_DATA = "photoSphereViewer";
  */
 declare const CAPTURE_EVENTS_CLASS = "psv--capture-event";
 /**
- * Actions available for {@link ViewerConfig['keyboard']} configuration
+ * Actions available for {@link ViewerConfig['keyboardActions']} configuration
  */
 declare enum ACTIONS {
     ROTATE_UP = "ROTATE_UP",
@@ -99,10 +91,8 @@ declare const constants_ANIMATION_MIN_DURATION: typeof ANIMATION_MIN_DURATION;
 declare const constants_CAPTURE_EVENTS_CLASS: typeof CAPTURE_EVENTS_CLASS;
 declare const constants_CTRLZOOM_TIMEOUT: typeof CTRLZOOM_TIMEOUT;
 declare const constants_DBLCLICK_DELAY: typeof DBLCLICK_DELAY;
-declare const constants_DEFAULT_TRANSITION: typeof DEFAULT_TRANSITION;
 declare const constants_EASINGS: typeof EASINGS;
 declare const constants_ICONS: typeof ICONS;
-declare const constants_INERTIA_WINDOW: typeof INERTIA_WINDOW;
 declare const constants_KEY_CODES: typeof KEY_CODES;
 declare const constants_LONGTOUCH_DELAY: typeof LONGTOUCH_DELAY;
 declare const constants_MOVE_THRESHOLD: typeof MOVE_THRESHOLD;
@@ -110,7 +100,7 @@ declare const constants_SPHERE_RADIUS: typeof SPHERE_RADIUS;
 declare const constants_TWOFINGERSOVERLAY_DELAY: typeof TWOFINGERSOVERLAY_DELAY;
 declare const constants_VIEWER_DATA: typeof VIEWER_DATA;
 declare namespace constants {
-  export { constants_ACTIONS as ACTIONS, constants_ANIMATION_MIN_DURATION as ANIMATION_MIN_DURATION, constants_CAPTURE_EVENTS_CLASS as CAPTURE_EVENTS_CLASS, constants_CTRLZOOM_TIMEOUT as CTRLZOOM_TIMEOUT, constants_DBLCLICK_DELAY as DBLCLICK_DELAY, constants_DEFAULT_TRANSITION as DEFAULT_TRANSITION, constants_EASINGS as EASINGS, constants_ICONS as ICONS, constants_INERTIA_WINDOW as INERTIA_WINDOW, constants_KEY_CODES as KEY_CODES, constants_LONGTOUCH_DELAY as LONGTOUCH_DELAY, constants_MOVE_THRESHOLD as MOVE_THRESHOLD, constants_SPHERE_RADIUS as SPHERE_RADIUS, constants_TWOFINGERSOVERLAY_DELAY as TWOFINGERSOVERLAY_DELAY, constants_VIEWER_DATA as VIEWER_DATA };
+  export { constants_ACTIONS as ACTIONS, constants_ANIMATION_MIN_DURATION as ANIMATION_MIN_DURATION, constants_CAPTURE_EVENTS_CLASS as CAPTURE_EVENTS_CLASS, constants_CTRLZOOM_TIMEOUT as CTRLZOOM_TIMEOUT, constants_DBLCLICK_DELAY as DBLCLICK_DELAY, constants_EASINGS as EASINGS, constants_ICONS as ICONS, constants_KEY_CODES as KEY_CODES, constants_LONGTOUCH_DELAY as LONGTOUCH_DELAY, constants_MOVE_THRESHOLD as MOVE_THRESHOLD, constants_SPHERE_RADIUS as SPHERE_RADIUS, constants_TWOFINGERSOVERLAY_DELAY as TWOFINGERSOVERLAY_DELAY, constants_VIEWER_DATA as VIEWER_DATA };
 }
 
 /**
@@ -125,9 +115,10 @@ declare abstract class AbstractComponent {
     /**
      * Container element
      */
-    readonly container: HTMLDivElement;
+    readonly container: HTMLElement;
     constructor(parent: Viewer | AbstractComponent, config: {
         className?: string;
+        tagName?: string;
     });
     /**
      * Destroys the component
@@ -174,6 +165,7 @@ declare class Loader extends AbstractComponent {
  */
 type ButtonConfig = {
     id?: string;
+    tagName?: string;
     className?: string;
     title?: string;
     /**
@@ -364,10 +356,14 @@ type OverlayConfig = {
      */
     text?: string;
     /**
+     * @deprecated Use `dismissible`
+     */
+    dissmisable?: boolean;
+    /**
      * if the user can hide the overlay by clicking
      * @default true
      */
-    dissmisable?: boolean;
+    dismissible?: boolean;
 };
 /**
  * Overlay component
@@ -560,9 +556,9 @@ declare abstract class ViewerEvent extends TypedEvent<Viewer> {
  */
 declare class BeforeAnimateEvent extends ViewerEvent {
     /** target position, can be modified */
-    position?: Position;
+    position: Position | undefined;
     /** target zoom level, can be modified */
-    zoomLevel?: number;
+    zoomLevel: number | undefined;
     static readonly type = "before-animate";
     type: 'before-animate';
 }
@@ -660,6 +656,7 @@ declare class HideTooltipEvent extends ViewerEvent {
  */
 declare class KeypressEvent extends ViewerEvent {
     readonly key: string;
+    readonly originalEvent: KeyboardEvent;
     static readonly type = "key-press";
     type: 'key-press';
 }
@@ -695,6 +692,14 @@ declare class PanoramaErrorEvent extends ViewerEvent {
     readonly error: Error;
     static readonly type = "panorama-error";
     type: 'panorama-error';
+}
+/**
+ * @event Triggered when the transition to a new panorama is done (complete or not)
+ */
+declare class TransitionDoneEvent extends ViewerEvent {
+    readonly completed: boolean;
+    static readonly type = "transition-done";
+    type: 'transition-done';
 }
 /**
  * @event Triggered when the view angles change
@@ -822,7 +827,7 @@ declare class ObjectHoverEvent extends ObjectEvent {
     static readonly type = "hover-object";
     type: 'hover-object';
 }
-type ViewerEvents = BeforeAnimateEvent | BeforeRenderEvent | BeforeRotateEvent | ClickEvent | ConfigChangedEvent | DoubleClickEvent | FullscreenEvent | HideNotificationEvent | HideOverlayEvent | HidePanelEvent | HideTooltipEvent | KeypressEvent | LoadProgressEvent | PanoramaLoadEvent | PanoramaLoadedEvent | PanoramaErrorEvent | PositionUpdatedEvent | RollUpdatedEvent | ReadyEvent | RenderEvent | ShowNotificationEvent | ShowOverlayEvent | ShowPanelEvent | ShowTooltipEvent | SizeUpdatedEvent | StopAllEvent | ZoomUpdatedEvent | ObjectEnterEvent | ObjectLeaveEvent | ObjectHoverEvent;
+type ViewerEvents = BeforeAnimateEvent | BeforeRenderEvent | BeforeRotateEvent | ClickEvent | ConfigChangedEvent | DoubleClickEvent | FullscreenEvent | HideNotificationEvent | HideOverlayEvent | HidePanelEvent | HideTooltipEvent | KeypressEvent | LoadProgressEvent | PanoramaLoadEvent | PanoramaLoadedEvent | PanoramaErrorEvent | TransitionDoneEvent | PositionUpdatedEvent | RollUpdatedEvent | ReadyEvent | RenderEvent | ShowNotificationEvent | ShowOverlayEvent | ShowPanelEvent | ShowTooltipEvent | SizeUpdatedEvent | StopAllEvent | ZoomUpdatedEvent | ObjectEnterEvent | ObjectLeaveEvent | ObjectHoverEvent;
 
 type events_BeforeAnimateEvent = BeforeAnimateEvent;
 declare const events_BeforeAnimateEvent: typeof BeforeAnimateEvent;
@@ -884,13 +889,15 @@ type events_SizeUpdatedEvent = SizeUpdatedEvent;
 declare const events_SizeUpdatedEvent: typeof SizeUpdatedEvent;
 type events_StopAllEvent = StopAllEvent;
 declare const events_StopAllEvent: typeof StopAllEvent;
+type events_TransitionDoneEvent = TransitionDoneEvent;
+declare const events_TransitionDoneEvent: typeof TransitionDoneEvent;
 type events_ViewerEvent = ViewerEvent;
 declare const events_ViewerEvent: typeof ViewerEvent;
 type events_ViewerEvents = ViewerEvents;
 type events_ZoomUpdatedEvent = ZoomUpdatedEvent;
 declare const events_ZoomUpdatedEvent: typeof ZoomUpdatedEvent;
 declare namespace events {
-  export { events_BeforeAnimateEvent as BeforeAnimateEvent, events_BeforeRenderEvent as BeforeRenderEvent, events_BeforeRotateEvent as BeforeRotateEvent, events_ClickEvent as ClickEvent, events_ConfigChangedEvent as ConfigChangedEvent, events_DoubleClickEvent as DoubleClickEvent, events_FullscreenEvent as FullscreenEvent, events_HideNotificationEvent as HideNotificationEvent, events_HideOverlayEvent as HideOverlayEvent, events_HidePanelEvent as HidePanelEvent, events_HideTooltipEvent as HideTooltipEvent, events_KeypressEvent as KeypressEvent, events_LoadProgressEvent as LoadProgressEvent, events_ObjectEnterEvent as ObjectEnterEvent, events_ObjectEvent as ObjectEvent, events_ObjectHoverEvent as ObjectHoverEvent, events_ObjectLeaveEvent as ObjectLeaveEvent, events_PanoramaErrorEvent as PanoramaErrorEvent, events_PanoramaLoadEvent as PanoramaLoadEvent, events_PanoramaLoadedEvent as PanoramaLoadedEvent, events_PositionUpdatedEvent as PositionUpdatedEvent, events_ReadyEvent as ReadyEvent, events_RenderEvent as RenderEvent, events_RollUpdatedEvent as RollUpdatedEvent, events_ShowNotificationEvent as ShowNotificationEvent, events_ShowOverlayEvent as ShowOverlayEvent, events_ShowPanelEvent as ShowPanelEvent, events_ShowTooltipEvent as ShowTooltipEvent, events_SizeUpdatedEvent as SizeUpdatedEvent, events_StopAllEvent as StopAllEvent, events_ViewerEvent as ViewerEvent, type events_ViewerEvents as ViewerEvents, events_ZoomUpdatedEvent as ZoomUpdatedEvent };
+  export { events_BeforeAnimateEvent as BeforeAnimateEvent, events_BeforeRenderEvent as BeforeRenderEvent, events_BeforeRotateEvent as BeforeRotateEvent, events_ClickEvent as ClickEvent, events_ConfigChangedEvent as ConfigChangedEvent, events_DoubleClickEvent as DoubleClickEvent, events_FullscreenEvent as FullscreenEvent, events_HideNotificationEvent as HideNotificationEvent, events_HideOverlayEvent as HideOverlayEvent, events_HidePanelEvent as HidePanelEvent, events_HideTooltipEvent as HideTooltipEvent, events_KeypressEvent as KeypressEvent, events_LoadProgressEvent as LoadProgressEvent, events_ObjectEnterEvent as ObjectEnterEvent, events_ObjectEvent as ObjectEvent, events_ObjectHoverEvent as ObjectHoverEvent, events_ObjectLeaveEvent as ObjectLeaveEvent, events_PanoramaErrorEvent as PanoramaErrorEvent, events_PanoramaLoadEvent as PanoramaLoadEvent, events_PanoramaLoadedEvent as PanoramaLoadedEvent, events_PositionUpdatedEvent as PositionUpdatedEvent, events_ReadyEvent as ReadyEvent, events_RenderEvent as RenderEvent, events_RollUpdatedEvent as RollUpdatedEvent, events_ShowNotificationEvent as ShowNotificationEvent, events_ShowOverlayEvent as ShowOverlayEvent, events_ShowPanelEvent as ShowPanelEvent, events_ShowTooltipEvent as ShowTooltipEvent, events_SizeUpdatedEvent as SizeUpdatedEvent, events_StopAllEvent as StopAllEvent, events_TransitionDoneEvent as TransitionDoneEvent, events_ViewerEvent as ViewerEvent, type events_ViewerEvents as ViewerEvents, events_ZoomUpdatedEvent as ZoomUpdatedEvent };
 }
 
 /**
@@ -1115,8 +1122,7 @@ type CustomRenderer = Pick<Renderer$1, 'render'> & {
 declare class Renderer extends AbstractService {
     private readonly renderer;
     private readonly scene;
-    private readonly mesh;
-    private readonly meshContainer;
+    private meshContainer;
     private readonly raycaster;
     private readonly frustum;
     private readonly container;
@@ -1207,7 +1213,7 @@ declare class TextureLoader extends AbstractService {
 declare class Viewer extends TypedEventTarget<ViewerEvents> {
     /**
      * Change the order in which the panoData and sphereCorrection angles are applied from 'ZXY' to 'YXZ'
-     * Will default to `true` in version 5.11
+     * @deprecated Will be removed in version 5.12
      */
     static useNewAnglesOrder: boolean;
     readonly state: ViewerState;
@@ -1369,10 +1375,11 @@ declare class Viewer extends TypedEventTarget<ViewerEvents> {
 /**
  * Base class for adapters
  * @template TPanorama type of the panorama object
- * @template TTexture type of the loaded texture
  * @template TData type of the panorama metadata
+ * @template TTexture type of the loaded texture
+ * @template TMesh type of the mesh
  */
-declare abstract class AbstractAdapter<TPanorama, TTexture, TData> {
+declare abstract class AbstractAdapter<TPanorama, TData, TTexture, TMesh extends Object3D> {
     protected readonly viewer: Viewer;
     /**
      * Unique identifier of the adapter
@@ -1421,21 +1428,25 @@ declare abstract class AbstractAdapter<TPanorama, TTexture, TData> {
     /**
      * Creates the mesh
      */
-    abstract createMesh(): Mesh;
+    abstract createMesh(panoData: TData): TMesh;
     /**
      * Applies the texture to the mesh
      */
-    abstract setTexture(mesh: Mesh, textureData: TextureData<TTexture, TPanorama, TData>, transition?: boolean): void;
+    abstract setTexture(mesh: TMesh, textureData: TextureData<TTexture, TPanorama, TData>, transition: boolean): void;
     /**
      * Changes the opacity of the mesh
      */
-    abstract setTextureOpacity(mesh: Mesh, opacity: number): void;
+    abstract setTextureOpacity(mesh: TMesh, opacity: number): void;
     /**
      * Clear a loaded texture from memory
      */
     abstract disposeTexture(textureData: TextureData<TTexture, TPanorama, TData>): void;
+    /**
+     * Cleanup a mesh from memory
+     */
+    abstract disposeMesh(mesh: TMesh): void;
 }
-type AdapterConstructor = (new (viewer: Viewer, config?: any) => AbstractAdapter<any, any, any>);
+type AdapterConstructor = (new (viewer: Viewer, config?: any) => AbstractAdapter<any, any, any, any>);
 
 /**
  * A wrapper around a Promise with an initial value before resolution
@@ -1518,14 +1529,21 @@ type AnimateOptions = Partial<ExtendedPosition> & {
     easing?: AnimationOptions<any>['easing'];
 };
 /**
+ * Configuration of an equirectangular panorama
+ */
+type EquirectangularPanorama = {
+    path: string;
+    data?: PanoData | PanoDataProvider;
+};
+/**
  * Crop information of an equirectangular panorama
  */
 type PanoData = {
     isEquirectangular?: true;
     fullWidth: number;
-    fullHeight: number;
-    croppedWidth: number;
-    croppedHeight: number;
+    fullHeight?: number;
+    croppedWidth?: number;
+    croppedHeight?: number;
     croppedX: number;
     croppedY: number;
     poseHeading?: number;
@@ -1560,10 +1578,9 @@ type PanoramaOptions = {
      * enable transition (rotation + fading) between old and new panorama
      * @default true
      */
-    transition?: boolean | 'fade-only';
+    transition?: boolean | 'fade-only' | TransitionOptions;
     /**
-     * speed or duration of the transition between old and new panorama
-     * @default 1500
+     * @deprecated Use `transition.speed`
      */
     speed?: string | number;
     /**
@@ -1579,6 +1596,14 @@ type PanoramaOptions = {
      * new data used for this panorama
      */
     panoData?: PanoData | PanoDataProvider;
+};
+type TransitionOptions = {
+    /** @default 1500 */
+    speed?: string | number;
+    /** @default true */
+    rotation?: boolean;
+    /** @default 'fade' */
+    effect?: 'fade' | 'black' | 'white';
 };
 /**
  * Result of {@link AbstractAdapter.loadTexture}
@@ -1678,6 +1703,7 @@ type NavbarCustomButton = {
     id?: string;
     /**
      * Tooltip displayed when the mouse is over the button
+     * If can be a key in the global `lang` config
      */
     title?: string;
     /**
@@ -1755,8 +1781,8 @@ type ViewerConfig = {
     moveSpeed?: number;
     /** @default 1 */
     zoomSpeed?: number;
-    /** @default true */
-    moveInertia?: boolean;
+    /** @default 0.8 */
+    moveInertia?: boolean | number;
     /** @default true */
     mousewheel?: boolean;
     /** @default true */
@@ -1767,6 +1793,10 @@ type ViewerConfig = {
     touchmoveTwoFingers?: boolean;
     panoData?: PanoData | PanoDataProvider;
     requestHeaders?: Record<string, string> | ((url: string) => Record<string, string>);
+    /** @default '#000' */
+    canvasBackground?: string;
+    /** @default '{ speed: 1500, rotation: true, effect: "fade" }' */
+    defaultTransition?: TransitionOptions;
     /** @default '{ alpha: true, antialias: true }' */
     rendererParameters?: WebGLRendererParameters;
     /** @default false */
@@ -1775,16 +1805,17 @@ type ViewerConfig = {
     navbar?: boolean | string | Array<string | NavbarCustomButton>;
     lang?: Record<string, string>;
     keyboard?: boolean | 'always' | 'fullscreen' | Record<string, ACTIONS | ((viewer: Viewer) => void)>;
-    keyboardActions?: Record<string, ACTIONS | ((viewer: Viewer) => void)>;
+    keyboardActions?: Record<string, ACTIONS | ((viewer: Viewer, e: KeyboardEvent) => void)>;
 };
 /**
  * Viewer configuration after applying parsers
  */
-type ParsedViewerConfig = Omit<ViewerConfig, 'adapter' | 'plugins' | 'defaultYaw' | 'defaultPitch' | 'fisheye' | 'requestHeaders' | 'navbar' | 'keyboard'> & {
+type ParsedViewerConfig = Omit<ViewerConfig, 'adapter' | 'plugins' | 'defaultYaw' | 'defaultPitch' | 'moveInertia' | 'fisheye' | 'requestHeaders' | 'navbar' | 'keyboard'> & {
     adapter?: [AdapterConstructor, any];
     plugins?: Array<[PluginConstructor, any]>;
     defaultYaw?: number;
     defaultPitch?: number;
+    moveInertia?: number;
     fisheye?: number;
     requestHeaders?: (url: string) => Record<string, string>;
     navbar?: Array<string | NavbarCustomButton>;
@@ -2006,7 +2037,7 @@ declare function parseAngle(angle: string | number, zeroCenter?: boolean, halfCi
 /**
  * Creates a THREE texture from an image
  */
-declare function createTexture(img: HTMLImageElement | HTMLCanvasElement, mimaps?: boolean): Texture;
+declare function createTexture(img: TexImageSource, mimaps?: boolean): Texture;
 /**
  * Applies the inverse of Euler angles to a vector
  */
@@ -2069,6 +2100,10 @@ declare function checkVersion(name: string, version: string, coreVersion: string
  * Checks if the viewer is not used insude a closed shadow DOM
  */
 declare function checkClosedShadowDom(el: Node): void;
+/**
+ * Merge XMP data with custom panoData, also apply default behaviour when data is missing
+ */
+declare function mergePanoData(width: number, height: number, newPanoData?: PanoData, xmpPanoData?: PanoData): PanoData;
 
 /**
  * Options for {@link Animation}
@@ -2349,6 +2384,7 @@ declare const index_isFullscreenEnabled: typeof isFullscreenEnabled;
 declare const index_isNil: typeof isNil;
 declare const index_isPlainObject: typeof isPlainObject;
 declare const index_logWarn: typeof logWarn;
+declare const index_mergePanoData: typeof mergePanoData;
 declare const index_parseAngle: typeof parseAngle;
 declare const index_parsePoint: typeof parsePoint;
 declare const index_parseSpeed: typeof parseSpeed;
@@ -2361,7 +2397,7 @@ declare const index_throttle: typeof throttle;
 declare const index_toggleClass: typeof toggleClass;
 declare const index_wrap: typeof wrap;
 declare namespace index {
-  export { index_Animation as Animation, type index_AnimationOptions as AnimationOptions, type index_ConfigParser as ConfigParser, type index_ConfigParsers as ConfigParsers, index_Dynamic as Dynamic, index_MultiDynamic as MultiDynamic, index_Slider as Slider, index_SliderDirection as SliderDirection, type index_SliderUpdateData as SliderUpdateData, type index_TouchData as TouchData, index_addClasses as addClasses, index_angle as angle, index_applyEulerInverse as applyEulerInverse, index_checkClosedShadowDom as checkClosedShadowDom, index_checkStylesheet as checkStylesheet, index_checkVersion as checkVersion, index_cleanCssPosition as cleanCssPosition, index_clone as clone, index_createTexture as createTexture, index_cssPositionIsOrdered as cssPositionIsOrdered, index_dasherize as dasherize, index_deepEqual as deepEqual, index_deepmerge as deepmerge, index_distance as distance, index_exitFullscreen as exitFullscreen, index_firstNonNull as firstNonNull, index_getAbortError as getAbortError, index_getAngle as getAngle, index_getClosest as getClosest, index_getConfigParser as getConfigParser, index_getElement as getElement, index_getEventTarget as getEventTarget, index_getMatchingTarget as getMatchingTarget, index_getPosition as getPosition, index_getShortestArc as getShortestArc, index_getStyleProperty as getStyleProperty, index_getTouchData as getTouchData, index_getXMPValue as getXMPValue, index_greatArcDistance as greatArcDistance, index_hasParent as hasParent, index_invertResolvableBoolean as invertResolvableBoolean, index_isAbortError as isAbortError, index_isEmpty as isEmpty, index_isExtendedPosition as isExtendedPosition, index_isFullscreenEnabled as isFullscreenEnabled, index_isNil as isNil, index_isPlainObject as isPlainObject, index_logWarn as logWarn, index_parseAngle as parseAngle, index_parsePoint as parsePoint, index_parseSpeed as parseSpeed, index_removeClasses as removeClasses, index_requestFullscreen as requestFullscreen, index_resolveBoolean as resolveBoolean, index_speedToDuration as speedToDuration, index_sum as sum, index_throttle as throttle, index_toggleClass as toggleClass, index_wrap as wrap };
+  export { index_Animation as Animation, type index_AnimationOptions as AnimationOptions, type index_ConfigParser as ConfigParser, type index_ConfigParsers as ConfigParsers, index_Dynamic as Dynamic, index_MultiDynamic as MultiDynamic, index_Slider as Slider, index_SliderDirection as SliderDirection, type index_SliderUpdateData as SliderUpdateData, type index_TouchData as TouchData, index_addClasses as addClasses, index_angle as angle, index_applyEulerInverse as applyEulerInverse, index_checkClosedShadowDom as checkClosedShadowDom, index_checkStylesheet as checkStylesheet, index_checkVersion as checkVersion, index_cleanCssPosition as cleanCssPosition, index_clone as clone, index_createTexture as createTexture, index_cssPositionIsOrdered as cssPositionIsOrdered, index_dasherize as dasherize, index_deepEqual as deepEqual, index_deepmerge as deepmerge, index_distance as distance, index_exitFullscreen as exitFullscreen, index_firstNonNull as firstNonNull, index_getAbortError as getAbortError, index_getAngle as getAngle, index_getClosest as getClosest, index_getConfigParser as getConfigParser, index_getElement as getElement, index_getEventTarget as getEventTarget, index_getMatchingTarget as getMatchingTarget, index_getPosition as getPosition, index_getShortestArc as getShortestArc, index_getStyleProperty as getStyleProperty, index_getTouchData as getTouchData, index_getXMPValue as getXMPValue, index_greatArcDistance as greatArcDistance, index_hasParent as hasParent, index_invertResolvableBoolean as invertResolvableBoolean, index_isAbortError as isAbortError, index_isEmpty as isEmpty, index_isExtendedPosition as isExtendedPosition, index_isFullscreenEnabled as isFullscreenEnabled, index_isNil as isNil, index_isPlainObject as isPlainObject, index_logWarn as logWarn, index_mergePanoData as mergePanoData, index_parseAngle as parseAngle, index_parsePoint as parsePoint, index_parseSpeed as parseSpeed, index_removeClasses as removeClasses, index_requestFullscreen as requestFullscreen, index_resolveBoolean as resolveBoolean, index_speedToDuration as speedToDuration, index_sum as sum, index_throttle as throttle, index_toggleClass as toggleClass, index_wrap as wrap };
 }
 
 /**
@@ -2369,12 +2405,11 @@ declare namespace index {
  */
 type EquirectangularAdapterConfig = {
     /**
-     * Background color of the canvas, which will be visible when using cropped panoramas
-     * @default '#000'
+     * @deprecated Use CSS to change the background color of '.psv-canvas'
      */
     backgroundColor?: string;
     /**
-     * Interpolate the missing parts of cropped panoramas (async)
+     * @deprecated Not supported anymore
      */
     interpolateBackground?: boolean;
     /**
@@ -2388,26 +2423,22 @@ type EquirectangularAdapterConfig = {
      */
     useXmpData?: boolean;
 };
-type EquirectangularMesh = Mesh<BufferGeometry, Material>;
-type EquirectangularTexture = TextureData<Texture, string, PanoData>;
+type EquirectangularMesh = Mesh<SphereGeometry, MeshBasicMaterial>;
+type EquirectangularTextureData = TextureData<Texture, string | EquirectangularPanorama, PanoData>;
 /**
  * Adapter for equirectangular panoramas
  */
-declare class EquirectangularAdapter extends AbstractAdapter<string, Texture, PanoData> {
+declare class EquirectangularAdapter extends AbstractAdapter<string | EquirectangularPanorama, PanoData, Texture, EquirectangularMesh> {
     static readonly id: string;
     static readonly VERSION: string;
     static readonly supportsDownload: boolean;
     private readonly config;
-    private interpolationWorker;
-    readonly SPHERE_SEGMENTS: number;
-    readonly SPHERE_HORIZONTAL_SEGMENTS: number;
     constructor(viewer: Viewer, config?: EquirectangularAdapterConfig);
     supportsTransition(): boolean;
     supportsPreload(): boolean;
-    destroy(): void;
     textureCoordsToSphericalCoords(point: PanoramaPosition, data: PanoData): Position;
     sphericalCoordsToTextureCoords(position: Position, data: PanoData): PanoramaPosition;
-    loadTexture(panorama: string, loader?: boolean, newPanoData?: PanoData | PanoDataProvider, useXmpPanoData?: boolean): Promise<EquirectangularTexture>;
+    loadTexture(panorama: string | EquirectangularPanorama, loader?: boolean, newPanoData?: PanoData | PanoDataProvider, useXmpPanoData?: boolean): Promise<EquirectangularTextureData>;
     /**
      * Loads the XMP data of an image
      */
@@ -2420,11 +2451,11 @@ declare class EquirectangularAdapter extends AbstractAdapter<string, Texture, Pa
      * Creates the final texture from image and panorama data
      */
     private createEquirectangularTexture;
-    createMesh(): EquirectangularMesh;
-    setTexture(mesh: EquirectangularMesh, textureData: EquirectangularTexture, transition?: boolean): void;
+    createMesh(panoData: PanoData): EquirectangularMesh;
+    setTexture(mesh: EquirectangularMesh, textureData: EquirectangularTextureData): void;
     setTextureOpacity(mesh: EquirectangularMesh, opacity: number): void;
-    disposeTexture(textureData: EquirectangularTexture): void;
-    private __defaultPanoData;
+    disposeTexture({ texture }: EquirectangularTextureData): void;
+    disposeMesh(mesh: EquirectangularMesh): void;
 }
 
 type DualFisheyeAdapterConfig = {
@@ -2441,7 +2472,7 @@ declare class DualFisheyeAdapter extends EquirectangularAdapter {
     static readonly id: string;
     static readonly VERSION: string;
     constructor(viewer: Viewer, config?: DualFisheyeAdapterConfig);
-    loadTexture(panorama: string, loader?: boolean): Promise<EquirectangularTexture>;
+    loadTexture(panorama: string, loader?: boolean): Promise<EquirectangularTextureData>;
     createMesh(): EquirectangularMesh;
 }
 
@@ -2515,4 +2546,4 @@ declare class PSVError extends Error {
 
 declare const VERSION: string;
 
-export { AbstractAdapter, AbstractButton, AbstractComponent, AbstractConfigurablePlugin, AbstractPlugin, type AdapterConstructor, type AnimateOptions, type ButtonConfig, type ButtonConstructor, constants as CONSTANTS, Cache, type ClickData, type CssSize, type CustomRenderer, DEFAULTS, DataHelper, DualFisheyeAdapter, type DualFisheyeAdapterConfig, EquirectangularAdapter, type EquirectangularAdapterConfig, type ExtendedPosition, Loader, Navbar, type NavbarButtonElement, type NavbarCustomButton, Notification, type NotificationConfig, Overlay, type OverlayConfig, PSVError, Panel, type PanelConfig, type PanoData, type PanoDataProvider, type PanoramaOptions, type PanoramaPosition, type ParsedViewerConfig, type PluginConstructor, type Point, type Position, type ReadonlyViewerConfig, Renderer, type ResolvableBoolean, SYSTEM, type Size, type SphereCorrection, type SphericalPosition, type TextureData, TextureLoader, Tooltip, type TooltipConfig, type TooltipPosition, TypedEvent, TypedEventTarget, type UpdatableViewerConfig, VERSION, Viewer, type ViewerConfig, ViewerState, events, registerButton, index as utils };
+export { AbstractAdapter, AbstractButton, AbstractComponent, AbstractConfigurablePlugin, AbstractPlugin, type AdapterConstructor, type AnimateOptions, type ButtonConfig, type ButtonConstructor, constants as CONSTANTS, Cache, type ClickData, type CssSize, type CustomRenderer, DEFAULTS, DataHelper, DualFisheyeAdapter, type DualFisheyeAdapterConfig, EquirectangularAdapter, type EquirectangularAdapterConfig, type EquirectangularPanorama, type ExtendedPosition, Loader, Navbar, type NavbarButtonElement, type NavbarCustomButton, Notification, type NotificationConfig, Overlay, type OverlayConfig, PSVError, Panel, type PanelConfig, type PanoData, type PanoDataProvider, type PanoramaOptions, type PanoramaPosition, type ParsedViewerConfig, type PluginConstructor, type Point, type Position, type ReadonlyViewerConfig, Renderer, type ResolvableBoolean, SYSTEM, type Size, type SphereCorrection, type SphericalPosition, type TextureData, TextureLoader, Tooltip, type TooltipConfig, type TooltipPosition, type TransitionOptions, TypedEvent, TypedEventTarget, type UpdatableViewerConfig, VERSION, Viewer, type ViewerConfig, ViewerState, events, registerButton, index as utils };

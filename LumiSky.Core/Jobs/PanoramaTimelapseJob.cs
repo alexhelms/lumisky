@@ -171,11 +171,10 @@ public class PanoramaTimelapseJob : JobBase
         argsBuilder.AppendFormat("-i \"{0}\" ", imageListFilename);
 
         // Height must be divisible by 2 per libx264/libx265
-        // Double the height of the video and pad with black
         if (_profile.Current.Generation.PanoramaWidth > 0)
-            argsBuilder.AppendFormat("-vf \"scale={0}:-2,pad=iw:2*ih:ih:0:black\" ", _profile.Current.Generation.PanoramaWidth);
+            argsBuilder.AppendFormat("-vf \"scale={0}:-2\" ", _profile.Current.Generation.PanoramaWidth);
         else
-            argsBuilder.Append("-vf \"scale=iw:-2,pad=iw:2*ih:ih:0:black\" ");
+            argsBuilder.Append("-vf \"scale=iw:-2\" ");
 
         argsBuilder.AppendFormat("-c:v {0} ", encoder);
         argsBuilder.Append("-preset slow ");

@@ -1,6 +1,6 @@
 {
   "name": "@photo-sphere-viewer/video-plugin",
-  "version": "5.10.0",
+  "version": "5.11.4",
   "description": "Photo Sphere Viewer plugin to add video controls.",
   "keywords": [
     "photosphere",
@@ -18,12 +18,27 @@
     "email": "contact@git.strangeplanet.fr",
     "homepage": "https://www.strangeplanet.fr"
   },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.mts",
+        "default": "./index.module.js"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./index.cjs"
+      }
+    },
+    "./index.css": "./index.css",
+    "./index.scss": "./index.scss"
+  },
   "main": "index.cjs",
   "module": "index.module.js",
   "types": "index.d.ts",
   "style": "index.css",
   "sass": "index.scss",
+  "dependencies": {},
   "peerDependencies": {
-    "@photo-sphere-viewer/core": "5.10.0"
+    "@photo-sphere-viewer/core": "5.11.4"
   }
 }

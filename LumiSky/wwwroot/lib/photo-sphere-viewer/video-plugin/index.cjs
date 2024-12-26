@@ -1,5 +1,5 @@
 /*!
- * Photo Sphere Viewer / Video Plugin 5.10.0
+ * Photo Sphere Viewer / Video Plugin 5.11.4
  * @copyright 2015-2024 Damien "Mistic" Sorel
  * @licence MIT (https://opensource.org/licenses/MIT)
  */
@@ -466,7 +466,7 @@ var VideoPlugin = class extends import_core7.AbstractConfigurablePlugin {
         this.progressbar?.show();
         break;
       case import_core7.events.KeypressEvent.type:
-        this.__onKeyPress(e);
+        this.__onKeyPress(e.originalEvent);
         break;
       case "play":
       case "pause":
@@ -499,7 +499,7 @@ var VideoPlugin = class extends import_core7.AbstractConfigurablePlugin {
     this.video.addEventListener("timeupdate", this);
   }
   __onKeyPress(e) {
-    if (e.key === import_core7.CONSTANTS.KEY_CODES.Space) {
+    if (e.key === import_core7.CONSTANTS.KEY_CODES.Space && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
       this.playPause();
       e.preventDefault();
     }
@@ -721,7 +721,7 @@ var VideoPlugin = class extends import_core7.AbstractConfigurablePlugin {
   }
 };
 VideoPlugin.id = "video";
-VideoPlugin.VERSION = "5.10.0";
+VideoPlugin.VERSION = "5.11.4";
 VideoPlugin.configParser = getConfig;
 VideoPlugin.readonlyOptions = Object.keys(getConfig.defaults);
 

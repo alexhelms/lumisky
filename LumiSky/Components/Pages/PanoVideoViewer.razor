@@ -1,10 +1,10 @@
-﻿@implements IAsyncDisposable
+﻿@using Microsoft.EntityFrameworkCore
+@using LumiSky.Core.Video
+@implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject AppDbContext DbContext
 @page "/video/panorama/{Id:int}"
-@using Microsoft.EntityFrameworkCore
-@using LumiSky.Core.Video
 
 <PageTitle>Panorama Timelapse</PageTitle>
 
@@ -13,9 +13,9 @@
     <link rel="stylesheet" href="@Assets["lib/photo-sphere-viewer/video-plugin/index.css"]" />
     <style>
         #video-viewer {
-            display: block;
-            width: calc(100vw - 116px);
-            height: calc(100vh - 200px);
+        display: block;
+        width: calc(100vw - 116px);
+        height: calc(100vh - 200px);
         }
     </style>
 </HeadContent>
@@ -25,6 +25,8 @@
 @code {
     private IJSObjectReference? module;
     private string? videoUrl;
+    private int _videoWidth;
+    private int _videoHeight;
 
     [Parameter]
     public int Id { get; set; }
@@ -47,6 +49,8 @@
             return;
         }
 
+        (_videoWidth, _videoHeight) = await Ffprobe.GetWidthAndHeight(panorama.Filename);
+
         videoUrl = $"/api/video/download/panorama?id={Id}";
     }
 
@@ -59,7 +63,7 @@
             if (module is not null &&
                 videoUrl is not null)
             {
-                await module.InvokeVoidAsync("createPanoVideoViewer", videoUrl);
+                await module.InvokeVoidAsync("createPanoVideoViewer", videoUrl, _videoWidth, _videoHeight);
             }
         }
     }

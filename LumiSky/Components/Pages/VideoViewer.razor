@@ -8,7 +8,7 @@
 <PageTitle>Timelapse</PageTitle>
 
 <HeadContent>
-    <link rel="stylesheet" href="@Assets["lib/video.js/dist/video-js.css"]" />
+    <link rel="stylesheet" href="@Assets["lib/video.js/dist/video-js.min.css"]" />
     <style>
         #player {
             display: block;
@@ -22,7 +22,7 @@
     <video id="player" controls class="video-js"></video>
 </div>
 
-<script src="@Assets["lib/video.js/dist/video.js"]"></script>
+<script src="@Assets["lib/video.js/dist/video.min.js"]"></script>
 <script>
     function loadPlayer(id, options) {
         disposePlayer(id);

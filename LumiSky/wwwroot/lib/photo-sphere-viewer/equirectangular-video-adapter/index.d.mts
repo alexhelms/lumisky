@@ -2,7 +2,7 @@ import { AbstractAdapter, Viewer, TextureData, PanoData, PanoramaPosition, Posit
 import { VideoTexture, Mesh, BufferGeometry, Material, SphereGeometry, MeshBasicMaterial } from 'three';
 
 type AbstractVideoPanorama = {
-    source: string | MediaStream;
+    source: string | MediaStream | HTMLVideoElement;
 };
 type AbstractVideoAdapterConfig = {
     /**
@@ -17,11 +17,11 @@ type AbstractVideoAdapterConfig = {
     muted?: boolean;
 };
 type AbstractVideoMesh = Mesh<BufferGeometry, Material>;
-type AbstractVideoTexture = TextureData<VideoTexture>;
+type AbstractVideoTextureData = TextureData<VideoTexture>;
 /**
  * Base video adapters class
  */
-declare abstract class AbstractVideoAdapter<TPanorama extends AbstractVideoPanorama, TData> extends AbstractAdapter<TPanorama, VideoTexture, TData> {
+declare abstract class AbstractVideoAdapter<TPanorama extends AbstractVideoPanorama, TData, TMesh extends AbstractVideoMesh> extends AbstractAdapter<TPanorama, TData, VideoTexture, TMesh> {
     static readonly supportsDownload = false;
     protected abstract readonly config: AbstractVideoAdapterConfig;
     private video;
@@ -30,10 +30,11 @@ declare abstract class AbstractVideoAdapter<TPanorama extends AbstractVideoPanor
     destroy(): void;
     supportsPreload(): boolean;
     supportsTransition(): boolean;
-    loadTexture(panorama: AbstractVideoPanorama): Promise<AbstractVideoTexture>;
+    loadTexture(panorama: AbstractVideoPanorama): Promise<AbstractVideoTextureData>;
     protected switchVideo(texture: VideoTexture): void;
-    setTextureOpacity(mesh: AbstractVideoMesh, opacity: number): void;
-    disposeTexture(textureData: AbstractVideoTexture): void;
+    setTextureOpacity(mesh: TMesh, opacity: number): void;
+    disposeTexture({ texture }: AbstractVideoTextureData): void;
+    disposeMesh(mesh: AbstractVideoMesh): void;
     private __removeVideo;
     private __videoLoadPromise;
     private __videoBufferPromise;
@@ -42,7 +43,9 @@ declare abstract class AbstractVideoAdapter<TPanorama extends AbstractVideoPanor
 /**
  * Configuration of an equirectangular video
  */
-type EquirectangularVideoPanorama = AbstractVideoPanorama;
+type EquirectangularVideoPanorama = AbstractVideoPanorama & {
+    data?: PanoData | ((image: HTMLVideoElement) => PanoData);
+};
 type EquirectangularVideoAdapterConfig = AbstractVideoAdapterConfig & {
     /**
      * number of faces of the sphere geometry, higher values may decrease performances
@@ -51,25 +54,23 @@ type EquirectangularVideoAdapterConfig = AbstractVideoAdapterConfig & {
     resolution?: number;
 };
 
-type EquirectangularMesh = Mesh<SphereGeometry, MeshBasicMaterial>;
-type EquirectangularTexture = TextureData<VideoTexture, EquirectangularVideoPanorama, PanoData>;
+type EquirectangularVideoMesh = Mesh<SphereGeometry, MeshBasicMaterial>;
+type EquirectangularVideoTextureData = TextureData<VideoTexture, EquirectangularVideoPanorama, PanoData>;
 /**
  * Adapter for equirectangular videos
  */
-declare class EquirectangularVideoAdapter extends AbstractVideoAdapter<EquirectangularVideoPanorama, PanoData> {
+declare class EquirectangularVideoAdapter extends AbstractVideoAdapter<EquirectangularVideoPanorama, PanoData, EquirectangularVideoMesh> {
     static readonly id = "equirectangular-video";
     static readonly VERSION: string;
     protected readonly config: EquirectangularVideoAdapterConfig;
-    private readonly SPHERE_SEGMENTS;
-    private readonly SPHERE_HORIZONTAL_SEGMENTS;
     private adapter;
     constructor(viewer: Viewer, config: EquirectangularVideoAdapterConfig);
     destroy(): void;
     textureCoordsToSphericalCoords(point: PanoramaPosition, data: PanoData): Position;
     sphericalCoordsToTextureCoords(position: Position, data: PanoData): PanoramaPosition;
-    loadTexture(panorama: EquirectangularVideoPanorama): Promise<EquirectangularTexture>;
-    createMesh(): EquirectangularMesh;
-    setTexture(mesh: EquirectangularMesh, textureData: EquirectangularTexture): void;
+    loadTexture(panorama: EquirectangularVideoPanorama, _?: boolean, newPanoData?: any): Promise<EquirectangularVideoTextureData>;
+    createMesh(panoData: PanoData): EquirectangularVideoMesh;
+    setTexture(mesh: EquirectangularVideoMesh, { texture }: EquirectangularVideoTextureData): void;
 }
 
 export { EquirectangularVideoAdapter, type EquirectangularVideoAdapterConfig, type EquirectangularVideoPanorama };

@@ -1,5 +1,5 @@
 /*!
- * Photo Sphere Viewer 5.10.0
+ * Photo Sphere Viewer 5.11.4
  * @copyright 2014-2015 Jérémy Heleine
  * @copyright 2015-2024 Damien "Mistic" Sorel
  * @licence MIT (https://opensource.org/licenses/MIT)
@@ -55,11 +55,9 @@ __export(constants_exports, {
   CAPTURE_EVENTS_CLASS: () => CAPTURE_EVENTS_CLASS,
   CTRLZOOM_TIMEOUT: () => CTRLZOOM_TIMEOUT,
   DBLCLICK_DELAY: () => DBLCLICK_DELAY,
-  DEFAULT_TRANSITION: () => DEFAULT_TRANSITION,
   EASINGS: () => EASINGS,
   ICONS: () => ICONS,
   IDS: () => IDS,
-  INERTIA_WINDOW: () => INERTIA_WINDOW,
   KEY_CODES: () => KEY_CODES,
   LONGTOUCH_DELAY: () => LONGTOUCH_DELAY,
   MOVE_THRESHOLD: () => MOVE_THRESHOLD,
@@ -96,14 +94,12 @@ var zoom_in_default = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 2
 var zoom_out_default = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill="currentColor" d="M14.043 12.22a7.738 7.738 0 1 0-1.823 1.822l4.985 4.985c.503.504 1.32.504 1.822 0a1.285 1.285 0 0 0 0-1.822l-4.984-4.985zm-6.305 1.043a5.527 5.527 0 1 1 0-11.053 5.527 5.527 0 0 1 0 11.053z"/><path fill="currentColor" d="M4.006 6.746h7.459V8.73H4.006z"/><!--Created by Ryan Canning from the Noun Project--></svg>\n';
 
 // src/data/constants.ts
-var DEFAULT_TRANSITION = 1500;
 var ANIMATION_MIN_DURATION = 500;
 var MOVE_THRESHOLD = 4;
 var DBLCLICK_DELAY = 300;
 var LONGTOUCH_DELAY = 500;
 var TWOFINGERSOVERLAY_DELAY = 100;
 var CTRLZOOM_TIMEOUT = 2e3;
-var INERTIA_WINDOW = 300;
 var SPHERE_RADIUS = 10;
 var VIEWER_DATA = "photoSphereViewer";
 var CAPTURE_EVENTS_CLASS = "psv--capture-event";
@@ -221,6 +217,7 @@ __export(utils_exports, {
   isNil: () => isNil,
   isPlainObject: () => isPlainObject,
   logWarn: () => logWarn,
+  mergePanoData: () => mergePanoData,
   parseAngle: () => parseAngle,
   parsePoint: () => parsePoint,
   parseSpeed: () => parseSpeed,
@@ -652,24 +649,28 @@ function parseSpeed(speed) {
       speedValue /= 60;
     }
     switch (speedUnit) {
+      // Degrees per minute / second
       case "dpm":
       case "degrees per minute":
       case "dps":
       case "degrees per second":
         parsed = import_three.MathUtils.degToRad(speedValue);
         break;
+      // Radians per minute / second
       case "rdpm":
       case "radians per minute":
       case "rdps":
       case "radians per second":
         parsed = speedValue;
         break;
+      // Revolutions per minute / second
       case "rpm":
       case "revolutions per minute":
       case "rps":
       case "revolutions per second":
         parsed = speedValue * Math.PI * 2;
         break;
+      // Unknown unit
       default:
         throw new PSVError(`Unknown speed unit "${speedUnit}"`);
     }
@@ -775,6 +776,68 @@ function checkClosedShadowDom(el) {
     }
     el = el.parentNode;
   } while (el);
+}
+function mergePanoData(width, height, newPanoData, xmpPanoData) {
+  if (!newPanoData && !xmpPanoData) {
+    const fullWidth = Math.max(width, height * 2);
+    const fullHeight = Math.round(fullWidth / 2);
+    const croppedX = Math.round((fullWidth - width) / 2);
+    const croppedY = Math.round((fullHeight - height) / 2);
+    newPanoData = {
+      fullWidth,
+      fullHeight,
+      croppedWidth: width,
+      croppedHeight: height,
+      croppedX,
+      croppedY
+    };
+  }
+  const panoData = {
+    isEquirectangular: true,
+    fullWidth: firstNonNull(newPanoData?.fullWidth, xmpPanoData?.fullWidth),
+    fullHeight: firstNonNull(newPanoData?.fullHeight, xmpPanoData?.fullHeight),
+    croppedWidth: firstNonNull(newPanoData?.croppedWidth, xmpPanoData?.croppedWidth, width),
+    croppedHeight: firstNonNull(newPanoData?.croppedHeight, xmpPanoData?.croppedHeight, height),
+    croppedX: firstNonNull(newPanoData?.croppedX, xmpPanoData?.croppedX, 0),
+    croppedY: firstNonNull(newPanoData?.croppedY, xmpPanoData?.croppedY, 0),
+    poseHeading: firstNonNull(newPanoData?.poseHeading, xmpPanoData?.poseHeading, 0),
+    posePitch: firstNonNull(newPanoData?.posePitch, xmpPanoData?.posePitch, 0),
+    poseRoll: firstNonNull(newPanoData?.poseRoll, xmpPanoData?.poseRoll, 0),
+    initialHeading: xmpPanoData?.initialHeading,
+    initialPitch: xmpPanoData?.initialPitch,
+    initialFov: xmpPanoData?.initialFov
+  };
+  if (!panoData.fullWidth && panoData.fullHeight) {
+    panoData.fullWidth = panoData.fullHeight * 2;
+  } else if (!panoData.fullWidth || !panoData.fullHeight) {
+    panoData.fullWidth = panoData.fullWidth ?? width;
+    panoData.fullHeight = panoData.fullHeight ?? height;
+  }
+  if (panoData.croppedWidth !== width || panoData.croppedHeight !== height) {
+    logWarn(`Invalid panoData, croppedWidth/croppedHeight is not coherent with the loaded image.
+        panoData: ${panoData.croppedWidth}x${panoData.croppedHeight}, image: ${width}x${height}`);
+  }
+  if (Math.abs(panoData.fullWidth - panoData.fullHeight * 2) > 1) {
+    logWarn("Invalid panoData, fullWidth should be twice fullHeight");
+    panoData.fullHeight = Math.round(panoData.fullWidth / 2);
+  }
+  if (panoData.croppedX + panoData.croppedWidth > panoData.fullWidth) {
+    logWarn("Invalid panoData, croppedX + croppedWidth > fullWidth");
+    panoData.croppedX = panoData.fullWidth - panoData.croppedWidth;
+  }
+  if (panoData.croppedY + panoData.croppedHeight > panoData.fullHeight) {
+    logWarn("Invalid panoData, croppedY + croppedHeight > fullHeight");
+    panoData.croppedY = panoData.fullHeight - panoData.croppedHeight;
+  }
+  if (panoData.croppedX < 0) {
+    logWarn("Invalid panoData, croppedX < 0");
+    panoData.croppedX = 0;
+  }
+  if (panoData.croppedY < 0) {
+    logWarn("Invalid panoData, croppedY < 0");
+    panoData.croppedY = 0;
+  }
+  return panoData;
 }
 
 // src/utils/Animation.ts
@@ -1107,12 +1170,13 @@ var PressHandler = class {
   get pending() {
     return this.time !== 0;
   }
-  down() {
+  down(data) {
     if (this.timeout) {
       clearTimeout(this.timeout);
       this.timeout = void 0;
     }
     this.time = (/* @__PURE__ */ new Date()).getTime();
+    this.data = data;
   }
   up(cb) {
     if (!this.time) {
@@ -1121,18 +1185,21 @@ var PressHandler = class {
     const elapsed = Date.now() - this.time;
     if (elapsed < this.delay) {
       this.timeout = setTimeout(() => {
-        cb();
+        cb(this.data);
         this.timeout = void 0;
         this.time = 0;
+        this.data = void 0;
       }, this.delay);
     } else {
-      cb();
+      cb(this.data);
       this.time = 0;
+      this.data = void 0;
     }
   }
 };
 
 // src/utils/Slider.ts
+var import_three3 = require("three");
 var SliderDirection = /* @__PURE__ */ ((SliderDirection2) => {
   SliderDirection2["VERTICAL"] = "VERTICAL";
   SliderDirection2["HORIZONTAL"] = "HORIZONTAL";
@@ -1248,10 +1315,12 @@ var Slider = class {
   }
   __update(clientX, clientY, moving) {
     const boundingClientRect = this.container.getBoundingClientRect();
-    const cursor = this.isVertical ? clientY : clientX;
-    const pos = boundingClientRect[this.isVertical ? "bottom" : "left"];
-    const size = boundingClientRect[this.isVertical ? "height" : "width"];
-    const val = Math.abs((pos - cursor) / size);
+    let val;
+    if (this.isVertical) {
+      val = import_three3.MathUtils.clamp((boundingClientRect.bottom - clientY) / boundingClientRect.height, 0, 1);
+    } else {
+      val = import_three3.MathUtils.clamp((clientX - boundingClientRect.left) / boundingClientRect.width, 0, 1);
+    }
     this.listener({
       value: val,
       click: !moving,
@@ -1295,6 +1364,7 @@ __export(events_exports, {
   ShowTooltipEvent: () => ShowTooltipEvent,
   SizeUpdatedEvent: () => SizeUpdatedEvent,
   StopAllEvent: () => StopAllEvent,
+  TransitionDoneEvent: () => TransitionDoneEvent,
   ViewerEvent: () => ViewerEvent,
   ZoomUpdatedEvent: () => ZoomUpdatedEvent
 });
@@ -1437,9 +1507,10 @@ _HideTooltipEvent.type = "hide-tooltip";
 var HideTooltipEvent = _HideTooltipEvent;
 var _KeypressEvent = class _KeypressEvent extends ViewerEvent {
   /** @internal */
-  constructor(key) {
+  constructor(key, originalEvent) {
     super(_KeypressEvent.type, true);
     this.key = key;
+    this.originalEvent = originalEvent;
   }
 };
 _KeypressEvent.type = "key-press";
@@ -1481,6 +1552,15 @@ var _PanoramaErrorEvent = class _PanoramaErrorEvent extends ViewerEvent {
 };
 _PanoramaErrorEvent.type = "panorama-error";
 var PanoramaErrorEvent = _PanoramaErrorEvent;
+var _TransitionDoneEvent = class _TransitionDoneEvent extends ViewerEvent {
+  /** @internal */
+  constructor(completed) {
+    super(_TransitionDoneEvent.type);
+    this.completed = completed;
+  }
+};
+_TransitionDoneEvent.type = "transition-done";
+var TransitionDoneEvent = _TransitionDoneEvent;
 var _PositionUpdatedEvent = class _PositionUpdatedEvent extends ViewerEvent {
   /** @internal */
   constructor(position) {
@@ -1673,7 +1753,7 @@ function adapterInterop(adapter) {
   if (adapter) {
     for (const [, p] of [["_", adapter], ...Object.entries(adapter)]) {
       if (p.prototype instanceof AbstractAdapter) {
-        checkVersion(p.id, p.VERSION, "5.10.0");
+        checkVersion(p.id, p.VERSION, "5.11.4");
         return p;
       }
     }
@@ -1682,10 +1762,10 @@ function adapterInterop(adapter) {
 }
 
 // src/adapters/DualFisheyeAdapter.ts
-var import_three4 = require("three");
+var import_three5 = require("three");
 
 // src/adapters/EquirectangularAdapter.ts
-var import_three3 = require("three");
+var import_three4 = require("three");
 
 // src/data/system.ts
 var LOCALSTORAGE_TOUCH_SUPPORT = `${VIEWER_DATA}_touchSupport`;
@@ -1753,7 +1833,7 @@ function getWebGLCtx() {
   try {
     const canvas = document.createElement("canvas");
     return canvas.getContext("webgl2");
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -1803,7 +1883,7 @@ function getMaxCanvasWidth(maxWidth) {
       if (ctx.getImageData(0, 0, 1, 1).data[0] > 0) {
         pass = true;
       }
-    } catch (e) {
+    } catch {
     }
     canvas.width = 0;
     canvas.height = 0;
@@ -1818,204 +1898,10 @@ function getMaxCanvasWidth(maxWidth) {
   }
 }
 
-// src/adapters/interpolationWorker.ts
-function interpolationWorker() {
-  self.onmessage = (e) => {
-    const panoData = e.data.panoData;
-    const buffer = new OffscreenCanvas(panoData.fullWidth, panoData.fullHeight);
-    const ctx = buffer.getContext("2d", {
-      willReadFrequently: true
-    });
-    const img = new OffscreenCanvas(panoData.croppedWidth, panoData.croppedHeight);
-    const ctxImg = img.getContext("2d");
-    ctxImg.putImageData(e.data.image, 0, 0);
-    autoBackground(buffer, img, panoData);
-    postMessage(ctx.getImageData(0, 0, buffer.width, buffer.height));
-  };
-  function autoBackground(buffer, img, panoData) {
-    const croppedY2 = panoData.fullHeight - panoData.croppedHeight - panoData.croppedY;
-    const croppedX2 = panoData.fullWidth - panoData.croppedWidth - panoData.croppedX;
-    const middleY = panoData.croppedY + panoData.croppedHeight / 2;
-    const blurSize = buffer.width / 32;
-    const padding = blurSize;
-    const edge = 10;
-    const filter = `blur(${blurSize}px)`;
-    const ctx = buffer.getContext("2d");
-    ctx.drawImage(
-      img,
-      panoData.croppedX,
-      panoData.croppedY,
-      panoData.croppedWidth,
-      panoData.croppedHeight
-    );
-    if (panoData.croppedY > 0) {
-      if (panoData.croppedX > 0 || croppedX2 > 0) {
-        ctx.filter = "none";
-        const colorLeft = getAverageColor(ctx, panoData.croppedX, panoData.croppedY, edge, edge, 2);
-        const colorRight = getAverageColor(ctx, buffer.width - croppedX2 - 11, panoData.croppedY, edge, edge, 2);
-        const colorCenter = averageRgb(colorLeft, colorRight);
-        if (panoData.croppedX > 0) {
-          ctx.fillStyle = createHorizontalGradient(ctx, 0, panoData.croppedX, colorCenter, colorLeft);
-          ctx.fillRect(-padding, -padding, panoData.croppedX + padding * 2, middleY + padding);
-        }
-        if (croppedX2 > 0) {
-          ctx.fillStyle = createHorizontalGradient(ctx, buffer.width - croppedX2, buffer.width, colorRight, colorCenter);
-          ctx.fillRect(buffer.width - croppedX2 - padding, -padding, croppedX2 + padding * 2, middleY + padding);
-        }
-      }
-      ctx.filter = filter;
-      ctx.drawImage(
-        img,
-        0,
-        0,
-        img.width,
-        edge,
-        panoData.croppedX,
-        -padding,
-        panoData.croppedWidth,
-        panoData.croppedY + padding * 2
-      );
-      ctx.fillStyle = rgbCss(getAverageColor(ctx, 0, 0, buffer.width, edge, edge));
-      ctx.fillRect(-padding, -padding, buffer.width + padding * 2, padding * 2);
-    }
-    if (croppedY2 > 0) {
-      if (panoData.croppedX > 0 || croppedX2 > 0) {
-        ctx.filter = "none";
-        const colorLeft = getAverageColor(ctx, panoData.croppedX, buffer.height - croppedY2 - 1 - edge, edge, edge, 2);
-        const colorRight = getAverageColor(ctx, buffer.width - croppedX2 - 1 - edge, buffer.height - croppedY2 - 1 - edge, edge, edge, 2);
-        const colorCenter = averageRgb(colorLeft, colorRight);
-        if (panoData.croppedX > 0) {
-          ctx.fillStyle = createHorizontalGradient(ctx, 0, panoData.croppedX, colorCenter, colorLeft);
-          ctx.fillRect(-padding, middleY, panoData.croppedX + padding * 2, buffer.height - middleY + padding);
-        }
-        if (croppedX2 > 0) {
-          ctx.fillStyle = createHorizontalGradient(ctx, buffer.width - croppedX2, buffer.width, colorRight, colorCenter);
-          ctx.fillRect(buffer.width - croppedX2 - padding, middleY, croppedX2 + padding * 2, buffer.height - middleY + padding);
-        }
-      }
-      ctx.filter = filter;
-      ctx.drawImage(
-        img,
-        0,
-        img.height - edge,
-        img.width,
-        edge,
-        panoData.croppedX,
-        buffer.height - croppedY2 - padding,
-        panoData.croppedWidth,
-        croppedY2 + padding * 2
-      );
-      ctx.fillStyle = rgbCss(getAverageColor(ctx, 0, buffer.height - 1 - edge, buffer.width, edge, edge));
-      ctx.fillRect(-padding, buffer.height - padding, buffer.width + padding * 2, padding * 2);
-    }
-    if (panoData.croppedX > 0) {
-      ctx.filter = filter;
-      ctx.drawImage(
-        img,
-        img.width - edge,
-        0,
-        edge,
-        img.height,
-        -padding,
-        panoData.croppedY,
-        padding * 2,
-        panoData.croppedHeight
-      );
-      ctx.drawImage(
-        img,
-        0,
-        0,
-        edge,
-        img.height,
-        0,
-        panoData.croppedY,
-        panoData.croppedX + padding,
-        panoData.croppedHeight
-      );
-    }
-    if (croppedX2 > 0) {
-      ctx.filter = filter;
-      ctx.drawImage(
-        img,
-        0,
-        0,
-        edge,
-        img.height,
-        buffer.width - padding,
-        panoData.croppedY,
-        padding * 2,
-        panoData.croppedHeight
-      );
-      ctx.drawImage(
-        img,
-        img.width - edge,
-        0,
-        edge,
-        img.height,
-        buffer.width - croppedX2 - padding,
-        panoData.croppedY,
-        croppedX2 + padding,
-        panoData.croppedHeight
-      );
-    }
-    ctx.filter = "none";
-    ctx.drawImage(
-      img,
-      panoData.croppedX,
-      panoData.croppedY,
-      panoData.croppedWidth,
-      panoData.croppedHeight
-    );
-  }
-  function rgbCss(color) {
-    return `rgb(${color.r}, ${color.g}, ${color.b})`;
-  }
-  function averageRgb(c1, c2) {
-    return {
-      r: Math.round(c1.r / 2 + c2.r / 2),
-      g: Math.round(c1.g / 2 + c2.g / 2),
-      b: Math.round(c1.b / 2 + c2.b / 2)
-    };
-  }
-  function createHorizontalGradient(ctx, x1, x2, c1, c2) {
-    const grad = ctx.createLinearGradient(x1, 0, x2, 0);
-    grad.addColorStop(0, rgbCss(c1));
-    grad.addColorStop(1, rgbCss(c2));
-    return grad;
-  }
-  function getAverageColor(ctx, x, y, w, h, every) {
-    every = Math.round(every);
-    let r = 0;
-    let g = 0;
-    let b = 0;
-    let count = 0;
-    const data = ctx.getImageData(x, y, w, h);
-    for (let row = 0; row < h; row += every) {
-      for (let col = 0; col < w; col += every) {
-        const i = 4 * (row * w + col);
-        r += data.data[i];
-        g += data.data[i + 1];
-        b += data.data[i + 2];
-        count++;
-      }
-    }
-    r = Math.round(r / count);
-    g = Math.round(g / count);
-    b = Math.round(b / count);
-    return { r, g, b };
-  }
-}
-var interpolationWorkerSrc = URL.createObjectURL(
-  new Blob(
-    ["(", interpolationWorker.toString(), ")()"],
-    { type: "application/javascript" }
-  )
-);
-
 // src/adapters/EquirectangularAdapter.ts
 var getConfig = getConfigParser(
   {
-    backgroundColor: "#000",
+    backgroundColor: null,
     interpolateBackground: false,
     resolution: 64,
     useXmpData: true,
@@ -2023,10 +1909,22 @@ var getConfig = getConfigParser(
   },
   {
     resolution: (resolution) => {
-      if (!resolution || !import_three3.MathUtils.isPowerOfTwo(resolution)) {
-        throw new PSVError("EquirectangularAdapter resolution must be power of two");
+      if (!resolution || !import_three4.MathUtils.isPowerOfTwo(resolution)) {
+        throw new PSVError("EquirectangularAdapter resolution must be power of two.");
       }
       return resolution;
+    },
+    backgroundColor: (backgroundColor) => {
+      if (backgroundColor) {
+        logWarn(`EquirectangularAdapter.backgroundColor is deprecated, use 'canvasBackground' main option instead.`);
+      }
+      return backgroundColor;
+    },
+    interpolateBackground: (interpolateBackground) => {
+      if (interpolateBackground) {
+        logWarn(`EquirectangularAdapter.interpolateBackground is not supported anymore.`);
+      }
+      return false;
     }
   }
 );
@@ -2034,28 +1932,17 @@ var EquirectangularAdapter = class extends AbstractAdapter {
   constructor(viewer, config) {
     super(viewer);
     this.config = getConfig(config);
-    if (this.config.interpolateBackground) {
-      if (!window.Worker) {
-        logWarn("Web Worker API not available");
-        this.config.interpolateBackground = false;
-      } else {
-        this.interpolationWorker = new Worker(interpolationWorkerSrc, {
-          name: "photo-sphere-viewer-interpolation"
-        });
-      }
-    }
     this.SPHERE_SEGMENTS = this.config.resolution;
     this.SPHERE_HORIZONTAL_SEGMENTS = this.SPHERE_SEGMENTS / 2;
+    if (this.config.backgroundColor) {
+      viewer.config.canvasBackground = config.backgroundColor;
+    }
   }
   supportsTransition() {
     return true;
   }
   supportsPreload() {
     return true;
-  }
-  destroy() {
-    this.interpolationWorker?.terminate();
-    super.destroy();
   }
   textureCoordsToSphericalCoords(point, data) {
     if (isNil(point.textureX) || isNil(point.textureY)) {
@@ -2071,67 +1958,46 @@ var EquirectangularAdapter = class extends AbstractAdapter {
   sphericalCoordsToTextureCoords(position, data) {
     const relativeLong = position.yaw / Math.PI / 2 * data.fullWidth;
     const relativeLat = position.pitch / Math.PI * data.fullHeight;
-    return {
-      textureX: Math.round(
-        position.yaw < Math.PI ? relativeLong + data.fullWidth / 2 : relativeLong - data.fullWidth / 2
-      ) - data.croppedX,
-      textureY: Math.round(data.fullHeight / 2 - relativeLat) - data.croppedY
-    };
+    let textureX = Math.round(position.yaw < Math.PI ? relativeLong + data.fullWidth / 2 : relativeLong - data.fullWidth / 2) - data.croppedX;
+    let textureY = Math.round(data.fullHeight / 2 - relativeLat) - data.croppedY;
+    if (textureX < 0 || textureX > data.croppedWidth || textureY < 0 || textureY > data.croppedHeight) {
+      textureX = textureY = void 0;
+    }
+    return { textureX, textureY };
   }
   async loadTexture(panorama, loader = true, newPanoData, useXmpPanoData = this.config.useXmpData) {
-    if (typeof panorama !== "string") {
+    if (typeof panorama !== "string" && (typeof panorama !== "object" || !panorama.path)) {
       return Promise.reject(new PSVError("Invalid panorama url, are you using the right adapter?"));
     }
+    let cleanPanorama;
+    if (typeof panorama === "string") {
+      cleanPanorama = {
+        path: panorama,
+        data: newPanoData
+      };
+    } else {
+      cleanPanorama = {
+        data: newPanoData,
+        ...panorama
+      };
+    }
     const blob = await this.viewer.textureLoader.loadFile(
-      panorama,
+      cleanPanorama.path,
       loader ? (p) => this.viewer.loader.setProgress(p) : null,
-      panorama
+      cleanPanorama.path
     );
     const xmpPanoData = useXmpPanoData ? await this.loadXMP(blob) : null;
     const img = await this.viewer.textureLoader.blobToImage(blob);
-    if (typeof newPanoData === "function") {
-      newPanoData = newPanoData(img, xmpPanoData);
+    if (typeof cleanPanorama.data === "function") {
+      cleanPanorama.data = cleanPanorama.data(img, xmpPanoData);
     }
-    if (!newPanoData && !xmpPanoData) {
-      newPanoData = this.__defaultPanoData(img);
-    }
-    const panoData = {
-      isEquirectangular: true,
-      fullWidth: firstNonNull(newPanoData?.fullWidth, xmpPanoData?.fullWidth, img.width),
-      fullHeight: firstNonNull(newPanoData?.fullHeight, xmpPanoData?.fullHeight, img.height),
-      croppedWidth: firstNonNull(newPanoData?.croppedWidth, xmpPanoData?.croppedWidth, img.width),
-      croppedHeight: firstNonNull(newPanoData?.croppedHeight, xmpPanoData?.croppedHeight, img.height),
-      croppedX: firstNonNull(newPanoData?.croppedX, xmpPanoData?.croppedX, 0),
-      croppedY: firstNonNull(newPanoData?.croppedY, xmpPanoData?.croppedY, 0),
-      poseHeading: firstNonNull(newPanoData?.poseHeading, xmpPanoData?.poseHeading, 0),
-      posePitch: firstNonNull(newPanoData?.posePitch, xmpPanoData?.posePitch, 0),
-      poseRoll: firstNonNull(newPanoData?.poseRoll, xmpPanoData?.poseRoll, 0),
-      initialHeading: xmpPanoData?.initialHeading,
-      initialPitch: xmpPanoData?.initialPitch,
-      initialFov: xmpPanoData?.initialFov
-    };
-    if (panoData.croppedWidth !== img.width || panoData.croppedHeight !== img.height) {
-      logWarn(`Invalid panoData, croppedWidth/croppedHeight is not coherent with the loaded image.
-            panoData: ${panoData.croppedWidth}x${panoData.croppedHeight}, image: ${img.width}x${img.height}`);
-    }
-    if (Math.abs(panoData.fullWidth - panoData.fullHeight * 2) > 1) {
-      logWarn("Invalid panoData, fullWidth should be twice fullHeight");
-      panoData.fullWidth = panoData.fullHeight * 2;
-    }
-    if (panoData.croppedX + panoData.croppedWidth > panoData.fullWidth) {
-      logWarn("Invalid panoData, croppedX + croppedWidth > fullWidth");
-      panoData.croppedX = panoData.fullWidth - panoData.croppedWidth;
-    }
-    if (panoData.croppedY + panoData.croppedHeight > panoData.fullHeight) {
-      logWarn("Invalid panoData, croppedY + croppedHeight > fullHeight");
-      panoData.croppedY = panoData.fullHeight - panoData.croppedHeight;
-    }
-    const texture = this.createEquirectangularTexture(img, panoData);
+    const panoData = mergePanoData(img.width, img.height, cleanPanorama.data, xmpPanoData);
+    const texture = this.createEquirectangularTexture(img);
     return {
       panorama,
       texture,
       panoData,
-      cacheKey: panorama
+      cacheKey: cleanPanorama.path
     };
   }
   /**
@@ -2140,26 +2006,31 @@ var EquirectangularAdapter = class extends AbstractAdapter {
   async loadXMP(blob) {
     const binary = await this.loadBlobAsString(blob);
     const a = binary.indexOf("<x:xmpmeta");
-    const b = binary.indexOf("</x:xmpmeta>");
-    const data = binary.substring(a, b);
-    if (a !== -1 && b !== -1 && data.includes("GPano:")) {
-      return {
-        isEquirectangular: true,
-        fullWidth: getXMPValue(data, "FullPanoWidthPixels"),
-        fullHeight: getXMPValue(data, "FullPanoHeightPixels"),
-        croppedWidth: getXMPValue(data, "CroppedAreaImageWidthPixels"),
-        croppedHeight: getXMPValue(data, "CroppedAreaImageHeightPixels"),
-        croppedX: getXMPValue(data, "CroppedAreaLeftPixels"),
-        croppedY: getXMPValue(data, "CroppedAreaTopPixels"),
-        poseHeading: getXMPValue(data, "PoseHeadingDegrees", false),
-        posePitch: getXMPValue(data, "PosePitchDegrees", false),
-        poseRoll: getXMPValue(data, "PoseRollDegrees", false),
-        initialHeading: getXMPValue(data, "InitialViewHeadingDegrees", false),
-        initialPitch: getXMPValue(data, "InitialViewPitchDegrees", false),
-        initialFov: getXMPValue(data, "InitialHorizontalFOVDegrees", false)
-      };
+    if (a === -1) {
+      return null;
     }
-    return null;
+    const b = binary.indexOf("</x:xmpmeta>", a);
+    if (b === -1) {
+      return null;
+    }
+    const data = binary.substring(a, b);
+    if (!data.includes("GPano:")) {
+      return null;
+    }
+    return {
+      fullWidth: getXMPValue(data, "FullPanoWidthPixels"),
+      fullHeight: getXMPValue(data, "FullPanoHeightPixels"),
+      croppedWidth: getXMPValue(data, "CroppedAreaImageWidthPixels"),
+      croppedHeight: getXMPValue(data, "CroppedAreaImageHeightPixels"),
+      croppedX: getXMPValue(data, "CroppedAreaLeftPixels"),
+      croppedY: getXMPValue(data, "CroppedAreaTopPixels"),
+      poseHeading: getXMPValue(data, "PoseHeadingDegrees", false),
+      posePitch: getXMPValue(data, "PosePitchDegrees", false),
+      poseRoll: getXMPValue(data, "PoseRollDegrees", false),
+      initialHeading: getXMPValue(data, "InitialViewHeadingDegrees", false),
+      initialPitch: getXMPValue(data, "InitialViewPitchDegrees", false),
+      initialFov: getXMPValue(data, "InitialHorizontalFOVDegrees", false)
+    };
   }
   /**
    * Reads a Blob as a string
@@ -2175,149 +2046,53 @@ var EquirectangularAdapter = class extends AbstractAdapter {
   /**
    * Creates the final texture from image and panorama data
    */
-  createEquirectangularTexture(img, panoData) {
-    if (this.config.blur || panoData.fullWidth > SYSTEM.maxTextureWidth || panoData.croppedWidth !== panoData.fullWidth || panoData.croppedHeight !== panoData.fullHeight) {
-      const ratio = Math.min(1, SYSTEM.maxCanvasWidth / panoData.fullWidth);
-      const resizedPanoData = {
-        fullWidth: panoData.fullWidth * ratio,
-        fullHeight: panoData.fullHeight * ratio,
-        croppedWidth: panoData.croppedWidth * ratio,
-        croppedHeight: panoData.croppedHeight * ratio,
-        croppedX: panoData.croppedX * ratio,
-        croppedY: panoData.croppedY * ratio
-      };
-      const buffer = document.createElement("canvas");
-      buffer.width = resizedPanoData.fullWidth;
-      buffer.height = resizedPanoData.fullHeight;
+  createEquirectangularTexture(img) {
+    if (this.config.blur || img.width > SYSTEM.maxTextureWidth) {
+      const ratio = Math.min(1, SYSTEM.maxCanvasWidth / img.width);
+      const buffer = new OffscreenCanvas(Math.floor(img.width * ratio), Math.floor(img.height * ratio));
       const ctx = buffer.getContext("2d");
-      if (this.config.backgroundColor) {
-        ctx.fillStyle = this.config.backgroundColor;
-        ctx.fillRect(0, 0, buffer.width, buffer.height);
-      }
       if (this.config.blur) {
-        const blurSize = buffer.width / 2048;
-        const margin = Math.ceil(blurSize * 2);
-        if (resizedPanoData.croppedWidth === buffer.width) {
-          ctx.drawImage(
-            img,
-            0,
-            0,
-            margin / ratio,
-            img.height,
-            0,
-            resizedPanoData.croppedY,
-            margin,
-            resizedPanoData.croppedHeight
-          );
-          ctx.drawImage(
-            img,
-            img.width - margin / ratio,
-            0,
-            margin / ratio,
-            img.height,
-            buffer.width - margin,
-            resizedPanoData.croppedY,
-            margin,
-            resizedPanoData.croppedHeight
-          );
-        }
-        if (resizedPanoData.croppedHeight === buffer.height) {
-          ctx.drawImage(
-            img,
-            0,
-            0,
-            1,
-            1,
-            resizedPanoData.croppedX,
-            0,
-            resizedPanoData.croppedWidth,
-            margin
-          );
-          ctx.drawImage(
-            img,
-            0,
-            img.height - 1,
-            1,
-            1,
-            resizedPanoData.croppedX,
-            buffer.height - margin,
-            resizedPanoData.croppedWidth,
-            margin
-          );
-        }
-        ctx.filter = `blur(${blurSize}px)`;
+        ctx.filter = `blur(${buffer.width / 2048}px)`;
       }
-      ctx.drawImage(
-        img,
-        resizedPanoData.croppedX,
-        resizedPanoData.croppedY,
-        resizedPanoData.croppedWidth,
-        resizedPanoData.croppedHeight
-      );
-      const t = createTexture(buffer);
-      if (this.config.interpolateBackground && resizedPanoData.fullWidth <= 8096 && (panoData.croppedWidth !== panoData.fullWidth || panoData.croppedHeight !== panoData.fullHeight)) {
-        this.interpolationWorker.postMessage({
-          image: ctx.getImageData(
-            resizedPanoData.croppedX,
-            resizedPanoData.croppedY,
-            resizedPanoData.croppedWidth,
-            resizedPanoData.croppedHeight
-          ),
-          panoData: resizedPanoData
-        });
-        this.interpolationWorker.onmessage = (e) => {
-          ctx.putImageData(e.data, 0, 0);
-          t.needsUpdate = true;
-          this.viewer.needsUpdate();
-        };
-      }
-      return t;
+      ctx.drawImage(img, 0, 0, buffer.width, buffer.height);
+      return createTexture(buffer);
     }
     return createTexture(img);
   }
-  createMesh() {
-    const geometry = new import_three3.SphereGeometry(
+  createMesh(panoData) {
+    const hStart = panoData.croppedX / panoData.fullWidth * 2 * Math.PI;
+    const hLength = panoData.croppedWidth / panoData.fullWidth * 2 * Math.PI;
+    const vStart = panoData.croppedY / panoData.fullHeight * Math.PI;
+    const vLength = panoData.croppedHeight / panoData.fullHeight * Math.PI;
+    const geometry = new import_three4.SphereGeometry(
       SPHERE_RADIUS,
-      this.SPHERE_SEGMENTS,
-      this.SPHERE_HORIZONTAL_SEGMENTS,
-      -Math.PI / 2
+      Math.round(this.SPHERE_SEGMENTS / (2 * Math.PI) * hLength),
+      Math.round(this.SPHERE_HORIZONTAL_SEGMENTS / Math.PI * vLength),
+      -Math.PI / 2 + hStart,
+      hLength,
+      vStart,
+      vLength
     ).scale(-1, 1, 1);
-    return new import_three3.Mesh(geometry);
+    const material = new import_three4.MeshBasicMaterial({ depthTest: false, depthWrite: false });
+    return new import_three4.Mesh(geometry, material);
   }
-  setTexture(mesh, textureData, transition) {
-    const material = new import_three3.MeshBasicMaterial();
-    material.map = textureData.texture;
-    if (transition) {
-      material.depthTest = false;
-      material.depthWrite = false;
-    }
-    mesh.material = material;
+  setTexture(mesh, textureData) {
+    mesh.material.map = textureData.texture;
   }
   setTextureOpacity(mesh, opacity) {
     mesh.material.opacity = opacity;
     mesh.material.transparent = opacity < 1;
   }
-  disposeTexture(textureData) {
-    textureData.texture?.dispose();
+  disposeTexture({ texture }) {
+    texture.dispose();
   }
-  __defaultPanoData(img) {
-    const fullWidth = Math.max(img.width, img.height * 2);
-    const fullHeight = Math.round(fullWidth / 2);
-    const croppedX = Math.round((fullWidth - img.width) / 2);
-    const croppedY = Math.round((fullHeight - img.height) / 2);
-    return {
-      isEquirectangular: true,
-      fullWidth,
-      fullHeight,
-      croppedWidth: img.width,
-      croppedHeight: img.height,
-      croppedX,
-      croppedY
-    };
+  disposeMesh(mesh) {
+    mesh.geometry.dispose();
+    mesh.material.dispose();
   }
 };
 EquirectangularAdapter.id = "equirectangular";
-EquirectangularAdapter.VERSION = "5.10.0";
+EquirectangularAdapter.VERSION = "5.11.4";
 EquirectangularAdapter.supportsDownload = true;
 
 // src/adapters/DualFisheyeAdapter.ts
@@ -2325,7 +2100,6 @@ var DualFisheyeAdapter = class extends EquirectangularAdapter {
   constructor(viewer, config) {
     super(viewer, {
       resolution: config?.resolution ?? 64,
-      interpolateBackground: false,
       useXmpData: false
     });
   }
@@ -2335,7 +2109,7 @@ var DualFisheyeAdapter = class extends EquirectangularAdapter {
     return result;
   }
   createMesh() {
-    const geometry = new import_three4.SphereGeometry(
+    const geometry = new import_three5.SphereGeometry(
       SPHERE_RADIUS,
       this.SPHERE_SEGMENTS,
       this.SPHERE_HORIZONTAL_SEGMENTS
@@ -2368,11 +2142,12 @@ var DualFisheyeAdapter = class extends EquirectangularAdapter {
     }
     geometry.rotateX(-Math.PI / 2);
     geometry.rotateY(Math.PI);
-    return new import_three4.Mesh(geometry, new import_three4.MeshBasicMaterial());
+    const material = new import_three5.MeshBasicMaterial({ depthTest: false, depthWrite: false });
+    return new import_three5.Mesh(geometry, material);
   }
 };
 DualFisheyeAdapter.id = "dual-fisheye";
-DualFisheyeAdapter.VERSION = "5.10.0";
+DualFisheyeAdapter.VERSION = "5.11.4";
 
 // src/components/AbstractComponent.ts
 var AbstractComponent = class _AbstractComponent {
@@ -2384,10 +2159,6 @@ var AbstractComponent = class _AbstractComponent {
      */
     this.children = [];
     /**
-     * Container element
-     */
-    this.container = document.createElement("div");
-    /**
      * Internal properties
      * @internal
      */
@@ -2395,6 +2166,7 @@ var AbstractComponent = class _AbstractComponent {
       visible: true
     };
     this.viewer = parent instanceof _AbstractComponent ? parent.viewer : parent;
+    this.container = document.createElement(config.tagName ?? "div");
     this.container.className = config.className || "";
     this.parent.children.push(this);
     this.parent.container.appendChild(this.container);
@@ -2450,6 +2222,7 @@ var AbstractComponent = class _AbstractComponent {
 // src/buttons/AbstractButton.ts
 var getConfig2 = getConfigParser({
   id: null,
+  tagName: null,
   className: null,
   title: null,
   hoverScale: false,
@@ -2461,6 +2234,7 @@ var getConfig2 = getConfigParser({
 var AbstractButton = class extends AbstractComponent {
   constructor(navbar, config) {
     super(navbar, {
+      tagName: config.tagName,
       className: `psv-button ${config.hoverScale ? "psv-button--hover-scale" : ""} ${config.className || ""}`
     });
     /**
@@ -2475,13 +2249,15 @@ var AbstractButton = class extends AbstractComponent {
       width: 0
     };
     this.config = getConfig2(config);
-    this.config.id = this.constructor.id;
+    if (!config.id) {
+      this.config.id = this.constructor.id;
+    }
     if (config.icon) {
       this.__setIcon(config.icon);
     }
     this.state.width = this.container.offsetWidth;
     if (this.config.title) {
-      this.container.title = this.config.title;
+      this.container.title = this.viewer.config.lang[this.config.title] ?? this.config.title;
     } else if (this.id && this.id in this.viewer.config.lang) {
       this.container.title = this.viewer.config.lang[this.id];
     }
@@ -2617,6 +2393,7 @@ var AbstractButton = class extends AbstractComponent {
 var CustomButton = class extends AbstractButton {
   constructor(navbar, config) {
     super(navbar, {
+      id: config.id ?? `psvButton-${Math.random().toString(36).substring(2)}`,
       className: `psv-custom-button ${config.className || ""}`,
       hoverScale: false,
       collapsable: config.collapsable !== false,
@@ -2624,11 +2401,6 @@ var CustomButton = class extends AbstractButton {
       title: config.title
     });
     this.customOnClick = config.onClick;
-    if (config.id) {
-      this.config.id = config.id;
-    } else {
-      this.config.id = "psvButton-" + Math.random().toString(36).substring(2);
-    }
     if (config.content) {
       if (typeof config.content === "string") {
         this.container.innerHTML = config.content;
@@ -2746,7 +2518,7 @@ var DescriptionButton = class extends AbstractButton {
       this.mode = 2 /* PANEL */;
       this.viewer.panel.show({
         id: IDS.DESCRIPTION,
-        content: (this.viewer.config.caption ? `<p>${this.viewer.config.caption}</p>` : "") + this.viewer.config.description
+        content: `${this.viewer.config.caption ? `<p>${this.viewer.config.caption}</p>` : ""}${this.viewer.config.description}`
       });
     } else {
       this.mode = 1 /* NOTIF */;
@@ -2763,6 +2535,7 @@ DescriptionButton.id = "description";
 var DownloadButton = class extends AbstractButton {
   constructor(navbar) {
     super(navbar, {
+      tagName: "a",
       className: "psv-download-button",
       hoverScale: true,
       collapsable: true,
@@ -2770,37 +2543,40 @@ var DownloadButton = class extends AbstractButton {
       icon: ICONS.download
     });
     this.viewer.addEventListener(ConfigChangedEvent.type, this);
+    this.viewer.addEventListener(PanoramaLoadedEvent.type, this);
   }
   destroy() {
     this.viewer.removeEventListener(ConfigChangedEvent.type, this);
+    this.viewer.removeEventListener(PanoramaLoadedEvent.type, this);
     super.destroy();
   }
   handleEvent(e) {
     if (e instanceof ConfigChangedEvent) {
       e.containsOptions("downloadUrl") && this.checkSupported();
+      e.containsOptions("downloadUrl", "downloadName") && this.__update();
+    } else if (e instanceof PanoramaLoadedEvent) {
+      this.__update();
     }
   }
   onClick() {
-    const link = document.createElement("a");
-    link.href = this.viewer.config.downloadUrl || this.viewer.config.panorama;
-    if (link.href.startsWith("data:") && !this.viewer.config.downloadName) {
-      link.download = "panorama." + link.href.substring(0, link.href.indexOf(";")).split("/").pop();
-    } else {
-      link.download = this.viewer.config.downloadName || link.href.split("/").pop();
-    }
-    link.target = "_blank";
-    this.viewer.container.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      this.viewer.container.removeChild(link);
-    }, 100);
   }
   checkSupported() {
-    const supported = this.viewer.adapter.constructor.supportsDownload || this.viewer.config.downloadUrl;
+    const adapter = this.viewer.adapter.constructor;
+    const supported = adapter.supportsDownload || this.viewer.config.downloadUrl;
     if (supported) {
       this.show();
     } else {
       this.hide();
+    }
+  }
+  __update() {
+    const link = this.container;
+    link.href = this.viewer.config.downloadUrl || this.viewer.config.panorama;
+    link.target = "_blank";
+    if (link.href.startsWith("data:") && !this.viewer.config.downloadName) {
+      link.download = "panorama." + link.href.substring(0, link.href.indexOf(";")).split("/").pop();
+    } else {
+      link.download = this.viewer.config.downloadName || link.href.split("/").pop();
     }
   }
 };
@@ -3191,7 +2967,7 @@ ZoomRangeButton.id = "zoomRange";
 ZoomRangeButton.groupId = "zoom";
 
 // src/data/config.ts
-var import_three5 = require("three");
+var import_three6 = require("three");
 
 // src/plugins/AbstractPlugin.ts
 var AbstractPlugin = class extends TypedEventTarget {
@@ -3259,7 +3035,7 @@ function pluginInterop(plugin) {
   if (plugin) {
     for (const [, p] of [["_", plugin], ...Object.entries(plugin)]) {
       if (p.prototype instanceof AbstractPlugin) {
-        checkVersion(p.id, p.VERSION, "5.10.0");
+        checkVersion(p.id, p.VERSION, "5.11.4");
         return p;
       }
     }
@@ -3290,16 +3066,21 @@ var DEFAULTS = {
   sphereCorrection: null,
   moveSpeed: 1,
   zoomSpeed: 1,
-  moveInertia: true,
+  moveInertia: 0.8,
   mousewheel: true,
   mousemove: true,
   mousewheelCtrlKey: false,
   touchmoveTwoFingers: false,
   panoData: null,
   requestHeaders: null,
+  canvasBackground: "#000",
+  defaultTransition: {
+    speed: 1500,
+    rotation: true,
+    effect: "fade"
+  },
   rendererParameters: { alpha: true, antialias: true },
   withCredentials: false,
-  // prettier-ignore
   navbar: [
     "zoom",
     "move",
@@ -3380,20 +3161,29 @@ var CONFIG_PARSERS = {
     return parseAngle(defaultPitch, true);
   },
   defaultZoomLvl: (defaultZoomLvl) => {
-    return import_three5.MathUtils.clamp(defaultZoomLvl, 0, 100);
+    return import_three6.MathUtils.clamp(defaultZoomLvl, 0, 100);
   },
   minFov: (minFov, { rawConfig }) => {
     if (rawConfig.maxFov < minFov) {
       logWarn("maxFov cannot be lower than minFov");
       minFov = rawConfig.maxFov;
     }
-    return import_three5.MathUtils.clamp(minFov, 1, 179);
+    return import_three6.MathUtils.clamp(minFov, 1, 179);
   },
   maxFov: (maxFov, { rawConfig }) => {
     if (maxFov < rawConfig.minFov) {
       maxFov = rawConfig.minFov;
     }
-    return import_three5.MathUtils.clamp(maxFov, 1, 179);
+    return import_three6.MathUtils.clamp(maxFov, 1, 179);
+  },
+  moveInertia: (moveInertia, { defValue }) => {
+    if (moveInertia === true) {
+      return defValue;
+    }
+    if (moveInertia === false) {
+      return 0;
+    }
+    return moveInertia;
   },
   lang: (lang) => {
     return {
@@ -3433,6 +3223,13 @@ var CONFIG_PARSERS = {
       return requestHeaders;
     }
     return null;
+  },
+  defaultTransition: (defaultTransition, { defValue }) => {
+    if (defaultTransition === null || defaultTransition.speed === 0) {
+      return null;
+    } else {
+      return { ...defValue, ...defaultTransition };
+    }
   },
   rendererParameters: (rendererParameters, { defValue }) => ({
     ...rendererParameters,
@@ -3688,8 +3485,8 @@ var Navbar = class extends AbstractComponent {
 };
 
 // src/data/cache.ts
-var import_three6 = require("three");
-import_three6.Cache.enabled = false;
+var import_three7 = require("three");
+import_three7.Cache.enabled = false;
 var Cache = {
   enabled: true,
   maxItems: 10,
@@ -3697,9 +3494,9 @@ var Cache = {
   items: {},
   purgeInterval: null,
   init() {
-    if (import_three6.Cache.enabled) {
+    if (import_three7.Cache.enabled) {
       logWarn("ThreeJS cache should be disabled");
-      import_three6.Cache.enabled = false;
+      import_three7.Cache.enabled = false;
     }
     if (!this.purgeInterval && this.enabled) {
       this.purgeInterval = setInterval(() => this.purge(), 60 * 1e3);
@@ -3738,6 +3535,7 @@ var Cache = {
 };
 
 // src/components/Loader.ts
+var import_three8 = require("three");
 var Loader = class extends AbstractComponent {
   /**
    * @internal
@@ -3756,6 +3554,11 @@ var Loader = class extends AbstractComponent {
     this.color = getStyleProperty(this.canvas, "color");
     this.border = parseInt(getStyleProperty(this.loader, "--psv-loader-border"), 10);
     this.thickness = parseInt(getStyleProperty(this.loader, "--psv-loader-tickness"), 10);
+    const halfSize = this.size / 2;
+    this.canvas.innerHTML = `
+            <circle cx="${halfSize}" cy="${halfSize}" r="${halfSize}" fill="${this.color}"/>
+            <path d="" fill="none" stroke="${this.textColor}" stroke-width="${this.thickness}" stroke-linecap="round"/>
+        `;
     this.viewer.addEventListener(ConfigChangedEvent.type, this);
     this.__updateContent();
     this.hide();
@@ -3772,14 +3575,14 @@ var Loader = class extends AbstractComponent {
    */
   handleEvent(e) {
     if (e instanceof ConfigChangedEvent) {
-      e.containsOptions("loadingImg", "loadingTxt") && this.__updateContent();
+      e.containsOptions("loadingImg", "loadingTxt", "lang") && this.__updateContent();
     }
   }
   /**
    * Sets the loader progression
    */
   setProgress(value) {
-    const angle2 = Math.min(value, 99.999) / 100 * Math.PI * 2;
+    const angle2 = import_three8.MathUtils.clamp(value, 0, 99.999) / 100 * Math.PI * 2;
     const halfSize = this.size / 2;
     const startX = halfSize;
     const startY = this.thickness / 2 + this.border;
@@ -3787,11 +3590,11 @@ var Loader = class extends AbstractComponent {
     const endX = Math.sin(angle2) * radius + halfSize;
     const endY = -Math.cos(angle2) * radius + halfSize;
     const largeArc = value > 50 ? "1" : "0";
-    this.canvas.innerHTML = `
-            <circle cx="${halfSize}" cy="${halfSize}" r="${halfSize}" fill="${this.color}"/>
-            <path d="M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}" 
-                  fill="none" stroke="${this.textColor}" stroke-width="${this.thickness}" stroke-linecap="round"/>
-        `;
+    this.canvas.querySelector("path").setAttributeNS(
+      null,
+      "d",
+      `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}`
+    );
     this.viewer.dispatchEvent(new LoadProgressEvent(Math.round(value)));
   }
   __updateContent() {
@@ -3873,7 +3676,7 @@ var Notification = class extends AbstractComponent {
     this.content.innerHTML = config.content;
     this.container.classList.add("psv-notification--visible");
     this.state.visible = true;
-    this.viewer.dispatchEvent(new ShowNotificationEvent(config.id));
+    this.viewer.dispatchEvent(new ShowNotificationEvent(this.state.contentId));
     if (config.timeout) {
       this.state.timeout = setTimeout(() => this.hide(this.state.contentId), config.timeout);
     }
@@ -3907,7 +3710,7 @@ var Overlay = class extends AbstractComponent {
     this.state = {
       visible: false,
       contentId: null,
-      dissmisable: true
+      dismissible: true
     };
     this.image = document.createElement("div");
     this.image.className = "psv-overlay-image";
@@ -3934,12 +3737,12 @@ var Overlay = class extends AbstractComponent {
    */
   handleEvent(e) {
     if (e.type === "click") {
-      if (this.isVisible() && this.state.dissmisable) {
+      if (this.isVisible() && this.state.dismissible) {
         this.hide();
         e.stopPropagation();
       }
     } else if (e instanceof KeypressEvent) {
-      if (this.isVisible() && this.state.dissmisable && e.key === KEY_CODES.Escape) {
+      if (this.isVisible() && this.state.dismissible && e.key === KEY_CODES.Escape) {
         this.hide();
         e.preventDefault();
       }
@@ -3965,13 +3768,17 @@ var Overlay = class extends AbstractComponent {
     if (typeof config === "string") {
       config = { title: config };
     }
+    if ("dissmisable" in config) {
+      logWarn('Replace "dissmisable" by "dismissible"');
+      config.dismissible = config.dissmisable;
+    }
     this.state.contentId = config.id || null;
-    this.state.dissmisable = config.dissmisable !== false;
+    this.state.dismissible = config.dismissible !== false;
     this.image.innerHTML = config.image || "";
     this.title.innerHTML = config.title || "";
     this.text.innerHTML = config.text || "";
     super.show();
-    this.viewer.dispatchEvent(new ShowOverlayEvent(config.id));
+    this.viewer.dispatchEvent(new ShowOverlayEvent(this.state.contentId));
   }
   /**
    * Hides the overlay
@@ -4021,7 +3828,6 @@ var Panel = class extends AbstractComponent {
     this.content = document.createElement("div");
     this.content.className = "psv-panel-content";
     this.container.appendChild(this.content);
-    this.container.addEventListener("wheel", (e) => e.stopPropagation());
     closeBtn.addEventListener("click", () => this.hide());
     resizer.addEventListener("mousedown", this);
     resizer.addEventListener("touchstart", this);
@@ -4127,7 +3933,7 @@ var Panel = class extends AbstractComponent {
         }, 300);
       }
     }
-    this.viewer.dispatchEvent(new ShowPanelEvent(config.id));
+    this.viewer.dispatchEvent(new ShowPanelEvent(this.state.contentId));
   }
   /**
    * Hides the panel
@@ -4141,7 +3947,9 @@ var Panel = class extends AbstractComponent {
       this.container.classList.remove("psv-panel--open");
       if (this.state.clickHandler) {
         this.content.removeEventListener("click", this.state.clickHandler);
+        this.content.removeEventListener("keydown", this.state.keyHandler);
         this.state.clickHandler = null;
+        this.state.keyHandler = null;
       }
       this.viewer.dispatchEvent(new HidePanelEvent(contentId));
     }
@@ -4512,7 +4320,7 @@ var Tooltip = class extends AbstractComponent {
 var error_default = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="15 15 70 70"><path fill="currentColor" d="M50,16.2c-18.6,0-33.8,15.1-33.8,33.8S31.4,83.7,50,83.7S83.8,68.6,83.8,50S68.6,16.2,50,16.2z M50,80.2c-16.7,0-30.2-13.6-30.2-30.2S33.3,19.7,50,19.7S80.3,33.3,80.3,50S66.7,80.2,50,80.2z"/><rect fill="currentColor" x="48" y="31.7" width="4" height="28"/><rect fill="currentColor" x="48" y="63.2" width="4" height="5"/><!--Created by Shastry from the Noun Project--></svg>\n';
 
 // src/services/DataHelper.ts
-var import_three7 = require("three");
+var import_three9 = require("three");
 
 // src/services/AbstractService.ts
 var AbstractService = class {
@@ -4534,8 +4342,8 @@ var AbstractService = class {
 };
 
 // src/services/DataHelper.ts
-var vector3 = new import_three7.Vector3();
-var EULER_ZERO = new import_three7.Euler(0, 0, 0, "ZXY");
+var vector3 = new import_three9.Vector3();
+var EULER_ZERO = new import_three9.Euler(0, 0, 0, "ZXY");
 var DataHelper = class extends AbstractService {
   /**
    * @internal
@@ -4548,7 +4356,7 @@ var DataHelper = class extends AbstractService {
    */
   fovToZoomLevel(fov) {
     const temp = Math.round((fov - this.config.minFov) / (this.config.maxFov - this.config.minFov) * 100);
-    return import_three7.MathUtils.clamp(temp - 2 * (temp - 50), 0, 100);
+    return import_three9.MathUtils.clamp(temp - 2 * (temp - 50), 0, 100);
   }
   /**
    * Converts zoom level to vertical FOV
@@ -4560,13 +4368,13 @@ var DataHelper = class extends AbstractService {
    * Converts vertical FOV to horizontal FOV
    */
   vFovToHFov(vFov) {
-    return import_three7.MathUtils.radToDeg(2 * Math.atan(Math.tan(import_three7.MathUtils.degToRad(vFov) / 2) * this.state.aspect));
+    return import_three9.MathUtils.radToDeg(2 * Math.atan(Math.tan(import_three9.MathUtils.degToRad(vFov) / 2) * this.state.aspect));
   }
   /**
    * Converts horizontal FOV to vertical FOV
    */
   hFovToVFov(hFov) {
-    return import_three7.MathUtils.radToDeg(2 * Math.atan(Math.tan(import_three7.MathUtils.degToRad(hFov) / 2) / this.state.aspect));
+    return import_three9.MathUtils.radToDeg(2 * Math.atan(Math.tan(import_three9.MathUtils.degToRad(hFov) / 2) / this.state.aspect));
   }
   /**
    * @internal
@@ -4601,6 +4409,40 @@ var DataHelper = class extends AbstractService {
       duration = Math.max(ANIMATION_MIN_DURATION, duration);
     }
     return { duration, properties };
+  }
+  /**
+   * @internal
+   */
+  getTransitionOptions(options) {
+    let transition;
+    const defaultTransition = this.config.defaultTransition ?? DEFAULTS.defaultTransition;
+    if (options.transition === false || options.transition === null) {
+      transition = null;
+    } else if (options.transition === true) {
+      transition = {
+        ...defaultTransition
+      };
+    } else if (options.transition === "fade-only") {
+      logWarn(`PanoramaOptions transition "fade-only" value is deprecated, set transition.rotation=false instead.`);
+      transition = {
+        ...defaultTransition,
+        rotation: false
+      };
+    } else if (typeof options.transition === "object") {
+      transition = {
+        ...defaultTransition,
+        ...options.transition
+      };
+    } else {
+      transition = this.config.defaultTransition;
+    }
+    if ("speed" in options) {
+      logWarn(`PanoramaOptions speed is deprecated, set transition.speed instead.`);
+      if (transition) {
+        transition.speed = options.speed;
+      }
+    }
+    return transition;
   }
   /**
    * Converts pixel texture coordinates to spherical radians coordinates
@@ -4641,7 +4483,7 @@ var DataHelper = class extends AbstractService {
    */
   sphericalCoordsToVector3(position, vector, distance2 = SPHERE_RADIUS) {
     if (!vector) {
-      vector = new import_three7.Vector3();
+      vector = new import_three9.Vector3();
     }
     vector.x = distance2 * -Math.cos(position.pitch) * Math.sin(position.yaw);
     vector.y = distance2 * Math.sin(position.pitch);
@@ -4701,7 +4543,7 @@ var DataHelper = class extends AbstractService {
   isPointVisible(point) {
     let vector;
     let viewerPoint;
-    if (point instanceof import_three7.Vector3) {
+    if (point instanceof import_three9.Vector3) {
       vector = point;
       viewerPoint = this.vector3ToViewerCoords(point);
     } else if (isExtendedPosition(point)) {
@@ -4743,9 +4585,9 @@ var DataHelper = class extends AbstractService {
    */
   cleanPanoramaPose(panoData) {
     return {
-      pan: import_three7.MathUtils.degToRad(panoData?.poseHeading || 0),
-      tilt: import_three7.MathUtils.degToRad(panoData?.posePitch || 0),
-      roll: import_three7.MathUtils.degToRad(panoData?.poseRoll || 0)
+      pan: import_three9.MathUtils.degToRad(panoData?.poseHeading || 0),
+      tilt: import_three9.MathUtils.degToRad(panoData?.posePitch || 0),
+      roll: import_three9.MathUtils.degToRad(panoData?.poseRoll || 0)
     };
   }
   /**
@@ -4775,7 +4617,7 @@ var DataHelper = class extends AbstractService {
 };
 
 // src/services/EventsHandler.ts
-var import_three8 = require("three");
+var import_three10 = require("three");
 
 // src/icons/gesture.svg
 var gesture_default = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="currentColor" d="M33.38 33.2a1.96 1.96 0 0 0 1.5-3.23 10.61 10.61 0 0 1 7.18-17.51c.7-.06 1.31-.49 1.61-1.12a13.02 13.02 0 0 1 11.74-7.43c7.14 0 12.96 5.8 12.96 12.9 0 3.07-1.1 6.05-3.1 8.38-.7.82-.61 2.05.21 2.76.83.7 2.07.6 2.78-.22a16.77 16.77 0 0 0 4.04-10.91C72.3 7.54 64.72 0 55.4 0a16.98 16.98 0 0 0-14.79 8.7 14.6 14.6 0 0 0-12.23 14.36c0 3.46 1.25 6.82 3.5 9.45.4.45.94.69 1.5.69m45.74 43.55a22.13 22.13 0 0 1-5.23 12.4c-4 4.55-9.53 6.86-16.42 6.86-12.6 0-20.1-10.8-20.17-10.91a1.82 1.82 0 0 0-.08-.1c-5.3-6.83-14.55-23.82-17.27-28.87-.05-.1 0-.21.02-.23a6.3 6.3 0 0 1 8.24 1.85l9.38 12.59a1.97 1.97 0 0 0 3.54-1.17V25.34a4 4 0 0 1 1.19-2.87 3.32 3.32 0 0 1 2.4-.95c1.88.05 3.4 1.82 3.4 3.94v24.32a1.96 1.96 0 0 0 3.93 0v-33.1a3.5 3.5 0 0 1 7 0v35.39a1.96 1.96 0 0 0 3.93 0v-.44c.05-2.05 1.6-3.7 3.49-3.7 1.93 0 3.5 1.7 3.5 3.82v5.63c0 .24.04.48.13.71l.1.26a1.97 1.97 0 0 0 3.76-.37c.33-1.78 1.77-3.07 3.43-3.07 1.9 0 3.45 1.67 3.5 3.74l-1.77 18.1zM77.39 51c-1.25 0-2.45.32-3.5.9v-.15c0-4.27-3.33-7.74-7.42-7.74-1.26 0-2.45.33-3.5.9V16.69a7.42 7.42 0 0 0-14.85 0v1.86a7 7 0 0 0-3.28-.94 7.21 7.21 0 0 0-5.26 2.07 7.92 7.92 0 0 0-2.38 5.67v37.9l-5.83-7.82a10.2 10.2 0 0 0-13.35-2.92 4.1 4.1 0 0 0-1.53 5.48C20 64.52 28.74 80.45 34.07 87.34c.72 1.04 9.02 12.59 23.4 12.59 7.96 0 14.66-2.84 19.38-8.2a26.06 26.06 0 0 0 6.18-14.6l1.78-18.2v-.2c0-4.26-3.32-7.73-7.42-7.73z"/><!--Created by AomAm from the Noun Project--></svg>\n';
@@ -4804,7 +4646,6 @@ var _Step = class _Step {
 _Step.IDLE = 0;
 _Step.CLICK = 1;
 _Step.MOVING = 2;
-_Step.INERTIA = 4;
 var Step = _Step;
 var EventsHandler = class extends AbstractService {
   constructor(viewer) {
@@ -4818,10 +4659,11 @@ var EventsHandler = class extends AbstractService {
       mouseX: 0,
       /** current y position of the cursor */
       mouseY: 0,
-      /** list of latest positions of the cursor, [time, x, y] */
-      mouseHistory: [],
-      /** distance between fingers when zooming */
+      /** current distance between fingers */
       pinchDist: 0,
+      /** accumulator for smooth movement */
+      moveDelta: { yaw: 0, pitch: 0, zoom: 0 },
+      accumulatorFactor: 0,
       /** when the Ctrl key is pressed */
       ctrlKeyDown: false,
       /** temporary storage of click data between two clicks */
@@ -4851,6 +4693,8 @@ var EventsHandler = class extends AbstractService {
     this.viewer.container.addEventListener("wheel", this, { passive: false });
     document.addEventListener("fullscreenchange", this);
     this.resizeObserver.observe(this.viewer.container);
+    this.viewer.addEventListener(BeforeRenderEvent.type, this);
+    this.viewer.addEventListener(StopAllEvent.type, this);
   }
   destroy() {
     window.removeEventListener("keydown", this);
@@ -4864,6 +4708,8 @@ var EventsHandler = class extends AbstractService {
     this.viewer.container.removeEventListener("wheel", this);
     document.removeEventListener("fullscreenchange", this);
     this.resizeObserver.disconnect();
+    this.viewer.removeEventListener(BeforeRenderEvent.type, this);
+    this.viewer.removeEventListener(StopAllEvent.type, this);
     clearTimeout(this.data.dblclickTimeout);
     clearTimeout(this.data.longtouchTimeout);
     clearTimeout(this.data.twofingersTimeout);
@@ -4896,6 +4742,12 @@ var EventsHandler = class extends AbstractService {
       case "fullscreenchange":
         this.__onFullscreenChange();
         break;
+      case BeforeRenderEvent.type:
+        this.__applyMoveDelta();
+        break;
+      case StopAllEvent.type:
+        this.__clearMoveDelta();
+        break;
     }
     if (!getMatchingTarget(evt, "." + CAPTURE_EVENTS_CLASS)) {
       switch (evt.type) {
@@ -4922,7 +4774,7 @@ var EventsHandler = class extends AbstractService {
         this.viewer.overlay.hide(IDS.CTRL_ZOOM);
       }
     }
-    if (!this.viewer.dispatchEvent(new KeypressEvent(e.key))) {
+    if (!this.viewer.dispatchEvent(new KeypressEvent(e.key, e))) {
       return;
     }
     if (!this.state.keyboardEnabled) {
@@ -4930,9 +4782,14 @@ var EventsHandler = class extends AbstractService {
     }
     const action = this.config.keyboardActions?.[e.key];
     if (typeof action === "function") {
-      action(this.viewer);
+      action(this.viewer, e);
       e.preventDefault();
-    } else if (action && !this.keyHandler.pending) {
+      return;
+    }
+    if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) {
+      return;
+    }
+    if (action && !this.keyHandler.pending) {
       if (action !== "ZOOM_IN" /* ZOOM_IN */ && action !== "ZOOM_OUT" /* ZOOM_OUT */) {
         this.viewer.stopAll();
       }
@@ -4956,7 +4813,7 @@ var EventsHandler = class extends AbstractService {
           this.viewer.dynamics.zoom.roll(true);
           break;
       }
-      this.keyHandler.down();
+      this.keyHandler.down(action);
       e.preventDefault();
     }
   }
@@ -4968,10 +4825,13 @@ var EventsHandler = class extends AbstractService {
     if (!this.state.keyboardEnabled) {
       return;
     }
-    this.keyHandler.up(() => {
-      this.viewer.dynamics.position.stop();
-      this.viewer.dynamics.zoom.stop();
-      this.viewer.resetIdleTimer();
+    this.keyHandler.up((action) => {
+      if (action === "ZOOM_IN" /* ZOOM_IN */ || action === "ZOOM_OUT" /* ZOOM_OUT */) {
+        this.viewer.dynamics.zoom.stop();
+      } else {
+        this.viewer.dynamics.position.stop();
+        this.viewer.resetIdleTimer();
+      }
     });
   }
   /**
@@ -5138,7 +4998,6 @@ var EventsHandler = class extends AbstractService {
     this.data.mouseY = 0;
     this.data.startMouseX = 0;
     this.data.startMouseY = 0;
-    this.data.mouseHistory.length = 0;
   }
   /**
    * Initializes the combines move and zoom
@@ -5148,76 +5007,25 @@ var EventsHandler = class extends AbstractService {
     this.__resetMove();
     const touchData = getTouchData(evt);
     this.step.set(Step.MOVING);
+    this.data.accumulatorFactor = this.config.moveInertia;
     ({
       distance: this.data.pinchDist,
       center: { x: this.data.mouseX, y: this.data.mouseY }
     } = touchData);
-    this.__logMouseMove(this.data.mouseX, this.data.mouseY);
   }
   /**
    * Stops the movement
-   * @description If the move threshold was not reached a click event is triggered, otherwise an animation is launched to simulate inertia
+   * @description If the move threshold was not reached a click event is triggered
    */
   __stopMove(clientX, clientY, event, rightclick = false) {
-    if (this.step.is(Step.MOVING)) {
-      if (this.config.moveInertia) {
-        this.__logMouseMove(clientX, clientY);
-        this.__stopMoveInertia(clientX, clientY);
-      } else {
-        this.__resetMove();
-        this.viewer.resetIdleTimer();
-      }
-    } else {
-      if (this.step.is(Step.CLICK) && !this.__moveThresholdReached(clientX, clientY)) {
-        this.__doClick(clientX, clientY, event, rightclick);
-      }
-      this.step.remove(Step.CLICK);
-      if (!this.step.is(Step.INERTIA)) {
-        this.__resetMove();
-        this.viewer.resetIdleTimer();
-      }
+    if (this.step.is(Step.CLICK) && !this.__moveThresholdReached(clientX, clientY)) {
+      this.__doClick(clientX, clientY, event, rightclick);
     }
-  }
-  /**
-   * Performs an animation to simulate inertia when the movement stops
-   */
-  __stopMoveInertia(clientX, clientY) {
-    const curve = new import_three8.SplineCurve(this.data.mouseHistory.map(([, x, y]) => new import_three8.Vector2(x, y)));
-    const direction = curve.getTangent(1);
-    const speed = this.data.mouseHistory.reduce(({ total, prev }, curr) => ({
-      total: !prev ? 0 : total + distance({ x: prev[1], y: prev[2] }, { x: curr[1], y: curr[2] }) / (curr[0] - prev[0]),
-      prev: curr
-    }), {
-      total: 0,
-      prev: null
-    }).total / this.data.mouseHistory.length;
-    if (!speed) {
-      this.__resetMove();
-      this.viewer.resetIdleTimer();
-      return;
+    if (this.config.moveInertia) {
+      this.data.accumulatorFactor = Math.pow(this.config.moveInertia, 0.5);
     }
-    this.step.set(Step.INERTIA);
-    let currentClientX = clientX;
-    let currentClientY = clientY;
-    this.state.animation = new Animation({
-      properties: {
-        speed: { start: speed, end: 0 }
-      },
-      duration: 1e3,
-      easing: "outQuad",
-      onTick: (properties) => {
-        currentClientX += properties.speed * direction.x * 3 * SYSTEM.pixelRatio;
-        currentClientY += properties.speed * direction.y * 3 * SYSTEM.pixelRatio;
-        this.__applyMove(currentClientX, currentClientY);
-      }
-    });
-    this.state.animation.then((done) => {
-      this.state.animation = null;
-      if (done) {
-        this.__resetMove();
-        this.viewer.resetIdleTimer();
-      }
-    });
+    this.__resetMove();
+    this.viewer.resetIdleTimer();
   }
   /**
    * Triggers an event with all coordinates when a simple click is performed
@@ -5245,7 +5053,7 @@ var EventsHandler = class extends AbstractService {
       try {
         const textureCoords = this.viewer.dataHelper.sphericalCoordsToTextureCoords(data);
         Object.assign(data, textureCoords);
-      } catch (e) {
+      } catch {
       }
       if (!this.data.dblclickTimeout) {
         this.viewer.dispatchEvent(new ClickEvent(data));
@@ -5308,10 +5116,18 @@ var EventsHandler = class extends AbstractService {
       this.step.set(Step.MOVING);
       this.data.mouseX = clientX;
       this.data.mouseY = clientY;
-      this.__logMouseMove(clientX, clientY);
+      this.data.accumulatorFactor = this.config.moveInertia;
     } else if (this.step.is(Step.MOVING)) {
-      this.__applyMove(clientX, clientY);
-      this.__logMouseMove(clientX, clientY);
+      const x = (clientX - this.data.mouseX) * Math.cos(this.state.roll) - (clientY - this.data.mouseY) * Math.sin(this.state.roll);
+      const y = (clientY - this.data.mouseY) * Math.cos(this.state.roll) + (clientX - this.data.mouseX) * Math.sin(this.state.roll);
+      const rotation = {
+        yaw: this.config.moveSpeed * (x / this.state.size.width) * import_three10.MathUtils.degToRad(this.state.hFov),
+        pitch: this.config.moveSpeed * (y / this.state.size.height) * import_three10.MathUtils.degToRad(this.state.vFov)
+      };
+      this.data.moveDelta.yaw += rotation.yaw;
+      this.data.moveDelta.pitch += rotation.pitch;
+      this.data.mouseX = clientX;
+      this.data.mouseY = clientY;
     }
   }
   /**
@@ -5321,74 +5137,56 @@ var EventsHandler = class extends AbstractService {
     return Math.abs(clientX - this.data.startMouseX) >= this.moveThreshold || Math.abs(clientY - this.data.startMouseY) >= this.moveThreshold;
   }
   /**
-   * Raw method for movement, called from mouse event and move inertia
-   */
-  __applyMove(clientX, clientY) {
-    const x = (clientX - this.data.mouseX) * Math.cos(this.state.roll) - (clientY - this.data.mouseY) * Math.sin(this.state.roll);
-    const y = (clientY - this.data.mouseY) * Math.cos(this.state.roll) + (clientX - this.data.mouseX) * Math.sin(this.state.roll);
-    const rotation = {
-      yaw: this.config.moveSpeed * (x / this.state.size.width) * import_three8.MathUtils.degToRad(this.state.hFov),
-      pitch: this.config.moveSpeed * (y / this.state.size.height) * import_three8.MathUtils.degToRad(this.state.vFov)
-    };
-    const currentPosition = this.viewer.getPosition();
-    this.viewer.rotate({
-      yaw: currentPosition.yaw - rotation.yaw,
-      pitch: currentPosition.pitch + rotation.pitch
-    });
-    this.data.mouseX = clientX;
-    this.data.mouseY = clientY;
-  }
-  /**
    * Perfoms combined move and zoom
    */
   __doMoveZoom(evt) {
     if (this.step.is(Step.MOVING)) {
       evt.preventDefault();
       const touchData = getTouchData(evt);
-      const delta = (touchData.distance - this.data.pinchDist) / SYSTEM.pixelRatio * this.config.zoomSpeed;
-      this.viewer.zoom(this.viewer.getZoomLevel() + delta);
       this.__doMove(touchData.center.x, touchData.center.y);
+      this.data.moveDelta.zoom += this.config.zoomSpeed * ((touchData.distance - this.data.pinchDist) / SYSTEM.pixelRatio);
       this.data.pinchDist = touchData.distance;
     }
   }
-  /**
-   * Stores each mouse position during a mouse move
-   * @description Positions older than "INERTIA_WINDOW" are removed<br>
-   * Positions before a pause of "INERTIA_WINDOW" / 10 are removed
-   */
-  __logMouseMove(clientX, clientY) {
-    const now = Date.now();
-    const last = this.data.mouseHistory.length ? this.data.mouseHistory[this.data.mouseHistory.length - 1] : [0, -1, -1];
-    if (last[1] === clientX && last[2] === clientY) {
-      last[0] = now;
-    } else if (now === last[0]) {
-      last[1] = clientX;
-      last[2] = clientY;
-    } else {
-      this.data.mouseHistory.push([now, clientX, clientY]);
-    }
-    let previous = null;
-    for (let i = 0; i < this.data.mouseHistory.length; ) {
-      if (this.data.mouseHistory[i][0] < now - INERTIA_WINDOW) {
-        this.data.mouseHistory.splice(i, 1);
-      } else if (previous && this.data.mouseHistory[i][0] - previous > INERTIA_WINDOW / 10) {
-        this.data.mouseHistory.splice(0, i);
-        i = 0;
-        previous = this.data.mouseHistory[i][0];
-      } else {
-        previous = this.data.mouseHistory[i][0];
-        i++;
+  __applyMoveDelta() {
+    const EPS = 1e-3;
+    if (Math.abs(this.data.moveDelta.yaw) > 0 || Math.abs(this.data.moveDelta.pitch) > 0) {
+      const currentPosition = this.viewer.getPosition();
+      this.viewer.rotate({
+        yaw: currentPosition.yaw - this.data.moveDelta.yaw * (1 - this.config.moveInertia),
+        pitch: currentPosition.pitch + this.data.moveDelta.pitch * (1 - this.config.moveInertia)
+      });
+      this.data.moveDelta.yaw *= this.data.accumulatorFactor;
+      this.data.moveDelta.pitch *= this.data.accumulatorFactor;
+      if (Math.abs(this.data.moveDelta.yaw) <= EPS) {
+        this.data.moveDelta.yaw = 0;
+      }
+      if (Math.abs(this.data.moveDelta.pitch) <= EPS) {
+        this.data.moveDelta.pitch = 0;
       }
     }
+    if (Math.abs(this.data.moveDelta.zoom) > 0) {
+      const currentZoom = this.viewer.getZoomLevel();
+      this.viewer.zoom(currentZoom + this.data.moveDelta.zoom * (1 - this.config.moveInertia));
+      this.data.moveDelta.zoom *= this.config.moveInertia;
+      if (Math.abs(this.data.moveDelta.zoom) <= EPS) {
+        this.data.moveDelta.zoom = 0;
+      }
+    }
+  }
+  __clearMoveDelta() {
+    this.data.moveDelta.yaw = 0;
+    this.data.moveDelta.pitch = 0;
+    this.data.moveDelta.zoom = 0;
   }
 };
 
 // src/services/Renderer.ts
-var import_three9 = require("three");
-import_three9.ColorManagement.enabled = false;
-var vector2 = new import_three9.Vector2();
-var matrix4 = new import_three9.Matrix4();
-var box3 = new import_three9.Box3();
+var import_three11 = require("three");
+import_three11.ColorManagement.enabled = false;
+var vector2 = new import_three11.Vector2();
+var matrix4 = new import_three11.Matrix4();
+var box3 = new import_three11.Box3();
 var Renderer = class extends AbstractService {
   /**
    * @internal
@@ -5396,20 +5194,23 @@ var Renderer = class extends AbstractService {
   constructor(viewer) {
     super(viewer);
     this.frustumNeedsUpdate = true;
-    this.renderer = new import_three9.WebGLRenderer(this.config.rendererParameters);
+    this.renderer = new import_three11.WebGLRenderer(this.config.rendererParameters);
     this.renderer.setPixelRatio(SYSTEM.pixelRatio);
-    this.renderer.outputColorSpace = import_three9.LinearSRGBColorSpace;
+    this.renderer.outputColorSpace = import_three11.LinearSRGBColorSpace;
+    this.renderer.toneMapping = import_three11.LinearToneMapping;
     this.renderer.domElement.className = "psv-canvas";
-    this.scene = new import_three9.Scene();
-    this.camera = new import_three9.PerspectiveCamera(50, 16 / 9, 0.1, 2 * SPHERE_RADIUS);
+    this.renderer.domElement.style.background = this.config.canvasBackground;
+    this.scene = new import_three11.Scene();
+    this.camera = new import_three11.PerspectiveCamera(50, 16 / 9, 0.1, 2 * SPHERE_RADIUS);
     this.camera.matrixAutoUpdate = false;
-    this.mesh = this.viewer.adapter.createMesh();
-    this.mesh.userData = { [VIEWER_DATA]: true };
-    this.meshContainer = new import_three9.Group();
-    this.meshContainer.add(this.mesh);
-    this.scene.add(this.meshContainer);
-    this.raycaster = new import_three9.Raycaster();
-    this.frustum = new import_three9.Frustum();
+    const raycasterMesh = new import_three11.Mesh(
+      new import_three11.SphereGeometry(SPHERE_RADIUS).scale(-1, 1, 1),
+      new import_three11.MeshBasicMaterial({ opacity: 0, transparent: true, depthTest: false, depthWrite: false })
+    );
+    raycasterMesh.userData = { [VIEWER_DATA]: true };
+    this.scene.add(raycasterMesh);
+    this.raycaster = new import_three11.Raycaster();
+    this.frustum = new import_three11.Frustum();
     this.container = document.createElement("div");
     this.container.className = "psv-canvas-container";
     this.container.appendChild(this.renderer.domElement);
@@ -5440,6 +5241,7 @@ var Renderer = class extends AbstractService {
   destroy() {
     this.renderer.setAnimationLoop(null);
     this.cleanScene(this.scene);
+    this.renderer.dispose();
     this.viewer.container.removeChild(this.container);
     this.viewer.removeEventListener(SizeUpdatedEvent.type, this);
     this.viewer.removeEventListener(ZoomUpdatedEvent.type, this);
@@ -5468,6 +5270,9 @@ var Renderer = class extends AbstractService {
       case ConfigChangedEvent.type:
         if (e.containsOptions("fisheye")) {
           this.__onPositionUpdated();
+        }
+        if (e.containsOptions("canvasBackground")) {
+          this.renderer.domElement.style.background = this.config.canvasBackground;
         }
         break;
     }
@@ -5548,11 +5353,21 @@ var Renderer = class extends AbstractService {
    * @internal
    */
   setTexture(textureData) {
+    if (!this.meshContainer) {
+      this.meshContainer = new import_three11.Group();
+      this.scene.add(this.meshContainer);
+    }
     if (this.state.textureData) {
       this.viewer.adapter.disposeTexture(this.state.textureData);
     }
+    if (this.mesh) {
+      this.meshContainer.remove(this.mesh);
+      this.viewer.adapter.disposeMesh(this.mesh);
+    }
+    this.mesh = this.viewer.adapter.createMesh(textureData.panoData);
+    this.viewer.adapter.setTexture(this.mesh, textureData, false);
+    this.meshContainer.add(this.mesh);
     this.state.textureData = textureData;
-    this.viewer.adapter.setTexture(this.mesh, textureData);
     this.viewer.needsUpdate();
   }
   /**
@@ -5563,8 +5378,8 @@ var Renderer = class extends AbstractService {
     const cleanCorrection = this.viewer.dataHelper.cleanPanoramaPose(panoData);
     const i = (cleanCorrection.pan ? 1 : 0) + (cleanCorrection.tilt ? 1 : 0) + (cleanCorrection.roll ? 1 : 0);
     if (!Viewer.useNewAnglesOrder && i > 1) {
-      logWarn(`'panoData' Euler angles will change in version 5.11.0.`);
-      logWarn(`Set 'Viewer.useNewAnglesOrder = true;' to remove this warning (you might have to adapt your poseHeading/posePitch/poseRoll parameters).`);
+      logWarn(`'panoData' Euler angles have changed in version 5.11.0.`);
+      logWarn(`Remove your 'useNewAnglesOrder' override to remove this warning (you might have to adapt your poseHeading/posePitch/poseRoll parameters).`);
     }
     if (Viewer.useNewAnglesOrder) {
       mesh.rotation.set(cleanCorrection.tilt, cleanCorrection.pan, cleanCorrection.roll, "YXZ");
@@ -5580,8 +5395,8 @@ var Renderer = class extends AbstractService {
     const cleanCorrection = this.viewer.dataHelper.cleanSphereCorrection(sphereCorrection);
     const i = (cleanCorrection.pan ? 1 : 0) + (cleanCorrection.tilt ? 1 : 0) + (cleanCorrection.roll ? 1 : 0);
     if (!Viewer.useNewAnglesOrder && i > 1) {
-      logWarn(`'sphereCorrection' Euler angles will change in version 5.11.0.`);
-      logWarn(`Set 'Viewer.useNewAnglesOrder = true;' to remove this warning (you might have to adapt your pan/tilt/roll parameters).`);
+      logWarn(`'sphereCorrection' Euler angles have changed in version 5.11.0.`);
+      logWarn(`Remove your 'useNewAnglesOrder' override to remove this warning (you might have to adapt your poseHeading/posePitch/poseRoll parameters).`);
     }
     if (Viewer.useNewAnglesOrder) {
       group.rotation.set(cleanCorrection.tilt, cleanCorrection.pan, cleanCorrection.roll, "YXZ");
@@ -5593,7 +5408,8 @@ var Renderer = class extends AbstractService {
    * Performs transition between the current and a new texture
    * @internal
    */
-  transition(textureData, options) {
+  transition(textureData, options, transition) {
+    const zoomTransition = transition.effect === "fade" || transition.rotation;
     const positionProvided = !isNil(options.position);
     const zoomProvided = !isNil(options.zoom);
     const e = new BeforeAnimateEvent(
@@ -5601,28 +5417,28 @@ var Renderer = class extends AbstractService {
       options.zoom
     );
     this.viewer.dispatchEvent(e);
-    const group = new import_three9.Group();
-    const mesh = this.viewer.adapter.createMesh();
-    this.viewer.adapter.setTexture(mesh, textureData, true);
-    this.viewer.adapter.setTextureOpacity(mesh, 0);
-    this.setPanoramaPose(textureData.panoData, mesh);
-    this.setSphereCorrection(options.sphereCorrection, group);
-    if (positionProvided && options.transition === "fade-only") {
+    const tempContainer = new import_three11.Group();
+    const newMesh = this.viewer.adapter.createMesh(textureData.panoData);
+    this.viewer.adapter.setTexture(newMesh, textureData, true);
+    this.viewer.adapter.setTextureOpacity(newMesh, 0);
+    this.setPanoramaPose(textureData.panoData, newMesh);
+    this.setSphereCorrection(options.sphereCorrection, tempContainer);
+    if (positionProvided && !transition.rotation) {
       const currentPosition = this.viewer.getPosition();
-      const verticalAxis = new import_three9.Vector3(0, 1, 0);
-      group.rotateOnWorldAxis(verticalAxis, e.position.yaw - currentPosition.yaw);
-      const horizontalAxis = new import_three9.Vector3(0, 1, 0).cross(this.camera.getWorldDirection(new import_three9.Vector3())).normalize();
-      group.rotateOnWorldAxis(horizontalAxis, e.position.pitch - currentPosition.pitch);
+      const verticalAxis = new import_three11.Vector3(0, 1, 0);
+      tempContainer.rotateOnWorldAxis(verticalAxis, e.position.yaw - currentPosition.yaw);
+      const horizontalAxis = new import_three11.Vector3(0, 1, 0).cross(this.camera.getWorldDirection(new import_three11.Vector3())).normalize();
+      tempContainer.rotateOnWorldAxis(horizontalAxis, e.position.pitch - currentPosition.pitch);
     }
-    group.add(mesh);
-    this.scene.add(group);
-    this.renderer.setRenderTarget(new import_three9.WebGLRenderTarget());
+    tempContainer.add(newMesh);
+    this.scene.add(tempContainer);
+    this.renderer.setRenderTarget(new import_three11.WebGLRenderTarget());
     this.renderer.render(this.scene, this.camera);
     this.renderer.setRenderTarget(null);
     const { duration, properties } = this.viewer.dataHelper.getAnimationProperties(
-      options.speed,
-      options.transition === true ? e.position : null,
-      e.zoomLevel
+      transition.speed,
+      transition.rotation ? e.position : null,
+      zoomTransition ? e.zoomLevel : null
     );
     const animation = new Animation({
       properties: {
@@ -5632,34 +5448,55 @@ var Renderer = class extends AbstractService {
       duration,
       easing: "inOutCubic",
       onTick: (props) => {
-        this.viewer.adapter.setTextureOpacity(mesh, props.opacity);
-        if (positionProvided && options.transition === true) {
+        switch (transition.effect) {
+          case "fade":
+            this.viewer.adapter.setTextureOpacity(newMesh, props.opacity);
+            break;
+          case "black":
+          case "white":
+            if (props.opacity < 0.5) {
+              this.renderer.toneMappingExposure = transition.effect === "black" ? import_three11.MathUtils.mapLinear(props.opacity, 0, 0.5, 1, 0) : import_three11.MathUtils.mapLinear(props.opacity, 0, 0.5, 1, 4);
+            } else {
+              this.renderer.toneMappingExposure = transition.effect === "black" ? import_three11.MathUtils.mapLinear(props.opacity, 0.5, 1, 0, 1) : import_three11.MathUtils.mapLinear(props.opacity, 0.5, 1, 4, 1);
+              this.mesh.visible = false;
+              this.viewer.adapter.setTextureOpacity(newMesh, 1);
+              if (zoomProvided && !zoomTransition) {
+                this.viewer.dynamics.zoom.setValue(e.zoomLevel);
+              }
+            }
+            break;
+        }
+        if (positionProvided && transition.rotation) {
           this.viewer.dynamics.position.setValue({
             yaw: props.yaw,
             pitch: props.pitch
           });
         }
-        if (zoomProvided) {
+        if (zoomProvided && zoomTransition) {
           this.viewer.dynamics.zoom.setValue(props.zoom);
         }
         this.viewer.needsUpdate();
       }
     });
     animation.then((completed) => {
+      tempContainer.remove(newMesh);
+      this.scene.remove(tempContainer);
       if (completed) {
-        this.setTexture(textureData);
-        this.viewer.adapter.setTextureOpacity(this.mesh, 1);
+        this.viewer.adapter.disposeTexture(this.state.textureData);
+        this.meshContainer.remove(this.mesh);
+        this.viewer.adapter.disposeMesh(this.mesh);
+        this.mesh = newMesh;
+        this.meshContainer.add(newMesh);
+        this.state.textureData = textureData;
         this.setPanoramaPose(textureData.panoData);
         this.setSphereCorrection(options.sphereCorrection);
-        if (positionProvided && options.transition === "fade-only") {
+        if (positionProvided && !transition.rotation) {
           this.viewer.rotate(options.position);
         }
       } else {
         this.viewer.adapter.disposeTexture(textureData);
+        this.viewer.adapter.disposeMesh(newMesh);
       }
-      this.scene.remove(group);
-      mesh.geometry.dispose();
-      mesh.geometry = null;
     });
     return animation;
   }
@@ -5740,7 +5577,7 @@ var Renderer = class extends AbstractService {
           disposeMaterial(item.material);
         }
       }
-      if (!(item instanceof import_three9.Scene)) {
+      if (!(item instanceof import_three11.Scene)) {
         item.dispose?.();
       }
       if (item !== object) {
@@ -5751,8 +5588,8 @@ var Renderer = class extends AbstractService {
 };
 
 // src/lib/BlobLoader.ts
-var import_three10 = require("three");
-var BlobLoader = class extends import_three10.Loader {
+var import_three12 = require("three");
+var BlobLoader = class extends import_three12.Loader {
   // @ts-ignore
   load(url, onLoad, onProgress, onError, abortSignal) {
     const req = new Request(url, {
@@ -5803,8 +5640,8 @@ var BlobLoader = class extends import_three10.Loader {
 };
 
 // src/lib/ImageLoader.ts
-var import_three11 = require("three");
-var ImageLoader = class extends import_three11.Loader {
+var import_three13 = require("three");
+var ImageLoader = class extends import_three13.Loader {
   // @ts-ignore
   load(url, onLoad, onError, abortSignal) {
     const image = document.createElement("img");
@@ -5989,7 +5826,7 @@ var TextureLoader = class extends AbstractService {
 };
 
 // src/services/ViewerDynamics.ts
-var import_three12 = require("three");
+var import_three14 = require("three");
 var ViewerDynamics = class extends AbstractService {
   /**
    * @internal
@@ -6048,8 +5885,8 @@ var ViewerDynamics = class extends AbstractService {
    */
   updateSpeeds() {
     this.zoom.setSpeed(this.config.zoomSpeed * 50);
-    this.position.setSpeed(import_three12.MathUtils.degToRad(this.config.moveSpeed * 50));
-    this.roll.setSpeed(import_three12.MathUtils.degToRad(this.config.moveSpeed * 50));
+    this.position.setSpeed(import_three14.MathUtils.degToRad(this.config.moveSpeed * 50));
+    this.roll.setSpeed(import_three14.MathUtils.degToRad(this.config.moveSpeed * 50));
   }
   /**
    * @internal
@@ -6062,7 +5899,7 @@ var ViewerDynamics = class extends AbstractService {
 };
 
 // src/services/ViewerState.ts
-var import_three13 = require("three");
+var import_three15 = require("three");
 var ViewerState = class {
   /**
    * @internal
@@ -6088,7 +5925,7 @@ var ViewerState = class {
     /**
      * direction of the camera
      */
-    this.direction = new import_three13.Vector3(0, 0, SPHERE_RADIUS);
+    this.direction = new import_three15.Vector3(0, 0, SPHERE_RADIUS);
     /**
      * current camera roll
      */
@@ -6193,7 +6030,10 @@ var Viewer = class extends TypedEventTarget {
     }
     if (!this.state.loadingPromise) {
       if (this.config.panorama) {
-        this.setPanorama(this.config.panorama);
+        this.setPanorama(this.config.panorama, {
+          sphereCorrection: this.config.sphereCorrection,
+          panoData: this.config.panoData
+        });
       } else {
         this.loader.show();
       }
@@ -6330,19 +6170,7 @@ var Viewer = class extends TypedEventTarget {
   setPanorama(path, options = {}) {
     this.textureLoader.abortLoading();
     this.state.transitionAnimation?.cancel();
-    if (!this.state.ready) {
-      ["sphereCorrection", "panoData"].forEach((opt) => {
-        if (!(opt in options)) {
-          options[opt] = this.config[opt];
-        }
-      });
-    }
-    if (options.transition === void 0) {
-      options.transition = true;
-    }
-    if (options.speed === void 0) {
-      options.speed = DEFAULT_TRANSITION;
-    }
+    const transition = this.dataHelper.getTransitionOptions(options);
     if (options.showLoader === void 0) {
       options.showLoader = true;
     }
@@ -6360,6 +6188,7 @@ var Viewer = class extends TypedEventTarget {
     this.config.panorama = path;
     this.config.caption = options.caption;
     this.config.description = options.description;
+    this.config.sphereCorrection = options.sphereCorrection;
     const done = (err) => {
       if (isAbortError(err)) {
         return false;
@@ -6396,7 +6225,7 @@ var Viewer = class extends TypedEventTarget {
         cleanOptions
       };
     });
-    if (!options.transition || !this.state.ready || !this.adapter.supportsTransition(this.config.panorama)) {
+    if (!transition || !this.state.ready || !this.adapter.supportsTransition(this.config.panorama)) {
       this.state.loadingPromise = loadingPromise.then(({ textureData, cleanOptions }) => {
         this.renderer.show();
         this.renderer.setTexture(textureData);
@@ -6420,10 +6249,11 @@ var Viewer = class extends TypedEventTarget {
       this.state.loadingPromise = loadingPromise.then(({ textureData, cleanOptions }) => {
         this.loader.hide();
         this.dispatchEvent(new PanoramaLoadedEvent(textureData));
-        this.state.transitionAnimation = this.renderer.transition(textureData, cleanOptions);
+        this.state.transitionAnimation = this.renderer.transition(textureData, cleanOptions, transition);
         return this.state.transitionAnimation;
       }).then((completed) => {
         this.state.transitionAnimation = null;
+        this.dispatchEvent(new TransitionDoneEvent(completed));
         if (!completed) {
           throw getAbortError();
         }
@@ -6516,7 +6346,7 @@ var Viewer = class extends TypedEventTarget {
       id: IDS.ERROR,
       image: error_default,
       title: message,
-      dissmisable: false
+      dismissible: false
     });
   }
   /**
@@ -6715,12 +6545,12 @@ var Viewer = class extends TypedEventTarget {
 };
 /**
  * Change the order in which the panoData and sphereCorrection angles are applied from 'ZXY' to 'YXZ'
- * Will default to `true` in version 5.11
+ * @deprecated Will be removed in version 5.12
  */
-Viewer.useNewAnglesOrder = false;
+Viewer.useNewAnglesOrder = true;
 
 // src/index.ts
-var VERSION = "5.10.0";
+var VERSION = "5.11.4";
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AbstractAdapter,

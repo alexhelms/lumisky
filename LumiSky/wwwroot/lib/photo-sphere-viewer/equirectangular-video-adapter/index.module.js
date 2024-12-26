@@ -1,12 +1,11 @@
 /*!
- * Photo Sphere Viewer / Equirectangular Video Adapter 5.10.0
+ * Photo Sphere Viewer / Equirectangular Video Adapter 5.11.4
  * @copyright 2015-2024 Damien "Mistic" Sorel
  * @licence MIT (https://opensource.org/licenses/MIT)
  */
 
 // src/EquirectangularVideoAdapter.ts
-import { CONSTANTS, EquirectangularAdapter, PSVError as PSVError2, utils } from "@photo-sphere-viewer/core";
-import { MathUtils, Mesh as Mesh2, MeshBasicMaterial, SphereGeometry } from "three";
+import { EquirectangularAdapter, utils } from "@photo-sphere-viewer/core";
 
 // ../shared/AbstractVideoAdapter.ts
 import { AbstractAdapter, PSVError } from "@photo-sphere-viewer/core";
@@ -53,23 +52,22 @@ var AbstractVideoAdapter = class extends AbstractAdapter {
   supportsTransition() {
     return false;
   }
-  loadTexture(panorama) {
+  async loadTexture(panorama) {
     if (typeof panorama !== "object" || !panorama.source) {
       return Promise.reject(new PSVError("Invalid panorama configuration, are you using the right adapter?"));
     }
     if (!this.viewer.getPlugin("video")) {
       return Promise.reject(new PSVError("Video adapters require VideoPlugin to be loaded too."));
     }
-    const video = createVideo({
+    const video = panorama.source instanceof HTMLVideoElement ? panorama.source : createVideo({
       src: panorama.source,
       withCredentials: this.viewer.config.withCredentials,
       muted: this.config.muted,
       autoplay: false
     });
-    return this.__videoLoadPromise(video).then(() => {
-      const texture = new VideoTexture(video);
-      return { panorama, texture };
-    });
+    await this.__videoLoadPromise(video);
+    const texture = new VideoTexture(video);
+    return { panorama, texture };
   }
   switchVideo(texture) {
     let currentTime;
@@ -95,8 +93,12 @@ var AbstractVideoAdapter = class extends AbstractAdapter {
     mesh.material.opacity = opacity;
     mesh.material.transparent = opacity < 1;
   }
-  disposeTexture(textureData) {
-    textureData.texture.dispose();
+  disposeTexture({ texture }) {
+    texture.dispose();
+  }
+  disposeMesh(mesh) {
+    mesh.geometry.dispose();
+    mesh.material.dispose();
   }
   __removeVideo() {
     if (this.video) {
@@ -148,86 +150,52 @@ var AbstractVideoAdapter = class extends AbstractAdapter {
 AbstractVideoAdapter.supportsDownload = false;
 
 // src/EquirectangularVideoAdapter.ts
-var getConfig = utils.getConfigParser(
-  {
-    resolution: 64,
-    autoplay: false,
-    muted: false
-  },
-  {
-    resolution: (resolution) => {
-      if (!resolution || !MathUtils.isPowerOfTwo(resolution)) {
-        throw new PSVError2("EquirectangularTilesAdapter resolution must be power of two");
-      }
-      return resolution;
-    }
-  }
-);
+var getConfig = utils.getConfigParser({
+  resolution: 64,
+  autoplay: false,
+  muted: false
+});
 var EquirectangularVideoAdapter = class extends AbstractVideoAdapter {
   constructor(viewer, config) {
     super(viewer);
     this.config = getConfig(config);
-    this.SPHERE_SEGMENTS = this.config.resolution;
-    this.SPHERE_HORIZONTAL_SEGMENTS = this.SPHERE_SEGMENTS / 2;
+    this.adapter = new EquirectangularAdapter(this.viewer, {
+      resolution: this.config.resolution
+    });
   }
   destroy() {
-    this.adapter?.destroy();
+    this.adapter.destroy();
     delete this.adapter;
     super.destroy();
   }
   textureCoordsToSphericalCoords(point, data) {
-    return this.getAdapter().textureCoordsToSphericalCoords(point, data);
+    return this.adapter.textureCoordsToSphericalCoords(point, data);
   }
   sphericalCoordsToTextureCoords(position, data) {
-    return this.getAdapter().sphericalCoordsToTextureCoords(position, data);
+    return this.adapter.sphericalCoordsToTextureCoords(position, data);
   }
-  loadTexture(panorama) {
-    return super.loadTexture(panorama).then(({ texture }) => {
-      const video = texture.image;
-      const panoData = {
-        isEquirectangular: true,
-        fullWidth: video.videoWidth,
-        fullHeight: video.videoHeight,
-        croppedWidth: video.videoWidth,
-        croppedHeight: video.videoHeight,
-        croppedX: 0,
-        croppedY: 0,
-        poseHeading: 0,
-        posePitch: 0,
-        poseRoll: 0
-      };
-      return { panorama, texture, panoData };
-    });
-  }
-  createMesh() {
-    const geometry = new SphereGeometry(
-      CONSTANTS.SPHERE_RADIUS,
-      this.SPHERE_SEGMENTS,
-      this.SPHERE_HORIZONTAL_SEGMENTS,
-      -Math.PI / 2
-    ).scale(-1, 1, 1);
-    const material = new MeshBasicMaterial();
-    return new Mesh2(geometry, material);
-  }
-  setTexture(mesh, textureData) {
-    mesh.material.map = textureData.texture;
-    this.switchVideo(textureData.texture);
-  }
-  /**
-   * @internal
-   */
-  getAdapter() {
-    if (!this.adapter) {
-      this.adapter = new EquirectangularAdapter(this.viewer, {
-        interpolateBackground: false,
-        resolution: this.config.resolution
-      });
+  async loadTexture(panorama, _, newPanoData) {
+    const { texture } = await super.loadTexture(panorama);
+    const video = texture.image;
+    if (panorama.data) {
+      newPanoData = panorama.data;
     }
-    return this.adapter;
+    if (typeof newPanoData === "function") {
+      newPanoData = newPanoData(video);
+    }
+    const panoData = utils.mergePanoData(video.videoWidth, video.videoHeight, newPanoData);
+    return { panorama, texture, panoData };
+  }
+  createMesh(panoData) {
+    return this.adapter.createMesh(panoData);
+  }
+  setTexture(mesh, { texture }) {
+    mesh.material.map = texture;
+    this.switchVideo(texture);
   }
 };
 EquirectangularVideoAdapter.id = "equirectangular-video";
-EquirectangularVideoAdapter.VERSION = "5.10.0";
+EquirectangularVideoAdapter.VERSION = "5.11.4";
 export {
   EquirectangularVideoAdapter
 };
