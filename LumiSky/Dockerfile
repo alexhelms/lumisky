@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-preview-bookworm-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS base
 USER app
 WORKDIR /app
 EXPOSE 8080
@@ -22,7 +22,7 @@ RUN mkdir /lumisky \
     && chown app:app /lumisky
 USER app
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0-preview-bookworm-slim AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Directory.Packages.props", "."]
