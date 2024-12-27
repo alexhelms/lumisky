@@ -1,4 +1,5 @@
 ﻿@page "/log"
+@using Serilog.Events
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject LogChannel LogChannel
@@ -13,10 +14,11 @@
         </RadzenColumn>
     </RadzenRow>
 
-    @foreach (var line in logLines)
+    @foreach (var item in logItems)
     {
-        <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Left" Style="font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;">
-            <span>@line</span>
+        var style = $"font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace; color: {GetLineColor(item.Level)};";
+        <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Left" Style="@style">
+            <span>@item.Content</span>
         </RadzenText>
     }
 </RadzenStack>
@@ -24,7 +26,7 @@
 @code {
     const int MaxLines = 250;
 
-    static List<string> logLines = new(MaxLines);
+    static List<LogChannelItem> logItems = new(MaxLines);
 
     Task logReader = null!;
     CancellationTokenSource cts = new();
@@ -47,14 +49,14 @@
     {
         try
         {
-            await foreach (var line in LogChannel.Reader.ReadAllAsync(cts.Token))
+            await foreach (var item in LogChannel.Reader.ReadAllAsync(cts.Token))
             {
                 await InvokeAsync(() =>
                 {
-                    logLines.Insert(0, line);
-                    if (logLines.Count > MaxLines)
+                    logItems.Insert(0, item);
+                    if (logItems.Count > MaxLines)
                     {
-                        logLines.RemoveRange(MaxLines, logLines.Count - MaxLines);
+                        logItems.RemoveRange(MaxLines, logItems.Count - MaxLines);
                     }
                     StateHasChanged();
                 });
@@ -67,4 +69,15 @@
     {
         await JS.InvokeVoidAsync("open", "/api/logs/download", "_blank");
     }
+
+    private string GetLineColor(LogEventLevel level) => level switch
+    {
+        LogEventLevel.Verbose => "#C8E0F5",
+        LogEventLevel.Debug => "#C8E0F5",
+        LogEventLevel.Information => "#EAEBEC",
+        LogEventLevel.Warning => "#FA9442",
+        LogEventLevel.Error => "#FA0400",
+        LogEventLevel.Fatal => "#FA0400",
+        _ => "#EAEBEC",
+    };
 }

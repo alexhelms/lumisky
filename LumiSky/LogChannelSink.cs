@@ -45,7 +45,7 @@ public class LogChannelSink : ILogEventSink, IDisposable
             sb.Clear();
             using var writer = new StringWriter(sb);
             _formatter.Format(logEvent, writer);
-            await _channel.Write(writer.ToString().TrimEnd());
+            await _channel.Write(writer.ToString().TrimEnd(), logEvent.Level);
         }
     }
 }
@@ -65,17 +65,19 @@ public static class LogChannelSinkConfigurationExtensions
 
 public class LogChannel
 {
-    private readonly Channel<string> _channel;
+    private readonly Channel<LogChannelItem> _channel;
 
-    public ChannelReader<string> Reader => _channel.Reader;
+    public ChannelReader<LogChannelItem> Reader => _channel.Reader;
 
     public LogChannel()
     {
-        _channel = Channel.CreateUnbounded<string>();
+        _channel = Channel.CreateUnbounded<LogChannelItem>();
     }
 
-    public async ValueTask Write(string content)
+    public async ValueTask Write(string content, LogEventLevel level)
     {
-        await _channel.Writer.WriteAsync(content);
+        await _channel.Writer.WriteAsync(new LogChannelItem(content, level));
     }
 }
+
+public record LogChannelItem(string Content, LogEventLevel Level);
