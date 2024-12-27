@@ -16,9 +16,9 @@
 
     @foreach (var item in logItems)
     {
-        var style = $"font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace; color: {GetLineColor(item.Level)};";
-        <RadzenText TextStyle="TextStyle.Body2" TextAlign="TextAlign.Left" Style="@style">
-            <span>@item.Content</span>
+        var style = $"font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace; color: {GetLineColor(item.Level)}; white-space: pre-wrap;";
+        <RadzenText TextStyle="TextStyle.Body2" Style="@style">
+            @item.Content.ReplaceLineEndings("\n")
         </RadzenText>
     }
 </RadzenStack>
