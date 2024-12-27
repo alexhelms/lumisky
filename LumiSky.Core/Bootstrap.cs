@@ -26,6 +26,7 @@ public static class Bootstrap
     {
         services.AddDbContext<AppDbContext>(options => options.UseSqlite());
         services.AddDbContextFactory<AppDbContext>(options => options.UseSqlite(), lifetime: ServiceLifetime.Scoped);
+        services.AddMemoryCache();
 
         services.AddSingleton<IProfileProvider, ProfileProvider>();
         services.AddSingleton<DeviceFactory>();

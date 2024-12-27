@@ -3,6 +3,7 @@ using LumiSky.Core.Devices;
 using LumiSky.Core.Imaging.Processing;
 using LumiSky.Core.Profile;
 using LumiSky.Core.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Quartz;
 namespace LumiSky.Core.Jobs;
 
@@ -15,87 +16,98 @@ public class FindExposureJob : JobBase
     private readonly DeviceFactory _deviceFactory;
     private readonly ExposureService _exposureService;
     private readonly SunService _sunService;
+    private readonly IMemoryCache _memoryCache;
 
     public FindExposureJob(
         IProfileProvider profile,
         DeviceFactory deviceFactory,
         ExposureService exposureService,
-        SunService sunService)
+        SunService sunService,
+        IMemoryCache memoryCache)
     {
         _profile = profile;
         _deviceFactory = deviceFactory;
         _exposureService = exposureService;
         _sunService = sunService;
+        _memoryCache = memoryCache;
     }
 
     protected async override Task OnExecute(IJobExecutionContext context)
     {
         IndiCamera? camera = null;
-        bool success = false;
+        bool success = _memoryCache.TryGetValue<TimeSpan>(CacheKeys.NextExposure, out var previousExposure);
 
-        try
+        if (success)
         {
-            camera = await CreateCamera(context.CancellationToken);
-            context.CancellationToken.ThrowIfCancellationRequested();
-            
-            bool isDay = _sunService.IsDaytime;
-            var exposure = isDay
-                ? TimeSpan.FromSeconds(1)
-                : TimeSpan.FromSeconds(5);
-
-            var gain = isDay ?
-                _profile.Current.Camera.DaytimeGain
-                : _profile.Current.Camera.NighttimeGain;
-
-            var exposureParameters = new ExposureParameters
+            Log.Information("Using last exposure of {Exposure:#.000000} sec",
+                _exposureService.GetNextExposure().TotalSeconds);
+        }
+        else
+        {
+            try
             {
-                Duration = exposure,
-                Gain = gain,
-                Offset = _profile.Current.Camera.Offset,
-            };
-
-            Log.Information("Finding initial exposure");
-
-            while (true)
-            {
+                camera = await CreateCamera(context.CancellationToken);
                 context.CancellationToken.ThrowIfCancellationRequested();
+            
+                bool isDay = _sunService.IsDaytime;
+                var exposure = isDay
+                    ? TimeSpan.FromSeconds(1)
+                    : TimeSpan.FromSeconds(5);
 
-                var median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
-                _exposureService.AddMostRecentStatistics(exposureParameters.Duration, median, gain);
+                var gain = isDay
+                    ? _profile.Current.Camera.DaytimeGain
+                    : _profile.Current.Camera.NighttimeGain;
 
-                var nextExposure = _exposureService.GetNextExposure();
-                exposureParameters = exposureParameters with { Duration = nextExposure };
-
-                if (median < 0.9)
+                var exposureParameters = new ExposureParameters
                 {
-                    Log.Information("Starting exposure found at {Exposure:#.000000} sec, iterating once more",
-                        exposureParameters.Duration.TotalSeconds);
+                    Duration = exposure,
+                    Gain = gain,
+                    Offset = _profile.Current.Camera.Offset,
+                };
 
-                    median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
+                Log.Information("Finding initial exposure");
+
+                while (true)
+                {
+                    context.CancellationToken.ThrowIfCancellationRequested();
+
+                    var median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
                     _exposureService.AddMostRecentStatistics(exposureParameters.Duration, median, gain);
 
-                    Log.Information("Final starting exposure is {Exposure:#.000000} sec",
-                        _exposureService.GetNextExposure().TotalSeconds);
+                    var nextExposure = _exposureService.GetNextExposure();
+                    exposureParameters = exposureParameters with { Duration = nextExposure };
 
-                    success = true;
-                    break;
+                    if (median < 0.9)
+                    {
+                        Log.Information("Starting exposure found at {Exposure:#.000000} sec, iterating once more",
+                            exposureParameters.Duration.TotalSeconds);
+
+                        median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
+                        _exposureService.AddMostRecentStatistics(exposureParameters.Duration, median, gain);
+
+                        Log.Information("Final starting exposure is {Exposure:#.000000} sec",
+                            _exposureService.GetNextExposure().TotalSeconds);
+
+                        success = true;
+                        break;
+                    }
                 }
             }
-        }
-        finally
-        {
-            if (camera is not null)
+            finally
             {
-                try
+                if (camera is not null)
                 {
-                    await camera.DisconnectAsync();
-                    camera.Dispose();
-                    camera = null;
-                }
-                catch (Exception e)
-                {
-                    Log.Warning(e, "Error disconnecting from camera");
-                    throw;
+                    try
+                    {
+                        await camera.DisconnectAsync();
+                        camera.Dispose();
+                        camera = null;
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning(e, "Error disconnecting from camera");
+                        throw;
+                    }
                 }
             }
         }

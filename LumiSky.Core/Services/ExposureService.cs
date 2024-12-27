@@ -1,6 +1,7 @@
 ﻿using MathNet.Numerics.Statistics;
 using LumiSky.Core.Mathematics;
 using LumiSky.Core.Profile;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace LumiSky.Core.Services;
 
@@ -10,6 +11,7 @@ public class ExposureService
 
     private readonly IProfileProvider _profile;
     private readonly SunService _sunService;
+    private readonly IMemoryCache _memoryCache;
 
     // TODO: A visualization of the queue on the gui as well as the coefficients for the fits
     private Queue<double> ElectronQueue { get; } = [];
@@ -22,10 +24,12 @@ public class ExposureService
 
     public ExposureService(
         IProfileProvider profile,
-        SunService sunService)
+        SunService sunService,
+        IMemoryCache memoryCache)
     {
         _profile = profile;
         _sunService = sunService;
+        _memoryCache = memoryCache;
     }
 
     public TimeSpan GetNextExposure()
@@ -109,6 +113,10 @@ public class ExposureService
         exposureNextSec = Math.Clamp(exposureNextSec, 1e-6, maxExposure.TotalSeconds);
 
         ExposureSecNext = TimeSpan.FromSeconds(exposureNextSec);
+
+        // Cache the next exposure duration so restarting the job pipeline can be avoid the auto exposure startup time.
+        _memoryCache.Set(CacheKeys.NextExposure, ExposureSecNext, DateTimeOffset.UtcNow.AddMinutes(3));
+
         DataChanged?.Invoke(this, EventArgs.Empty);
     }
 
