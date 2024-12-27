@@ -17,7 +17,7 @@
 <HeadContent>
     <style>
         .rz-message-popup {
-            z-index: 99;
+        z-index: 99;
         }
     </style>
 </HeadContent>
@@ -67,6 +67,23 @@
                                 </RadzenColumn>
                             </RadzenRow>
 
+                            <RadzenRow AlignItems="AlignItems.Center" RowGap="1.5rem">
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenLabel Text="Shortcuts" />
+                                </RadzenColumn>
+                                <RadzenColumn>
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Wrap="FlexWrap.Wrap">
+                                        <RadzenButton Text="Last Night" ButtonStyle="ButtonStyle.Secondary" Click="OnLastNightSelected"/>
+                                        <RadzenButton Text="1 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("1 hr"))" />
+                                        <RadzenButton Text="3 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("3 hr"))" />
+                                        <RadzenButton Text="6 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("6 hr"))" />
+                                        <RadzenButton Text="12 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("12 hr"))" />
+                                        <RadzenButton Text="24 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("24 hr"))" />
+                                        <RadzenButton Text="48 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("48 hr"))" />
+                                    </RadzenStack>
+                                </RadzenColumn>
+                            </RadzenRow>
+
                         </RadzenStack>
                     </RadzenFieldset>
                     <RadzenButton ButtonType="ButtonType.Submit" Size="ButtonSize.Medium" Icon="bolt" Text="Generate" />
@@ -78,8 +95,8 @@
     <RadzenRow JustifyContent="JustifyContent.Center" class="rz-mt-4">
         <RadzenColumn Size="12">
             <RadzenDataGrid @ref="dataGrid" IsLoading="@isLoading" Count="@count" Data="@jobs" LoadData="@LoadData" AllowFiltering="false" 
-                            AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Simple" AllowSorting="false"
-                            PageSize="25" AllowPaging="true" ShowPagingSummary="true" SelectionMode="DataGridSelectionMode.Single">
+            AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Simple" AllowSorting="false"
+            PageSize="25" AllowPaging="true" ShowPagingSummary="true" SelectionMode="DataGridSelectionMode.Single">
                 <EmptyTemplate>
                     <RadzenText TextAlign="TextAlign.Center" class="rz-mb-0">No jobs.</RadzenText>
                 </EmptyTemplate>
@@ -178,10 +195,7 @@
 
     protected override void OnInitialized()
     {
-        model.StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
-        model.EndDate = model.StartDate.AddDays(1);
-        model.StartTime = GetDusk(model.StartDate);
-        model.EndTime = GetDawn(model.EndDate);
+        OnLastNightSelected();
 
         GenerationService.Queued += OnGenerationQueued;
         GenerationService.Starting += OnGenerationStarting;
@@ -351,6 +365,29 @@
         }
 
         await dataGrid.RefreshDataAsync();
+    }
+
+    private void OnLastNightSelected()
+    {
+        model.StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
+        model.EndDate = model.StartDate.AddDays(1);
+        model.StartTime = GetDusk(model.StartDate);
+        model.EndTime = GetDawn(model.EndDate);
+        StateHasChanged();
+    }
+
+    private void OnShortcutSelected(string shortcut)
+    {
+        if (double.TryParse(shortcut.Replace("hr", string.Empty).Trim(), out var hours))
+        {
+            var end = DateTime.Now;
+            var start = end.AddHours(-1 * hours);
+            model.StartDate = DateOnly.FromDateTime(start);
+            model.EndDate = DateOnly.FromDateTime(end);
+            model.StartTime = TimeOnly.FromDateTime(start);
+            model.EndTime = TimeOnly.FromDateTime(end);
+            StateHasChanged();
+        }
     }
 
     private bool ValidateStartDateBeforeEndDate(DateOnly date)
