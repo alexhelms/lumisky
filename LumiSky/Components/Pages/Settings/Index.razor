@@ -1,18 +1,79 @@
 ﻿@page "/settings"
+@inject IJSRuntime JS
+@inject NotificationService NotificationService
+
 <PageTitle>Settings</PageTitle>
 
-<RadzenTabs TabPosition="TabPosition.Left"> 
-    <Tabs>
-        <RadzenTabsItem Text="Capture"><CaptureSettings /></RadzenTabsItem>
-        <RadzenTabsItem Text="Camera"><CameraSettings /></RadzenTabsItem>
-        <RadzenTabsItem Text="Image"><ImageSettings /></RadzenTabsItem>
-        <RadzenTabsItem Text="Processing"><ProcessingSettings /></RadzenTabsItem>
-        <RadzenTabsItem Text="Location"><LocationSettings /></RadzenTabsItem>
-        <RadzenTabsItem Text="Export"><ExportSettings /></RadzenTabsItem>
-        <RadzenTabsItem Text="Timelapse"><TimelapseSettings /></RadzenTabsItem>
-    </Tabs>
-</RadzenTabs>
+<HeadContent>
+    <style>
+        .rz-fileupload-buttonbar {
+            padding: 0;
+        }
+
+        .rz-fileupload-buttonbar .rz-fileupload-choose {
+            padding: 0.5rem 1rem;
+        }
+
+        :root {
+            --rz-upload-choose-background-color: var(--rz-primary);
+            --rz-upload-choose-color: var(--rz-on-primary);
+            --rz-upload-choose-hover-background-color: var(--rz-primary);
+            --rz-upload-choose-hover-color: var(--rz-on-primary);
+            --rz-upload-choose-active-background-color: var(--rz-primary);
+            --rz-upload-choose-active-color: var(--rz-on-primary);
+        }
+    </style>
+</HeadContent>
+
+<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+        <RadzenUpload Multiple="false" MaxFileCount="1" Accept=".lsp" Url="api/profile/import" ChooseText="Import" Complete="OnImportComplete" Error="OnImportError"
+                      InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" />
+        <RadzenButton Text="Export" Click="ExportSettings" />
+    </RadzenStack>
+
+    <RadzenTabs TabPosition="TabPosition.Left">
+        <Tabs>
+            <RadzenTabsItem Text="Capture"><CaptureSettings /></RadzenTabsItem>
+            <RadzenTabsItem Text="Camera"><CameraSettings /></RadzenTabsItem>
+            <RadzenTabsItem Text="Image"><ImageSettings /></RadzenTabsItem>
+            <RadzenTabsItem Text="Processing"><ProcessingSettings /></RadzenTabsItem>
+            <RadzenTabsItem Text="Location"><LocationSettings /></RadzenTabsItem>
+            <RadzenTabsItem Text="Export"><ExportSettings /></RadzenTabsItem>
+            <RadzenTabsItem Text="Timelapse"><TimelapseSettings /></RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+
+</RadzenStack>
 
 @code {
+    private bool _showRestartMessage;
 
+    private void OnImportError(UploadErrorEventArgs args)
+    {
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Duration = 5000,
+            Summary = "Import Failed!",
+            Detail = "Check the file and try again.",
+        });
+    }
+
+    private void OnImportComplete(UploadCompleteEventArgs args)
+    {
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Duration = 5000,
+            Summary = "Settings Imported!",
+            Detail = "Restart LumiSky to take effect.",
+        });
+    }
+
+    private async Task ExportSettings()
+    {
+        await JS.InvokeVoidAsync("open", "/api/profile/export", "_blank");
+    }
 }

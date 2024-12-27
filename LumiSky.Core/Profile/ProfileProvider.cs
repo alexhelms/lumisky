@@ -53,6 +53,20 @@ public interface IProfileProvider
     IProfile LoadProfiles();
 
     /// <summary>
+    /// Export the current profile as a json string.
+    /// </summary>
+    /// <returns>A json string of the current profile.</returns>
+    string ExportProfile();
+
+    /// <summary>
+    /// Import a json string as the current profile.
+    /// The application must be restarted to take full effect.
+    /// </summary>
+    /// <param name="json">Profile as json.</param>
+    /// <returns>True if successfully imported.</returns>
+    bool ImportProfile(string json);
+
+    /// <summary>
     /// Geta list of profiles.
     /// </summary>
     ObservableCollection<IProfile> Profiles { get; }
@@ -65,7 +79,7 @@ public interface IProfileProvider
 
 public class ProfileProvider : ObservableObject, IProfileProvider
 {
-    private static readonly string ProfileExtension = ".lgp";
+    public static readonly string ProfileExtension = ".lsp";
 
     private IProfile _current = null!;
     private string? _prevProfileName;
@@ -82,11 +96,6 @@ public class ProfileProvider : ObservableObject, IProfileProvider
                 ChangeProfile(_current, value);
             }
         }
-    }
-
-    public ProfileProvider()
-    {
-        LoadProfiles();
     }
 
     public IProfile NewProfile(string profileName)
@@ -191,10 +200,18 @@ public class ProfileProvider : ObservableObject, IProfileProvider
             IProfile profile = serializer.Deserialize<Profile>(jsonReader)
                 ?? throw new NullReferenceException($"Deserializing profile {filename} returned null");
 
-            Profiles.Add(profile);
-            if (activate)
-                Current = profile;
-            return profile;
+            var existingProfile = Profiles.FirstOrDefault(p => p.Name == profile.Name);
+            if (existingProfile is null)
+            {
+                Profiles.Add(profile);
+                if (activate)
+                    Current = profile;
+                return profile;
+            }
+            else
+            {
+                return existingProfile;
+            }
         }
         catch (Exception e)
         {
@@ -231,6 +248,46 @@ public class ProfileProvider : ObservableObject, IProfileProvider
         }
 
         return Current;
+    }
+
+    public string ExportProfile()
+    {
+        if (Current is null)
+            throw new NullReferenceException("Current profile is null");
+
+        var serializerSettings = Profile.CreateSerializerSettings();
+        string json = JsonConvert.SerializeObject(Current, serializerSettings);
+        return json;
+    }
+
+    public bool ImportProfile(string json)
+    {
+        bool success = false;
+
+        try
+        {
+            var serializerSettings = Profile.CreateSerializerSettings();
+            IProfile? profile = JsonConvert.DeserializeObject<IProfile>(json, serializerSettings);
+            if (profile is null)
+            {
+                return false;
+            }
+
+            int index = Profiles.IndexOf(Current);
+            if (index != -1)
+            {
+                Profiles[index] = profile;
+            }
+
+            Current = profile;
+            success = true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+
+        return success;
     }
 
     private string GetProfileFilename(string profileName) => Path.Combine(LumiSkyPaths.Profiles, $"{profileName}{ProfileExtension}");
