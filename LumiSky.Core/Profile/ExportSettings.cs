@@ -8,6 +8,8 @@ public interface IExportSettings : ISettings
     bool ExportRaws { get; set; }
     bool ExportImages { get; set; }
     bool ExportPanoramas { get; set; }
+    bool ExportTimelapses { get; set; }
+    bool ExportPanoramaTimelapses { get; set; }
     bool EnableFtp { get; set; }
     string FtpHostname { get; set; }
     int FtpPort { get; set; }
@@ -25,6 +27,8 @@ public sealed partial class ExportSettings : Settings, IExportSettings
         ExportRaws = false;
         ExportImages = true;
         ExportPanoramas = false;
+        ExportTimelapses = false;
+        ExportPanoramaTimelapses = false;
         FtpHostname = "localhost";
         FtpPort = 21;
         FtpUsername = "lumisky";
@@ -33,15 +37,42 @@ public sealed partial class ExportSettings : Settings, IExportSettings
         EnableCertificateValidation = false;
     }
 
-    [ObservableProperty] bool _enableExport;
-    [ObservableProperty] bool _exportRaws;
-    [ObservableProperty] bool _exportImages;
-    [ObservableProperty] bool _exportPanoramas;
-    [ObservableProperty] bool _enableFtp;
-    [ObservableProperty] string _ftpHostname = "localhost";
-    [ObservableProperty] int _ftpPort = 21;
-    [ObservableProperty] string _ftpUsername = "lumisky";
-    [ObservableProperty] string _ftpPassword = "password";
-    [ObservableProperty] string _ftpRemotePath = string.Empty;
-    [ObservableProperty] bool _enableCertificateValidation;
+    [ObservableProperty]
+    public partial bool EnableExport { get; set; }
+
+    [ObservableProperty]
+    public partial bool ExportRaws { get; set; }
+
+    [ObservableProperty]
+    public partial bool ExportImages { get; set; }
+
+    [ObservableProperty]
+    public partial bool ExportPanoramas { get; set; }
+
+    [ObservableProperty]
+    public partial bool ExportTimelapses { get; set; }
+
+    [ObservableProperty]
+    public partial bool ExportPanoramaTimelapses { get; set; }
+
+    [ObservableProperty]
+    public partial bool EnableFtp { get; set; }
+
+    [ObservableProperty]
+    public partial string FtpHostname { get; set; } = "localhost";
+
+    [ObservableProperty]
+    public partial int FtpPort { get; set; } = 21;
+
+    [ObservableProperty]
+    public partial string FtpUsername { get; set; } = "lumisky";
+
+    [ObservableProperty]
+    public partial string FtpPassword { get; set; } = "password";
+
+    [ObservableProperty]
+    public partial string FtpRemotePath { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool EnableCertificateValidation { get; set; }
 }

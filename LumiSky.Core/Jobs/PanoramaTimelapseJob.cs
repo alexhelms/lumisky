@@ -111,10 +111,19 @@ public class PanoramaTimelapseJob : JobBase
                 File.Delete(outputFilename);
                 throw;
             }
-            
+
             // Only save if the output is good
             await PersistTimelapse(beginLocal, endLocal, outputFilename);
             await PersistGenerationAsSuccess(outputFilename);
+
+            context.CancellationToken.ThrowIfCancellationRequested();
+
+            await context.Scheduler.TriggerJob(
+                ExportJob.Key,
+                new JobDataMap
+                {
+                    [nameof(ExportJob.PanoramaTimelapseFilename)] = outputFilename!,
+                });
 
             Log.Information("Panorama timelapse finished in {Elapsed:F3} seconds", ffmpeg.Elapsed.TotalSeconds);
         }

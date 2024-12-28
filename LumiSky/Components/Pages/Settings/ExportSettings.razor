@@ -32,6 +32,16 @@
                         <RadzenLabel Text="Export Panorama" Component="True" />
                     </RadzenStack>
 
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.ExportTimelapses" />
+                        <RadzenLabel Text="Export Timelapses" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.ExportPanoramaTimelapses" />
+                        <RadzenLabel Text="Export Panorama Timelapses" Component="True" />
+                    </RadzenStack>
+
                 </RadzenStack>
             </ChildContent>
         </RadzenFieldset>
@@ -93,6 +103,8 @@
         model.ExportRaws = Profile.Current.Export.ExportRaws;
         model.ExportImages = Profile.Current.Export.ExportImages;
         model.ExportPanoramas = Profile.Current.Export.ExportPanoramas;
+        model.ExportTimelapses = Profile.Current.Export.ExportTimelapses;
+        model.ExportPanoramaTimelapses = Profile.Current.Export.ExportPanoramaTimelapses;
         model.EnableFtp = Profile.Current.Export.EnableFtp;
         model.FtpHostname = Profile.Current.Export.FtpHostname;
         model.FtpPort = Profile.Current.Export.FtpPort;
@@ -109,6 +121,8 @@
         Profile.Current.Export.ExportRaws = model.ExportRaws;
         Profile.Current.Export.ExportImages = model.ExportImages;
         Profile.Current.Export.ExportPanoramas = model.ExportPanoramas;
+        Profile.Current.Export.ExportTimelapses = model.ExportTimelapses;
+        Profile.Current.Export.ExportPanoramaTimelapses = model.ExportPanoramaTimelapses;
         Profile.Current.Export.EnableFtp = model.EnableFtp;
         Profile.Current.Export.FtpHostname = model.FtpHostname;
         Profile.Current.Export.FtpPort = model.FtpPort;
@@ -131,6 +145,8 @@
         public bool ExportRaws { get; set; }
         public bool ExportImages { get; set; }
         public bool ExportPanoramas { get; set; }
+        public bool ExportTimelapses { get; set; }
+        public bool ExportPanoramaTimelapses { get; set; }
         public bool EnableFtp { get; set; }
         public string FtpHostname { get; set; } = null!;
         public int FtpPort { get; set; }

@@ -19,6 +19,8 @@ public class ExportJob : JobBase
     public string? RawFilename { get; set; }
     public string? ImageFilename { get; set; }
     public string? PanoramaFilename { get; set; }
+    public string? TimelapseFilename { get; set; }
+    public string? PanoramaTimelapseFilename { get; set; }
 
     protected override async Task OnExecute(IJobExecutionContext context)
     {
@@ -46,7 +48,21 @@ public class ExportJob : JobBase
         {
             localFilenames.Add(PanoramaFilename);
         }
-        
+
+        if (_profile.Current.Export.ExportTimelapses &&
+            TimelapseFilename is not null &&
+            File.Exists(TimelapseFilename))
+        {
+            localFilenames.Add(TimelapseFilename);
+        }
+
+        if (_profile.Current.Export.ExportPanoramaTimelapses &&
+            PanoramaTimelapseFilename is not null &&
+            File.Exists(PanoramaTimelapseFilename))
+        {
+            localFilenames.Add(PanoramaTimelapseFilename);
+        }
+
         if (localFilenames.Count > 0)
         {
             var start = Stopwatch.GetTimestamp();

@@ -116,6 +116,15 @@ public class TimelapseJob : JobBase
             await PersistTimelapse(beginLocal, endLocal, outputFilename);
             await PersistGenerationAsSuccess(outputFilename);
 
+            context.CancellationToken.ThrowIfCancellationRequested();
+
+            await context.Scheduler.TriggerJob(
+                ExportJob.Key,
+                new JobDataMap
+                {
+                    [nameof(ExportJob.TimelapseFilename)] = outputFilename!,
+                });
+
             Log.Information("Timelapse finished in {Elapsed:F3} seconds", ffmpeg.Elapsed.TotalSeconds);
         }
         catch (Exception e)
