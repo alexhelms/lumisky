@@ -21,8 +21,15 @@ public sealed partial class CaptureSettings : Settings, ICaptureSettings
         MaxExposureDuration = TimeSpan.FromSeconds(50);
     }
 
-    [ObservableProperty] bool _autoStart;
-    [ObservableProperty] string _dataDirectory = string.Empty;
-    [ObservableProperty] TimeSpan _captureInterval;
-    [ObservableProperty] TimeSpan _maxExposureDuration;
+    [ObservableProperty]
+    public partial bool AutoStart { get; set; }
+
+    [ObservableProperty]
+    public partial string DataDirectory { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial TimeSpan CaptureInterval { get; set; }
+
+    [ObservableProperty]
+    public partial TimeSpan MaxExposureDuration { get; set; }
 }

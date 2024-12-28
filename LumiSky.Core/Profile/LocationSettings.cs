@@ -22,9 +22,18 @@ public sealed partial class LocationSettings : Settings, ILocationSettings
         TransitionSunAltitude = -6;
     }
 
-    [ObservableProperty] string _location = string.Empty;
-    [ObservableProperty] double _latitude;
-    [ObservableProperty] double _longitude;
-    [ObservableProperty] double _elevation;
-    [ObservableProperty] double _transitionSunAltitude;
+    [ObservableProperty]
+    public partial string Location { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial double Latitude { get; set; }
+
+    [ObservableProperty]
+    public partial double Longitude { get; set; }
+
+    [ObservableProperty]
+    public partial double Elevation { get; set; }
+
+    [ObservableProperty]
+    public partial double TransitionSunAltitude { get; set; }
 }

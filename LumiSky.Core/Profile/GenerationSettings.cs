@@ -47,20 +47,47 @@ public sealed partial class GenerationSettings : Settings, IGenerationSettings
         PanoramaCodec = VideoCodec.H264;
     }
 
-    [ObservableProperty] string _ffmpegPath = string.Empty;
-    [ObservableProperty] string _ffprobePath = string.Empty;
-    [ObservableProperty] bool _enableDaytimeTimelapse;
-    [ObservableProperty] bool _enableNighttimeTimelapse;
-    [ObservableProperty] int _timelapseFrameRate;
-    [ObservableProperty] int _timelapseQuality;
-    [ObservableProperty] int _timelapseWidth;
-    [ObservableProperty] VideoCodec _timelapseCodec;
-    [ObservableProperty] bool _enableDaytimePanorama;
-    [ObservableProperty] bool _enableNighttimePanorama;
-    [ObservableProperty] int _panoramaFrameRate;
-    [ObservableProperty] int _panoramaQuality;
-    [ObservableProperty] int _panoramaWidth;
-    [ObservableProperty] VideoCodec _panoramaCodec;
+    [ObservableProperty]
+    public partial string FfmpegPath { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string FfprobePath { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool EnableDaytimeTimelapse { get; set; }
+
+    [ObservableProperty]
+    public partial bool EnableNighttimeTimelapse { get; set; }
+
+    [ObservableProperty]
+    public partial int TimelapseFrameRate { get; set; }
+
+    [ObservableProperty]
+    public partial int TimelapseQuality { get; set; }
+
+    [ObservableProperty]
+    public partial int TimelapseWidth { get; set; }
+
+    [ObservableProperty]
+    public partial VideoCodec TimelapseCodec { get; set; }
+
+    [ObservableProperty]
+    public partial bool EnableDaytimePanorama { get; set; }
+
+    [ObservableProperty]
+    public partial bool EnableNighttimePanorama { get; set; }
+
+    [ObservableProperty]
+    public partial int PanoramaFrameRate { get; set; }
+
+    [ObservableProperty]
+    public partial int PanoramaQuality { get; set; }
+
+    [ObservableProperty]
+    public partial int PanoramaWidth { get; set; }
+
+    [ObservableProperty]
+    public partial VideoCodec PanoramaCodec { get; set; }
 }
 
 public enum VideoCodec

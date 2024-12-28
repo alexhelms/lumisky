@@ -74,22 +74,57 @@ public sealed partial class CameraSettings : Settings, ICameraSettings
         TargetMedian = 1000;
     }
 
-    [ObservableProperty] string _name = string.Empty;
-    [ObservableProperty] string _indiHostname = string.Empty;
-    [ObservableProperty] int _indiPort = 7624;
-    [ObservableProperty] ObservableDictionary<string, string> _extra = new();
-    [ObservableProperty] double _pixelSize;
-    [ObservableProperty] double _focalLength;
-    [ObservableProperty] int _offset;
-    [ObservableProperty] int _daytimeGain;
-    [ObservableProperty] double _daytimeElectronGain;
-    [ObservableProperty] double _daytimeBiasR;
-    [ObservableProperty] double _daytimeBiasG;
-    [ObservableProperty] double _daytimeBiasB;
-    [ObservableProperty] int _nighttimeGain;
-    [ObservableProperty] double _nighttimeElectronGain;
-    [ObservableProperty] double _nighttimeBiasR;
-    [ObservableProperty] double _nighttimeBiasG;
-    [ObservableProperty] double _nighttimeBiasB;
-    [ObservableProperty] double _targetMedian;
+    [ObservableProperty]
+    public partial string Name { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string IndiHostname { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial int IndiPort { get; set; } = 7624;
+
+    [ObservableProperty]
+    public partial ObservableDictionary<string, string> Extra { get; set; } = new();
+
+    [ObservableProperty]
+    public partial double PixelSize { get; set; }
+
+    [ObservableProperty]
+    public partial double FocalLength { get; set; }
+
+    [ObservableProperty]
+    public partial int Offset { get; set; }
+
+    [ObservableProperty]
+    public partial int DaytimeGain { get; set; }
+
+    [ObservableProperty]
+    public partial double DaytimeElectronGain { get; set; }
+
+    [ObservableProperty]
+    public partial double DaytimeBiasR { get; set; }
+
+    [ObservableProperty]
+    public partial double DaytimeBiasG { get; set; }
+
+    [ObservableProperty]
+    public partial double DaytimeBiasB { get; set; }
+
+    [ObservableProperty]
+    public partial int NighttimeGain { get; set; }
+
+    [ObservableProperty]
+    public partial double NighttimeElectronGain { get; set; }
+
+    [ObservableProperty]
+    public partial double NighttimeBiasR { get; set; }
+
+    [ObservableProperty]
+    public partial double NighttimeBiasG { get; set; }
+
+    [ObservableProperty]
+    public partial double NighttimeBiasB { get; set; }
+
+    [ObservableProperty]
+    public partial double TargetMedian { get; set; }
 }

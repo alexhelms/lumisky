@@ -75,31 +75,80 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         TextOverlays = [];
     }
 
-    [ObservableProperty] double _wbRedScale;
-    [ObservableProperty] double _wbGreenScale;
-    [ObservableProperty] double _wbBlueScale;
-    [ObservableProperty] int _circleMaskDiameter;
-    [ObservableProperty] int _circleMaskOffsetX;
-    [ObservableProperty] int _circleMaskOffsetY;
-    [ObservableProperty] int _circleMaskBlur;
-    [ObservableProperty] bool _drawCardinalOverlay;
-    [ObservableProperty] int _textSize;
-    [ObservableProperty] int _textOutline;
-    [ObservableProperty] string _textColor = "#c8c8c8";
-    [ObservableProperty] string _textOutlineColor = "#000000";
-    [ObservableProperty] string _cardinalTopString = "N";
-    [ObservableProperty] string _cardinalBottomString = "S";
-    [ObservableProperty] string _cardinalRightString = "E";
-    [ObservableProperty] string _cardinalLeftString = "W";
-    [ObservableProperty] string _panoramaCardinal0AzimuthString = "N";
-    [ObservableProperty] string _panoramaCardinal90AzimuthString = "E";
-    [ObservableProperty] string _panoramaCardinal180AzimuthString = "S";
-    [ObservableProperty] string _panoramaCardinal270AzimuthString = "W";
-    [ObservableProperty] bool _autoSCurve;
-    [ObservableProperty] double _autoSCurveContrast;
-    [ObservableProperty] bool _hotPixelCorrection;
-    [ObservableProperty] int _hotPixelThresholdPercent;
-    [ObservableProperty] ObservableCollection<TextOverlay> _textOverlays = [];
+    [ObservableProperty]
+    public partial double WbRedScale { get; set; }
+
+    [ObservableProperty]
+    public partial double WbGreenScale { get; set; }
+
+    [ObservableProperty]
+    public partial double WbBlueScale { get; set; }
+
+    [ObservableProperty]
+    public partial int CircleMaskDiameter { get; set; }
+
+    [ObservableProperty]
+    public partial int CircleMaskOffsetX { get; set; }
+
+    [ObservableProperty]
+    public partial int CircleMaskOffsetY { get; set; }
+
+    [ObservableProperty]
+    public partial int CircleMaskBlur { get; set; }
+
+    [ObservableProperty]
+    public partial bool DrawCardinalOverlay { get; set; }
+
+    [ObservableProperty]
+    public partial int TextSize { get; set; }
+
+    [ObservableProperty]
+    public partial int TextOutline { get; set; }
+
+    [ObservableProperty]
+    public partial string TextColor { get; set; } = "#c8c8c8";
+
+    [ObservableProperty]
+    public partial string TextOutlineColor { get; set; } = "#000000";
+
+    [ObservableProperty]
+    public partial string CardinalTopString { get; set; } = "N";
+
+    [ObservableProperty]
+    public partial string CardinalBottomString { get; set; } = "S";
+
+    [ObservableProperty]
+    public partial string CardinalRightString { get; set; } = "E";
+
+    [ObservableProperty]
+    public partial string CardinalLeftString { get; set; } = "W";
+
+    [ObservableProperty]
+    public partial string PanoramaCardinal0AzimuthString { get; set; } = "N";
+
+    [ObservableProperty]
+    public partial string PanoramaCardinal90AzimuthString { get; set; } = "E";
+
+    [ObservableProperty]
+    public partial string PanoramaCardinal180AzimuthString { get; set; } = "S";
+
+    [ObservableProperty]
+    public partial string PanoramaCardinal270AzimuthString { get; set; } = "W";
+
+    [ObservableProperty]
+    public partial bool AutoSCurve { get; set; }
+
+    [ObservableProperty]
+    public partial double AutoSCurveContrast { get; set; }
+
+    [ObservableProperty]
+    public partial bool HotPixelCorrection { get; set; }
+
+    [ObservableProperty]
+    public partial int HotPixelThresholdPercent { get; set; }
+
+    [ObservableProperty]
+    public partial ObservableCollection<TextOverlay> TextOverlays { get; set; } = [];
 }
 
 public record TextOverlay

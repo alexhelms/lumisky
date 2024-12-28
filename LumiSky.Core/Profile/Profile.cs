@@ -86,15 +86,36 @@ public sealed partial class Profile : Settings, IProfile
         Generation = new GenerationSettings();
     }
 
-    [ObservableProperty] string _name = "default";
-    [ObservableProperty] string _description = "lumisky profile";
-    [ObservableProperty] DateTime _lastActivatedUtc;
-    [ObservableProperty] IAppSettings _app = new AppSettings();
-    [ObservableProperty] ICameraSettings _camera = new CameraSettings();
-    [ObservableProperty] ICaptureSettings _capture = new CaptureSettings();
-    [ObservableProperty] IExportSettings _export = new ExportSettings();
-    [ObservableProperty] IImageSettings _image = new ImageSettings();
-    [ObservableProperty] ILocationSettings _location = new LocationSettings();
-    [ObservableProperty] IProcessingSettings _processing = new ProcessingSettings();
-    [ObservableProperty] IGenerationSettings _generation = new GenerationSettings();
+    [ObservableProperty]
+    public partial string Name { get; set; } = "default";
+
+    [ObservableProperty]
+    public partial string Description { get; set; } = "lumisky profile";
+
+    [ObservableProperty]
+    public partial DateTime LastActivatedUtc { get; set; }
+
+    [ObservableProperty]
+    public partial IAppSettings App { get; set; } = new AppSettings();
+
+    [ObservableProperty]
+    public partial ICameraSettings Camera { get; set; } = new CameraSettings();
+
+    [ObservableProperty]
+    public partial ICaptureSettings Capture { get; set; } = new CaptureSettings();
+
+    [ObservableProperty]
+    public partial IExportSettings Export { get; set; } = new ExportSettings();
+
+    [ObservableProperty]
+    public partial IImageSettings Image { get; set; } = new ImageSettings();
+
+    [ObservableProperty]
+    public partial ILocationSettings Location { get; set; } = new LocationSettings();
+
+    [ObservableProperty]
+    public partial IProcessingSettings Processing { get; set; } = new ProcessingSettings();
+
+    [ObservableProperty]
+    public partial IGenerationSettings Generation { get; set; } = new GenerationSettings();
 }

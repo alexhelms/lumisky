@@ -39,17 +39,42 @@ public sealed partial class ImageSettings : Settings, IImageSettings
         PanoFlipHorizontal = false;
     }
 
-    [ObservableProperty] bool _keepRawImages;
-    [ObservableProperty] ImageFileType _fileType;
-    [ObservableProperty] int _jpegQuality;
-    [ObservableProperty] int _pngCompression;
-    [ObservableProperty] double _rotation;
-    [ObservableProperty] bool _flipHorizontal;
-    [ObservableProperty] bool _flipVertical;
-    [ObservableProperty] bool _createPano;
-    [ObservableProperty] double _panoDiameter;
-    [ObservableProperty] double _panoXOffset;
-    [ObservableProperty] double _panoYOffset;
-    [ObservableProperty] double _panoRotation;
-    [ObservableProperty] bool _panoFlipHorizontal;
+    [ObservableProperty]
+    public partial bool KeepRawImages { get; set; }
+
+    [ObservableProperty]
+    public partial ImageFileType FileType { get; set; }
+
+    [ObservableProperty]
+    public partial int JpegQuality { get; set; }
+
+    [ObservableProperty]
+    public partial int PngCompression { get; set; }
+
+    [ObservableProperty]
+    public partial double Rotation { get; set; }
+
+    [ObservableProperty]
+    public partial bool FlipHorizontal { get; set; }
+
+    [ObservableProperty]
+    public partial bool FlipVertical { get; set; }
+
+    [ObservableProperty]
+    public partial bool CreatePano { get; set; }
+
+    [ObservableProperty]
+    public partial double PanoDiameter { get; set; }
+
+    [ObservableProperty]
+    public partial double PanoXOffset { get; set; }
+
+    [ObservableProperty]
+    public partial double PanoYOffset { get; set; }
+
+    [ObservableProperty]
+    public partial double PanoRotation { get; set; }
+
+    [ObservableProperty]
+    public partial bool PanoFlipHorizontal { get; set; }
 }
