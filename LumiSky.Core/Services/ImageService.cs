@@ -69,6 +69,51 @@ public class ImageService
         NewPanorama?.Invoke(this, EventArgs.Empty);
     }
 
+    public async Task FavoriteRawImage(int id, bool value)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.RawImages
+            .Where(x => x.Id == id)
+            .ExecuteUpdateAsync(x => x.SetProperty(p => p.IsFavorite, value));
+    }
+
+    public async Task FavoriteImage(int id, bool value)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Images
+            .Where(x => x.Id == id)
+            .ExecuteUpdateAsync(x => x.SetProperty(p => p.IsFavorite, value));
+    }
+
+    public async Task FavoritePanorama(int id, bool value)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Panoramas
+            .Where(x => x.Id == id)
+            .ExecuteUpdateAsync(x => x.SetProperty(p => p.IsFavorite, value));
+    }
+
+    public async Task FavoriteTimelapse(int id, bool value)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Timelapses
+            .Where(x => x.Id == id)
+            .ExecuteUpdateAsync(x => x.SetProperty(p => p.IsFavorite, value));
+    }
+
+    public async Task FavoritePanoramaTimelapse(int id, bool value)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.PanoramaTimelapses
+            .Where(x => x.Id == id)
+            .ExecuteUpdateAsync(x => x.SetProperty(p => p.IsFavorite, value));
+    }
+
     public async Task DeleteRawImage(int id)
     {
         using var scope = _serviceScopeFactory.CreateScope();

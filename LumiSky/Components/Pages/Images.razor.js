@@ -17,14 +17,18 @@ export function createPanoViewer() {
 
 export async function updatePanoViewer(url, width, height) {
     if (viewer !== null) {
-        await viewer.setPanorama(url, {
-            panoData: {
-                fullWidth: width,
-                fullHeight: height,
-                croppedWidth: width,
-                croppedHeight: height / 2
-            },
-        });
+        try {
+            await viewer.setPanorama(url, {
+                panoData: {
+                    fullWidth: width,
+                    fullHeight: height,
+                    croppedWidth: width,
+                    croppedHeight: height / 2
+                },
+            });
+        } catch (error) {
+            console.error(error);
+        }
     }
 }
 

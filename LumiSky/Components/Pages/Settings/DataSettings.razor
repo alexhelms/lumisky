@@ -37,7 +37,11 @@
 
                     <RadzenText TextStyle="TextStyle.Body2" class="rz-m-0">
                         A daily job deletes files older than a certain age.
-                        Next cleanup runs in @(_timeUntilNextCleanupJob.Humanize(4, collectionSeparator: " and ")).
+                        Next cleanup runs in @(_timeUntilNextCleanupJob.Humanize(2, collectionSeparator: " and ")).
+                    </RadzenText>
+
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-m-0">
+                        Data that has been favorited will not be deleted.
                     </RadzenText>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Left">

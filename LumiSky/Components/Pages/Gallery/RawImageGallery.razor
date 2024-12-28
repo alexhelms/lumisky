@@ -20,6 +20,14 @@ else
                     FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
 
+            <RadzenDataGridColumn Title="Favorite" Width="90px" TextAlign="TextAlign.Center">
+                <Template Context="rawImage">
+                    <RadzenToggleButton @key=rawImage.Id @bind-Value=rawImage.IsFavorite Change="@(value => OnFavorite(rawImage, value))" Icon="heart_plus" ToggleIcon="favorite"
+                                        ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
+                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
+                </Template>
+            </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
                 <Template Context="rawImage">
                     <RadzenLink Path="@($"/api/image/download/raw?ts={rawImage.ExposedOn}")">
@@ -85,6 +93,13 @@ else
     private async Task OnDelete(RawImage rawImage)
     {
         await ImageService.DeleteRawImage(rawImage.Id);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
+    }
+
+    private async Task OnFavorite(RawImage rawImage, bool isFavorite)
+    {
+        await ImageService.FavoriteImage(rawImage.Id, isFavorite);
         if (grid is not null)
             await grid.RefreshDataAsync();
     }

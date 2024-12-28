@@ -82,6 +82,8 @@ public class CleanupJob : JobBase
         }
 
         await PrunOrphanedEntities();
+        
+        DeleteEmptyDirectories(_profile.Current.App.ImageDataPath);
 
         Log.Information("Cleanup complete");
     }
@@ -93,6 +95,7 @@ public class CleanupJob : JobBase
         var query = items
             .AsNoTracking()
             .Where(x => x.CreatedOn < expirationDate)
+            .Where(x => !x.IsFavorite)
             .AsQueryable();
 
         var itemsToDelete = await query
@@ -167,5 +170,29 @@ public class CleanupJob : JobBase
                     items.GetType().GenericTypeArguments[0].Name.Titleize().ToLowerInvariant().Pluralize());
             }
         }
+    }
+
+    private static void DeleteEmptyDirectories(string path)
+    {
+        try
+        {
+            foreach (var d in Directory.EnumerateDirectories(path))
+            {
+                DeleteEmptyDirectories(d);
+            }
+
+            var entries = Directory.EnumerateFileSystemEntries(path);
+
+            if (!entries.Any())
+            {
+                try
+                {
+                    Directory.Delete(path);
+                }
+                catch (UnauthorizedAccessException) { }
+                catch (DirectoryNotFoundException) { }
+            }
+        }
+        catch (UnauthorizedAccessException) { }
     }
 }

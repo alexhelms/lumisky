@@ -18,4 +18,6 @@ public class Panorama : ICanBeCleanedUp
     /// UTC unix timestamp, seconds.
     /// </summary>
     public long ExposedOn { get; set; }
+
+    public bool IsFavorite { get; set; }
 }

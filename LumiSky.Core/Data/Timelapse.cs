@@ -21,4 +21,6 @@ public class Timelapse : ICanBeCleanedUp
     /// UTC unix timestamp, seconds.
     /// </summary>
     public long RangeEnd { get; set; }
+
+    public bool IsFavorite { get; set; }
 }

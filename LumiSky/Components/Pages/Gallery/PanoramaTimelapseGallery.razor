@@ -23,6 +23,14 @@ else
                     FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
 
+            <RadzenDataGridColumn Title="Favorite" Width="90px" TextAlign="TextAlign.Center">
+                <Template Context="timelapse">
+                    <RadzenToggleButton @key=timelapse.Id @bind-Value=timelapse.IsFavorite Change="@(value => OnFavorite(timelapse, value))" Icon="heart_plus" ToggleIcon="favorite"
+                                        ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
+                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
+                </Template>
+            </RadzenDataGridColumn>
+
             <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
                 <Template Context="timelapse">
                     <RadzenLink Path="@($"/api/video/download/panorama?id={timelapse.Id}")">
@@ -102,6 +110,13 @@ else
     private async Task OnDelete(PanoramaTimelapse panoramaTimelapse)
     {
         await ImageService.DeletePanoramaTimelapse(panoramaTimelapse.Id);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
+    }
+
+    private async Task OnFavorite(PanoramaTimelapse panoramaTimelapse, bool isFavorite)
+    {
+        await ImageService.FavoritePanoramaTimelapse(panoramaTimelapse.Id, isFavorite);
         if (grid is not null)
             await grid.RefreshDataAsync();
     }
