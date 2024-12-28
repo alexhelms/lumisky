@@ -122,7 +122,14 @@ public static class Bootstrap
                 .StartAt(DateTimeOffset.UtcNow.AddSeconds(5))
                 .Build();
 
+            var cleanupTrigger = TriggerBuilder.Create()
+                .WithIdentity(TriggerKeys.Cleanup)
+                .ForJob(CleanupJob.Key)
+                .WithCronSchedule("0 0 10 * * ?")  // 10am every day
+                .Build();
+
             await scheduler.ScheduleJob(dayNightTrigger);
+            await scheduler.ScheduleJob(cleanupTrigger);
         }
         catch (Exception e)
         {
@@ -142,6 +149,11 @@ public static class Bootstrap
             q.AddTriggerListener<GenerationJobLimiter>(GroupMatcher<TriggerKey>.GroupEquals(JobConstants.Groups.Generation));
 
             q.AddJobListener<JobExceptionListener>(GroupMatcher<JobKey>.GroupEquals(JobConstants.Groups.Allsky));
+
+            q.AddJob<CleanupJob>(c => c
+                .WithIdentity(CleanupJob.Key)
+                .StoreDurably()
+                .Build());
 
             q.AddJob<DayNightJob>(c => c
                 .WithIdentity(DayNightJob.Key)

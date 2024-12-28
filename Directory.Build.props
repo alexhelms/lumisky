@@ -6,6 +6,7 @@
     <NoWarn>$(NoWarn);NU1901;NU1902;NU1903;NU1904;</NoWarn>
     <BuildVersioningLogLevel>normal</BuildVersioningLogLevel>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)'=='Release'">

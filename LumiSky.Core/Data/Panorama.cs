@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace LumiSky.Core.Data;
 
 [Index(nameof(ExposedOn))]
-public class Panorama
+public class Panorama : ICanBeCleanedUp
 {
     public int Id { get; set; }
 

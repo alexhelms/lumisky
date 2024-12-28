@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace LumiSky.Core.Data;
 
 [Index(nameof(ExposedOn))]
-public class RawImage
+public class RawImage : ICanBeCleanedUp
 {
     public int Id { get; set; }
 

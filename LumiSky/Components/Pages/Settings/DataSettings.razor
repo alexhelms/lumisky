@@ -1,0 +1,213 @@
+﻿@using Humanizer
+@using LumiSky.Core.Profile
+@using Quartz
+@implements IDisposable
+@inject IProfileProvider Profile
+@inject ISchedulerFactory SchedulerFactory
+@inject NotificationService NotificationService
+
+<RadzenTemplateForm TItem="DataSettingsModel" Data="@model" Submit="OnSubmit">
+    <RadzenStack>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Paths</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenFormField Text="App Data Path" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenTextBox @bind-Value="model.AppDataPath" Style="width: 100%" ReadOnly="true" Disabled="true" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Image Data Path" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenTextBox @bind-Value="model.ImageDataPath" Style="width: 100%" />
+                    </RadzenFormField>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Cleanup</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-m-0">
+                        A daily job deletes files older than a certain age.
+                        Next cleanup runs in @(_timeUntilNextCleanupJob.Humanize(4, collectionSeparator: " and ")).
+                    </RadzenText>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Left">
+                        <RadzenButton Text="Run Now" Click="RunCleanupJobNow" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="EnableCleanup" @bind-Value="model.EnableCleanup" />
+                        <RadzenLabel Text="Enable Cleanup" Component="EnableCleanup" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="EnableImageCleanup" @bind-Value="model.EnableImageCleanup" />
+                        <RadzenFormField Text="Age [days]" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 6rem; margin-top: -0.5rem;">
+                            <RadzenNumeric TValue="int" @bind-Value="model.ImageCleanupAge" Min="0" Max="10000" />
+                        </RadzenFormField>
+                        <RadzenLabel Text="Images" class="rz-my-0" Component="EnableImageCleanup" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="EnableRawImageCleanup" @bind-Value="model.EnableRawImageCleanup" />
+                        <RadzenFormField Text="Age [days]" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 6rem; margin-top: -0.5rem;">
+                            <RadzenNumeric TValue="int" @bind-Value="model.RawImageCleanupAge" Min="0" Max="10000" />
+                        </RadzenFormField>
+                        <RadzenLabel Text="Raw Images" class="rz-my-0" Component="EnableRawImageCleanup" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="EnableTimelapseCleanup" @bind-Value="model.EnableTimelapseCleanup" />
+                        <RadzenFormField Text="Age [days]" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 6rem; margin-top: -0.5rem;">
+                            <RadzenNumeric TValue="int" @bind-Value="model.TimelapseCleanupAge" Min="0" Max="10000" />
+                        </RadzenFormField>
+                        <RadzenLabel Text="Timelapses" class="rz-my-0" Component="EnableTimelapseCleanup" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="EnablePanoramaCleanup" @bind-Value="model.EnablePanoramaCleanup" />
+                        <RadzenFormField Text="Age [days]" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 6rem; margin-top: -0.5rem;">
+                            <RadzenNumeric TValue="int" @bind-Value="model.PanoramaCleanupAge" Min="0" Max="10000" />
+                        </RadzenFormField>
+                        <RadzenLabel Text="Panoramas" class="rz-my-0" Component="EnablePanoramaCleanup" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="EnablePanoramaTimelapseCleanup" @bind-Value="model.EnablePanoramaTimelapseCleanup" />
+                        <RadzenFormField Text="Age [days]" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 6rem; margin-top: -0.5rem;">
+                            <RadzenNumeric TValue="int" @bind-Value="model.PanoramaTimelapseCleanupAge" Min="0" Max="10000" />
+                        </RadzenFormField>
+                        <RadzenLabel Text="Panorama Timelapses" class="rz-my-0" Component="EnablePanoramaTimelapseCleanup" />
+                    </RadzenStack>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenRow>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+        </RadzenRow>
+
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource _timerCts = new();
+    private TimeSpan _timeUntilNextCleanupJob;
+
+    private DataSettingsModel model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _timeUntilNextCleanupJob = await GetTimeUntilNextCleanupJob();
+        _timer = new(TimeSpan.FromSeconds(30));
+        _ = RunTimer();
+
+        model.AppDataPath = LumiSky.Core.IO.LumiSkyPaths.BasePath;
+
+        model.ImageDataPath = Profile.Current.App.ImageDataPath;
+        model.EnableCleanup = Profile.Current.App.EnableCleanup;
+        model.EnableImageCleanup = Profile.Current.App.EnableImageCleanup;
+        model.EnableRawImageCleanup = Profile.Current.App.EnableRawImageCleanup;
+        model.EnableTimelapseCleanup = Profile.Current.App.EnableTimelapseCleanup;
+        model.EnablePanoramaCleanup = Profile.Current.App.EnablePanoramaCleanup;
+        model.EnablePanoramaTimelapseCleanup = Profile.Current.App.EnablePanoramaTimelapseCleanup;
+        model.ImageCleanupAge = Profile.Current.App.ImageCleanupAge;
+        model.RawImageCleanupAge = Profile.Current.App.RawImageCleanupAge;
+        model.TimelapseCleanupAge = Profile.Current.App.TimelapseCleanupAge;
+        model.PanoramaCleanupAge = Profile.Current.App.PanoramaCleanupAge;
+        model.PanoramaTimelapseCleanupAge = Profile.Current.App.PanoramaTimelapseCleanupAge;
+    }
+
+    private async Task<TimeSpan> GetTimeUntilNextCleanupJob()
+    {
+        var scheduler = await SchedulerFactory.GetScheduler();
+        var cleanupTrigger = await scheduler.GetTrigger(LumiSky.Core.Jobs.TriggerKeys.Cleanup);
+        if (cleanupTrigger is not null)
+        {
+            var nextFireTime = cleanupTrigger.GetNextFireTimeUtc()?.ToLocalTime().LocalDateTime ?? default;
+            return DateTime.Now - nextFireTime;
+        }
+
+        return default;
+    }
+
+    private async Task RunTimer()
+    {
+        try
+        {
+            while (_timer is not null && await _timer.WaitForNextTickAsync(_timerCts.Token))
+            {
+                _timeUntilNextCleanupJob = await GetTimeUntilNextCleanupJob();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _timer?.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        _timerCts.Cancel();
+        _timerCts.Dispose();
+    }
+
+    private async Task RunCleanupJobNow()
+    {
+        var scheduler = await SchedulerFactory.GetScheduler();
+        await scheduler.TriggerJob(LumiSky.Core.Jobs.CleanupJob.Key);
+    }
+
+    private void OnSubmit(DataSettingsModel model)
+    {
+        Profile.Current.App.ImageDataPath = model.ImageDataPath;
+        Profile.Current.App.EnableCleanup = model.EnableCleanup;
+        Profile.Current.App.EnableImageCleanup = model.EnableImageCleanup;
+        Profile.Current.App.EnableRawImageCleanup = model.EnableRawImageCleanup;
+        Profile.Current.App.EnableTimelapseCleanup = model.EnableTimelapseCleanup;
+        Profile.Current.App.EnablePanoramaCleanup = model.EnablePanoramaCleanup;
+        Profile.Current.App.EnablePanoramaTimelapseCleanup = model.EnablePanoramaTimelapseCleanup;
+        Profile.Current.App.ImageCleanupAge = model.ImageCleanupAge;
+        Profile.Current.App.RawImageCleanupAge = model.RawImageCleanupAge;
+        Profile.Current.App.TimelapseCleanupAge = model.TimelapseCleanupAge;
+        Profile.Current.App.PanoramaCleanupAge = model.PanoramaCleanupAge;
+        Profile.Current.App.PanoramaTimelapseCleanupAge = model.PanoramaTimelapseCleanupAge;
+
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Duration = 2000,
+            Summary = "Saved!",
+        });
+    }
+
+    public record DataSettingsModel
+    {
+        public string AppDataPath { get; set; } = string.Empty;
+        public string ImageDataPath { get; set; } = string.Empty;
+        public bool EnableCleanup { get; set; }
+        public bool EnableImageCleanup { get; set; }
+        public bool EnableRawImageCleanup { get; set; }
+        public bool EnableTimelapseCleanup { get; set; }
+        public bool EnablePanoramaCleanup { get; set; }
+        public bool EnablePanoramaTimelapseCleanup { get; set; }
+        public int ImageCleanupAge { get; set; }
+        public int RawImageCleanupAge { get; set; }
+        public int TimelapseCleanupAge { get; set; }
+        public int PanoramaCleanupAge { get; set; }
+        public int PanoramaTimelapseCleanupAge { get; set; }
+    }
+}

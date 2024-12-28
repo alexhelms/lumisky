@@ -2,7 +2,7 @@
 
 namespace LumiSky.Core.Data;
 
-public class Timelapse
+public class Timelapse : ICanBeCleanedUp
 {
     public int Id { get; set; }
 

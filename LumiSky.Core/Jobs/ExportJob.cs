@@ -83,7 +83,7 @@ public class ExportJob : JobBase
 
     private async Task UploadFile(AsyncFtpClient ftp, string localFilename, CancellationToken token)
     {
-        var remoteFilename = localFilename.Replace(_profile.Current.Capture.DataDirectory, string.Empty);
+        var remoteFilename = localFilename.Replace(_profile.Current.App.ImageDataPath, string.Empty);
         var start = Stopwatch.GetTimestamp();
 
         // Make path relative

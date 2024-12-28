@@ -17,10 +17,6 @@
                         <RadzenLabel Text="Auto Start" Component="True" />
                     </RadzenStack>
 
-                    <RadzenFormField Text="Data Path" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenTextBox @bind-Value="model.DataDirectory" Style="width: 100%" />
-                    </RadzenFormField>
-
                     <RadzenFormField Text="Interval [sec]" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <RadzenNumeric TValue="int" @bind-Value="model.CaptureIntervalSeconds" Min="5" Max="3600" />
                     </RadzenFormField>
@@ -51,7 +47,6 @@
     protected override void OnInitialized()
     {
         model.AutoStart = Profile.Current.Capture.AutoStart;
-        model.DataDirectory = Profile.Current.Capture.DataDirectory;
         model.CaptureIntervalSeconds = (int)Profile.Current.Capture.CaptureInterval.TotalSeconds;
         model.MaxExposureSeconds = (int)Profile.Current.Capture.MaxExposureDuration.TotalSeconds;
     }
@@ -59,7 +54,6 @@
     private void OnSubmit(CaptureSettingsModel model)
     {
         Profile.Current.Capture.AutoStart = model.AutoStart;
-        Profile.Current.Capture.DataDirectory = model.DataDirectory;
         Profile.Current.Capture.CaptureInterval = TimeSpan.FromSeconds(model.CaptureIntervalSeconds);
         Profile.Current.Capture.MaxExposureDuration = TimeSpan.FromSeconds(model.MaxExposureSeconds);
 
@@ -74,7 +68,6 @@
     public record CaptureSettingsModel
     {
         public bool AutoStart { get; set; }
-        public string DataDirectory { get; set; } = string.Empty;
         public int CaptureIntervalSeconds { get; set; }
         public int MaxExposureSeconds { get; set; }
     }
