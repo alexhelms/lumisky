@@ -1,0 +1,109 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using LumiSky.Controllers
+@using LumiSky.Core.Services
+@implements IDisposable
+@inject AppDbContext DbContext
+@inject ImageService ImageService
+
+@if (!imagesAvailable)
+{
+    <RadzenRow JustifyContent="JustifyContent.Center" class="rz-my-4">
+        <RadzenText>No Images Available</RadzenText>
+    </RadzenRow>
+}
+else
+{
+    <RadzenDataGrid @ref=grid TItem="Image" Data="@images" AllowFiltering="true" AllowColumnResize="true"
+                    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+        <Columns>
+
+            <RadzenDataGridColumn Title="Favorite" Width="90px" TextAlign="TextAlign.Center">
+                <Template Context="image">
+                    <RadzenToggleButton @key=image.Id @bind-Value=image.IsFavorite Change="@(value => OnFavorite(image, value))" Icon="heart_plus" ToggleIcon="favorite"
+                                        ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
+                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="Download" Width="100px" TextAlign="TextAlign.Center">
+                <Template Context="image">
+                    <RadzenLink Path="@($"/api/image/download/image?ts={image.ExposedOn}")">
+                        <RadzenButton Icon="download" Size="ButtonSize.Small" />
+                    </RadzenLink>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="View" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="image">
+                    <RadzenLink Path="@($"/api/image/view/image?ts={image.ExposedOn}")" Target="_blank">
+                        <RadzenButton Icon="open_in_new" Size="ButtonSize.Small" />
+                    </RadzenLink>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Property="@nameof(Image.Filename)" Title="Filename">
+                <Template Context="image">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body1" class="rz-m-0">@Path.GetFileName(image.Filename)</RadzenText>
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Property="@nameof(Image.CreatedOn)" Title="Timestamp" SortOrder="SortOrder.Descending" Width="160px" TextAlign="TextAlign.Center">
+                <Template Context="image">
+                    @DateTimeOffset.FromUnixTimeSeconds(image.ExposedOn).ToLocalTime().ToString("G")
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Title="Delete" Width="75px" TextAlign="TextAlign.Center">
+                <Template Context="image">
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" Click="@(() => OnDelete(image))" @onclick:stopPropagation="true" />
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    RadzenDataGrid<Image>? grid;
+    IQueryable<Image>? images;
+    bool imagesAvailable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        images = DbContext.Images;
+        imagesAvailable = await DbContext.Images.AnyAsync();
+
+        ImageService.NewImage += OnNewImage;
+    }
+
+    public void Dispose()
+    {
+        ImageService.NewImage -= OnNewImage;
+    }
+
+    private void OnNewImage(object? sender, EventArgs e)
+    {
+        if (grid is not null)
+            InvokeAsync(grid.RefreshDataAsync);
+
+        imagesAvailable = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnDelete(Image image)
+    {
+        await ImageService.DeleteImage(image.Id);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
+    }
+
+    private async Task OnFavorite(Image image, bool isFavorite)
+    {
+        await ImageService.FavoriteImage(image.Id, isFavorite);
+        if (grid is not null)
+            await grid.RefreshDataAsync();
+    }
+}

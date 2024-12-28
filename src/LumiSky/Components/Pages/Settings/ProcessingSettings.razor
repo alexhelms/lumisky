@@ -1,0 +1,598 @@
+﻿@using Humanizer
+@using LumiSky.Core.Imaging
+@using LumiSky.Core.Imaging.Processing
+@using LumiSky.Core.Profile
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@inject IProfileProvider Profile
+@inject NotificationService NotificationService
+
+<RadzenTemplateForm TItem="ProcessingSettingsModel" Data="@model" Submit="OnSubmit">
+    <RadzenStack>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>White Balance</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn SizeMD="3">
+                            <RadzenFormField Text="Red" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
+                                <RadzenNumeric @bind-Value="model.WbRedScale" Min="0" Max="1" Step="0.01" Format="0.00" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn SizeMD="9">
+                            <RadzenSlider Min="0" Max="1" Step="0.01" @bind-Value=model.WbRedScale Style="width: 100%;" class="rz-mt-4" />
+                        </RadzenColumn>
+                    </RadzenRow>
+
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn SizeMD="3">
+                            <RadzenFormField Text="Green" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
+                                <RadzenNumeric @bind-Value="model.WbGreenScale" Min="0" Max="1" Step="0.01" Format="0.00" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn SizeMD="9">
+                            <RadzenSlider Min="0" Max="1" Step="0.01" @bind-Value=model.WbGreenScale Style="width: 100%;" class="rz-mt-4" />
+                        </RadzenColumn>
+                    </RadzenRow>
+
+                    <RadzenRow AlignItems="AlignItems.Center">
+                        <RadzenColumn SizeMD="3">
+                            <RadzenFormField Text="Blue" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
+                                <RadzenNumeric @bind-Value="model.WbBlueScale" Min="0" Max="1" Step="0.01" Format="0.00" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn SizeMD="9">
+                            <RadzenSlider Min="0" Max="1" Step="0.01" @bind-Value=model.WbBlueScale Style="width: 100%;" class="rz-mt-4" />
+                        </RadzenColumn>
+                    </RadzenRow>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Hot Pixel Correction</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.HotPixelCorrection" />
+                        <RadzenLabel Text="Hot Pixel Correction" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenFormField Text="Threshold Percent" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <ChildContent>
+                            <RadzenNumeric @bind-Value="model.HotPixelThresholdPercent" Min="5" Max="1000" Step="5" Format="F0" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                A hot pixel is corrected if its value is greater than [1 + threshold/100] times the max of its NSEW neighbors.
+                                When corrected, the pixel is replaced with the average of its four neighbors. The neighbors are always of
+                                the same color filter, respecting the CFA.
+                            </RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Auto S Curve</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent> 
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.AutoSCurve" />
+                        <RadzenLabel Text="Auto S Curve" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenFormField Text="Contrast" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <ChildContent>
+                            <RadzenNumeric @bind-Value="model.AutoSCurveContrast" Min="1" Max="5" Step="0.1" Format="F2" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">1.0 is no contrast enhancement, default is 2.2.</RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Circle Mask</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenFormField Text="Diameter" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.CircleMaskDiameter" Min="0" Max="10000" Step="10" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="X Offset" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.CircleMaskOffsetX" Min="-10000" Max="10000" Step="10" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Y Offset" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.CircleMaskOffsetY" Min="-10000" Max="10000" Step="10" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Blur Size" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.CircleMaskBlur" Min="0" Max="51" Step="2" />
+                    </RadzenFormField>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Overlay</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch @bind-Value="model.DrawCardinalOverlay" />
+                        <RadzenLabel Text="Draw Cardinal Directions" Component="True" />
+                    </RadzenStack>
+
+                    <RadzenFormField Text="Text Size" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.TextSize" Min="10" Max="200" Step="5" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Outline Thickness" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenNumeric @bind-Value="model.TextOutline" Min="0" Max="50" Step="1" />
+                    </RadzenFormField>
+
+                    
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem">
+                            <RadzenLabel Text="Text Color" Component="TextColor" />
+                            <RadzenColorPicker Name="TextColor" @bind-Value="selectedTextColor" ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
+                        </RadzenStack>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem">
+                            <RadzenLabel Text="Outline Color" Component="OutlineColor" />
+                            <RadzenColorPicker Name="OutlineColor" @bind-Value="selectedTextOutlineColor" ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
+                        </RadzenStack>
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0">
+                        <RadzenText Text="Fisheye" TextStyle="TextStyle.Body1" class="rz-mb-0" />
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem" Wrap="FlexWrap.Wrap">
+                            <RadzenFormField Text="Top Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.CardinalTopString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="Bottom Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.CardinalBottomString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="Right Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.CardinalRightString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="Left Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.CardinalLeftString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                        </RadzenStack>
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0">
+                        <RadzenText Text="Panorama" TextStyle="TextStyle.Body1" class="rz-mb-0" />
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem" Wrap="FlexWrap.Wrap">
+                            <RadzenFormField Text="0° Azimuth Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.PanoramaCardinal0AzimuthString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="90° Azimuth Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.PanoramaCardinal90AzimuthString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="180° Azimuth Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.PanoramaCardinal180AzimuthString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                            <RadzenFormField Text="270° Azimuth Label" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <RadzenDropDown @bind-Value="model.PanoramaCardinal270AzimuthString" Data=@cardinalDirections />
+                            </RadzenFormField>
+                        </RadzenStack>
+                    </RadzenStack>
+
+                    <RadzenCard class="rz-p-4" Variant="Variant.Outlined">
+                        <RadzenStack Orientation="Orientation.Vertical">
+                            <RadzenText><strong>Variable Overlays</strong></RadzenText>
+                            <RadzenDataGrid @ref=_overlayDataGrid TItem="TextOverlayModel" Data="@overlays" AllowFiltering="false" AllowPaging="false" AllowSorting="false" AllowColumnResize="true"
+                                            AllowAlternatingRows="false" EditMode="DataGridEditMode.Single" RowUpdate="OnUpdateRow" RowCreate="OnCreateRow">
+                                <HeaderTemplate>
+                                    <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="add_circle" Text="Add New Text Overlay" Click="InsertRow" Disabled="@(overlaysToInsert.Count > 0)" />
+                                </HeaderTemplate>
+                                <EmptyTemplate>
+                                    <RadzenText TextAlign="TextAlign.Center">No overlays.</RadzenText>
+                                </EmptyTemplate>
+                                <Columns>
+
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.Variable)" Title="Variable" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenDropDown @bind-Value=item.Variable Data="@(Enum.GetValues<OverlayVariable>())" Change="@(() => OnOverlayVariableChanged(item))" Style="width: 90%;" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.TextFormat)" TextAlign="TextAlign.Center">
+                                        <HeaderTemplate>
+                                            <RadzenLink Path="https://learn.microsoft.com/en-us/dotnet/standard/base-types/formatting-types" Text="Text Format" Target="_blank" />
+                                        </HeaderTemplate>
+                                        <EditTemplate Context="item">
+                                            <RadzenTextBox @bind-Value=item.TextFormat Style="width: 90%;" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+                                    
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.X)" Title="X (from Left)" Width="128px" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenNumeric @bind-Value=item.X TValue="int" Min="-10000" Max="10000" Step="1" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+                                    
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.Y)" Title="Y (from Top)" Width="128px" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenNumeric @bind-Value=item.Y TValue="int" Min="-10000" Max="10000" Step="1" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+                                    
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.FontSize)" Title="Font Size" Width="72px" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenNumeric @bind-Value=item.FontSize TValue="int" Min="8" Max="1000" Step="1" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+                                    
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.TextAnchor)" Title="Text Anchor" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenDropDown @bind-Value=item.TextAnchor Data="@(Enum.GetValues<TextAnchor>())" Style="width: 90%;" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+                                    
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.TextColor)" Title="Text Color" Width="128px" TextAlign="TextAlign.Center">
+                                        <Template Context="item">
+                                            <svg width="32" height="32">
+                                                <circle cx="16" cy="16" r="12" fill="@item.TextColor"/>
+                                            </svg>
+                                        </Template>
+                                        <EditTemplate Context="item">
+                                            <RadzenColorPicker @bind-Value=item.TextColor ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+                                    
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.StrokeColor)" Title="Stroke Color" Width="128px" TextAlign="TextAlign.Center">
+                                        <Template Context="item">
+                                            <svg width="32" height="32">
+                                                <circle cx="16" cy="16" r="12" fill="@item.StrokeColor" />
+                                            </svg>
+                                        </Template>
+                                        <EditTemplate Context="item">
+                                            <RadzenColorPicker @bind-Value=item.StrokeColor ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(TextOverlayModel.StrokeWidth)" Title="Stroke Width" Width="128px" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenNumeric @bind-Value=item.StrokeWidth TValue="int" Min="0" Max="100" Step="1" Style="width: 100px;" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+                                    
+                                    <RadzenDataGridColumn Frozen="true" FrozenPosition="FrozenColumnPosition.Right" TextAlign="TextAlign.Right">
+                                        <Template Context="item">
+                                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(item))" @onclick:stopPropagation="true" />
+                                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(item))" @onclick:stopPropagation="true" />
+                                        </Template>
+                                        <EditTemplate Context="item">
+                                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(item))" aria-label="Save" />
+                                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@((args) => CancelEdit(item))" aria-label="Cancel" />
+                                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(item))" aria-label="Delete" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                </Columns>
+                            </RadzenDataGrid>
+                        </RadzenStack>
+                    </RadzenCard>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenRow>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+        </RadzenRow>
+
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    private RadzenDataGrid<TextOverlayModel> _overlayDataGrid = null!;
+    private ProcessingSettingsModel model = new();
+    private string selectedTextColor = "rgb(255, 255, 255)";
+    private string selectedTextOutlineColor = "rgb(0, 0, 0)";
+    private List<string> cardinalDirections = ["N", "S", "E", "W"];
+    private List<TextOverlayModel> overlays = [];
+    private List<TextOverlayModel> overlaysToInsert = [];
+    private List<TextOverlayModel> overlaysToUpdate = [];
+    private TextOverlayModel? _originalOverlay;
+
+    protected override void OnInitialized()
+    {
+        model.WbRedScale = Profile.Current.Processing.WbRedScale;
+        model.WbGreenScale = Profile.Current.Processing.WbGreenScale;
+        model.WbBlueScale = Profile.Current.Processing.WbBlueScale;
+        model.CircleMaskDiameter = Profile.Current.Processing.CircleMaskDiameter;
+        model.CircleMaskOffsetX = Profile.Current.Processing.CircleMaskOffsetX;
+        model.CircleMaskOffsetY = Profile.Current.Processing.CircleMaskOffsetY;
+        model.CircleMaskBlur = Profile.Current.Processing.CircleMaskBlur;
+        model.DrawCardinalOverlay = Profile.Current.Processing.DrawCardinalOverlay;
+        model.TextSize = Profile.Current.Processing.TextSize;
+        model.TextOutline = Profile.Current.Processing.TextOutline;
+        model.TextColor = Profile.Current.Processing.TextColor;
+        model.TextOutlineColor = Profile.Current.Processing.TextOutlineColor;
+        model.CardinalTopString = Profile.Current.Processing.CardinalTopString;
+        model.CardinalBottomString = Profile.Current.Processing.CardinalBottomString;
+        model.CardinalRightString = Profile.Current.Processing.CardinalRightString;
+        model.CardinalLeftString = Profile.Current.Processing.CardinalLeftString;
+        model.PanoramaCardinal0AzimuthString = Profile.Current.Processing.PanoramaCardinal0AzimuthString;
+        model.PanoramaCardinal90AzimuthString = Profile.Current.Processing.PanoramaCardinal90AzimuthString;
+        model.PanoramaCardinal180AzimuthString = Profile.Current.Processing.PanoramaCardinal180AzimuthString;
+        model.PanoramaCardinal270AzimuthString = Profile.Current.Processing.PanoramaCardinal270AzimuthString;
+        model.AutoSCurve = Profile.Current.Processing.AutoSCurve;
+        model.AutoSCurveContrast = Profile.Current.Processing.AutoSCurveContrast;
+        model.HotPixelCorrection = Profile.Current.Processing.HotPixelCorrection;
+        model.HotPixelThresholdPercent = Profile.Current.Processing.HotPixelThresholdPercent;
+
+        overlays = new(Profile.Current.Processing.TextOverlays
+            .Select(item => new TextOverlayModel
+            {
+                Variable = item.Variable,
+                TextFormat = item.Format ?? string.Empty,
+                X = item.X,
+                Y = item.Y,
+                FontSize = item.FontSize,
+                TextAnchor = item.Anchor,
+                TextColor = HexToRgb(item.Color),
+                StrokeColor = HexToRgb(item.StrokeColor),
+                StrokeWidth = item.StrokeWidth,
+            }));
+    }
+
+    private void OnSubmit(ProcessingSettingsModel model)
+    {
+        Profile.Current.Processing.WbRedScale = model.WbRedScale;
+        Profile.Current.Processing.WbGreenScale = model.WbGreenScale;
+        Profile.Current.Processing.WbBlueScale = model.WbBlueScale;
+        Profile.Current.Processing.CircleMaskDiameter = model.CircleMaskDiameter;
+        Profile.Current.Processing.CircleMaskOffsetX = model.CircleMaskOffsetX;
+        Profile.Current.Processing.CircleMaskOffsetY = model.CircleMaskOffsetY;
+        Profile.Current.Processing.CircleMaskBlur = model.CircleMaskBlur;
+        Profile.Current.Processing.DrawCardinalOverlay = model.DrawCardinalOverlay;
+        Profile.Current.Processing.TextSize = model.TextSize;
+        Profile.Current.Processing.TextOutline = model.TextOutline;
+        Profile.Current.Processing.TextColor = model.TextColor;
+        Profile.Current.Processing.TextOutlineColor = model.TextOutlineColor;
+        Profile.Current.Processing.CardinalTopString = model.CardinalTopString;
+        Profile.Current.Processing.CardinalBottomString = model.CardinalBottomString;
+        Profile.Current.Processing.CardinalRightString = model.CardinalRightString;
+        Profile.Current.Processing.CardinalLeftString = model.CardinalLeftString;
+        Profile.Current.Processing.PanoramaCardinal0AzimuthString = model.PanoramaCardinal0AzimuthString;
+        Profile.Current.Processing.PanoramaCardinal90AzimuthString = model.PanoramaCardinal90AzimuthString;
+        Profile.Current.Processing.PanoramaCardinal180AzimuthString = model.PanoramaCardinal180AzimuthString;
+        Profile.Current.Processing.PanoramaCardinal270AzimuthString = model.PanoramaCardinal270AzimuthString;
+        Profile.Current.Processing.AutoSCurve = model.AutoSCurve;
+        Profile.Current.Processing.AutoSCurveContrast = model.AutoSCurveContrast;
+        Profile.Current.Processing.HotPixelCorrection = model.HotPixelCorrection;
+        Profile.Current.Processing.HotPixelThresholdPercent = model.HotPixelThresholdPercent;
+
+        Profile.Current.Processing.TextOverlays.Clear();
+        foreach (var item in overlays)
+        {
+            Profile.Current.Processing.TextOverlays.Add(new()
+            {
+                Variable = item.Variable,
+                Format = item.TextFormat,
+                X = item.X,
+                Y = item.Y,
+                FontSize = item.FontSize,
+                Anchor = item.TextAnchor,
+                Color = RgbToHex(item.TextColor),
+                StrokeColor = RgbToHex(item.StrokeColor),
+                StrokeWidth = item.StrokeWidth,
+            });
+        }
+
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Duration = 2000,
+            Summary = "Saved!",
+        });
+    }
+
+    private void ResetOverlayGrid()
+    {
+        overlaysToInsert.Clear();
+        overlaysToUpdate.Clear();
+    }
+
+    private void ResetOverlayGrid(TextOverlayModel model)
+    {
+        overlaysToInsert.Remove(model);
+        overlaysToUpdate.Remove(model);
+    }
+
+    private async Task EditRow(TextOverlayModel model)
+    {
+        // Only allow a single row to be edited at any time
+        if (overlaysToUpdate.Count > 0) return;
+
+        if (overlaysToInsert.Count > 0)
+        {
+            ResetOverlayGrid();
+        }
+
+        _originalOverlay = model with { Key = Guid.NewGuid() };
+        overlaysToUpdate.Add(model);
+        await _overlayDataGrid.EditRow(model);
+    }
+
+    private void OnUpdateRow(TextOverlayModel model)
+    {
+        ResetOverlayGrid(model);
+    }
+
+    private async Task SaveRow(TextOverlayModel model)
+    {
+        await _overlayDataGrid.UpdateRow(model);
+    }
+
+    private async Task CancelEdit(TextOverlayModel model)
+    {
+        ResetOverlayGrid(model);
+
+        _overlayDataGrid.CancelEditRow(model);
+
+        int index = overlays.IndexOf(model);
+        if (index != -1 && _originalOverlay is not null)
+        {
+            overlays[index] = _originalOverlay;
+        }
+
+        await _overlayDataGrid.Reload();
+    }
+
+    private async Task DeleteRow(TextOverlayModel model)
+    {
+        ResetOverlayGrid(model);
+
+        if (overlays.Contains(model))
+        {
+            overlays.Remove(model);
+            await _overlayDataGrid.Reload();
+        }
+        else
+        {
+            _overlayDataGrid.CancelEditRow(model);
+            await _overlayDataGrid.Reload();
+        }
+    }
+
+    private async Task InsertRow()
+    {
+        ResetOverlayGrid();
+
+        var model = new TextOverlayModel();
+        OnOverlayVariableChanged(model);
+        overlaysToInsert.Add(model);
+        await _overlayDataGrid.InsertRow(model);
+    }
+
+    private void OnCreateRow(TextOverlayModel model)
+    {
+        overlays.Add(model);
+        overlaysToInsert.Remove(model);
+    }
+
+    private void OnOverlayVariableChanged(TextOverlayModel model)
+    {
+        model.TextFormat = GetDefaultFormat(model.Variable);
+    }
+
+    private string GetDefaultFormat(OverlayVariable variable) => variable switch
+    {
+        OverlayVariable.Timestamp => "{0:yyyy-MM-dd HH:mm:ss}",
+        OverlayVariable.Latitude => "LAT {0:F2}",
+        OverlayVariable.Longitude => "LON {0:F2}",
+        OverlayVariable.Elevation => "ELV {0:F0}",
+        OverlayVariable.Exposure => "Exposure {0:0.000000}",
+        OverlayVariable.Gain => "Gain {0:D}",
+        OverlayVariable.SunAltitude => "Sun {0:F1}°",
+        OverlayVariable.Text => "Text Here",
+        _ => "",
+    };
+
+    private string RgbToHex(string rgb)
+    {
+        try
+        {
+            // rgb(0, 0, 0)
+            int[] split = rgb[4..^1]
+                .Split(',', StringSplitOptions.TrimEntries)
+                .Select(s => int.Parse(s))
+                .ToArray();
+            return $"#{split[0]:x02}{split[1]:x02}{split[2]:x02}";
+        }
+        catch
+        {
+            return "#ffffff";
+        }
+    }
+
+    private string HexToRgb(string hex)
+    {
+        try
+        {
+            int r = int.Parse(hex[1..3], System.Globalization.NumberStyles.HexNumber);
+            int g = int.Parse(hex[3..5], System.Globalization.NumberStyles.HexNumber);
+            int b = int.Parse(hex[5..7], System.Globalization.NumberStyles.HexNumber);
+            return $"rgb({r}, {g}, {b})";
+        }
+        catch
+        {
+            return "rgb(255, 255, 255)";
+        }
+    }
+
+    public record ProcessingSettingsModel
+    {
+        public double WbRedScale { get; set; }
+        public double WbGreenScale { get; set; }
+        public double WbBlueScale { get; set; }
+        public double WbRedBias { get; set; }
+        public double WbGreenBias { get; set; }
+        public double WbBlueBias { get; set; }
+        public int CircleMaskDiameter { get; set; }
+        public int CircleMaskOffsetX { get; set; }
+        public int CircleMaskOffsetY { get; set; }
+        public int CircleMaskBlur { get; set; }
+        public bool DrawCardinalOverlay { get; set; }
+        public int TextSize { get; set; }
+        public int TextOutline { get; set; }
+        public string TextColor { get; set; } = null!;
+        public string TextOutlineColor { get; set; } = null!;
+        public string CardinalTopString { get; set; } = null!;
+        public string CardinalBottomString { get; set; } = null!;
+        public string CardinalRightString { get; set; } = null!;
+        public string CardinalLeftString { get; set; } = null!;
+        public string PanoramaCardinal0AzimuthString { get; set; } = null!;
+        public string PanoramaCardinal90AzimuthString { get; set; } = null!;
+        public string PanoramaCardinal180AzimuthString { get; set; } = null!;
+        public string PanoramaCardinal270AzimuthString { get; set; } = null!;
+        public bool AutoSCurve{ get; set; }
+        public double AutoSCurveContrast { get; set; }
+        public bool HotPixelCorrection { get; set; }
+        public int HotPixelThresholdPercent { get; set; }
+    }
+
+    public record TextOverlayModel
+    {
+        public Guid Key { get; set; } = Guid.NewGuid();
+        public OverlayVariable Variable { get; set; }
+        public string TextFormat { get; set; } = string.Empty;
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int FontSize { get; set; } = 30;
+        public string TextColor { get; set; } = "rgb(255, 255, 255)";
+        public TextAnchor TextAnchor { get; set; }
+        public string StrokeColor { get; set; } = "rgb(0, 0, 0)";
+        public int StrokeWidth { get; set; } = 2;
+    }
+}

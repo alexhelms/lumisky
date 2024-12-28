@@ -1,0 +1,34 @@
+{
+  "version": "1.0",
+  "defaultProvider": "jsdelivr",
+  "libraries": [
+    {
+      "library": "@photo-sphere-viewer/core@5.11.4",
+      "destination": "wwwroot/lib/photo-sphere-viewer/core/"
+    },
+    {
+      "library": "@photo-sphere-viewer/video-plugin@5.11.4",
+      "destination": "wwwroot/lib/photo-sphere-viewer/video-plugin/"
+    },
+    {
+      "library": "@photo-sphere-viewer/equirectangular-video-adapter@5.11.4",
+      "destination": "wwwroot/lib/photo-sphere-viewer/equirectangular-video-adapter/"
+    },
+    {
+      "library": "video.js@8.21.0",
+      "destination": "wwwroot/lib/video.js/",
+      "files": [
+        "dist/video.min.js",
+        "dist/video-js.min.css"
+      ]
+    },
+    {
+      "library": "three@0.169.0",
+      "destination": "wwwroot/lib/three/",
+      "files": [
+        "build/three.webgpu.min.js",
+        "build/three.module.min.js"
+      ]
+    }
+  ]
+}

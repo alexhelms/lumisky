@@ -1,0 +1,83 @@
+﻿@page "/log"
+@using Serilog.Events
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject LogChannel LogChannel
+
+<PageTitle>Log</PageTitle>
+
+<RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.Start" Gap="0">
+
+    <RadzenRow JustifyContent="JustifyContent.Left">
+        <RadzenColumn>
+            <RadzenButton Text="Download Log" ButtonStyle="ButtonStyle.Secondary" class="rz-mb-4" Click="DownloadLog" />
+        </RadzenColumn>
+    </RadzenRow>
+
+    @foreach (var item in logItems)
+    {
+        var style = $"font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace; color: {GetLineColor(item.Level)}; white-space: pre-wrap;";
+        <RadzenText TextStyle="TextStyle.Body2" Style="@style">
+            @item.Content.ReplaceLineEndings("\n")
+        </RadzenText>
+    }
+</RadzenStack>
+
+@code {
+    const int MaxLines = 250;
+
+    static List<LogChannelItem> logItems = new(MaxLines);
+
+    Task logReader = null!;
+    CancellationTokenSource cts = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        logReader = Task.Run(ReceiveLogs);
+
+        return base.OnInitializedAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        cts.Cancel();
+        await logReader;
+        cts.Dispose();
+    }
+
+    private async Task ReceiveLogs()
+    {
+        try
+        {
+            await foreach (var item in LogChannel.Reader.ReadAllAsync(cts.Token))
+            {
+                await InvokeAsync(() =>
+                {
+                    logItems.Insert(0, item);
+                    if (logItems.Count > MaxLines)
+                    {
+                        logItems.RemoveRange(MaxLines, logItems.Count - MaxLines);
+                    }
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task DownloadLog()
+    {
+        await JS.InvokeVoidAsync("open", "/api/logs/download", "_blank");
+    }
+
+    private string GetLineColor(LogEventLevel level) => level switch
+    {
+        LogEventLevel.Verbose => "#C8E0F5",
+        LogEventLevel.Debug => "#C8E0F5",
+        LogEventLevel.Information => "#EAEBEC",
+        LogEventLevel.Warning => "#FA9442",
+        LogEventLevel.Error => "#FA0400",
+        LogEventLevel.Fatal => "#FA0400",
+        _ => "#EAEBEC",
+    };
+}

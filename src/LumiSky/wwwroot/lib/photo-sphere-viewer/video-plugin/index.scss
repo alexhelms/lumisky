@@ -1,0 +1,340 @@
+/*!
+ * Photo Sphere Viewer / Video Plugin 5.11.4
+ * @copyright 2015-2024 Damien "Mistic" Sorel
+ * @licence MIT (https://opensource.org/licenses/MIT)
+ */
+
+@use 'sass:map';
+// *** MAIN ***
+$psv-main-background-stops: #fff 0%,
+    #fdfdfd 16%,
+    #fbfbfb 33%,
+    #f8f8f8 49%,
+    #efefef 66%,
+    #dfdfdf 82%,
+    #bfbfbf 100% !default;
+$psv-main-background: radial-gradient($psv-main-background-stops) !default;
+$psv-element-focus-outline: 2px solid #007cff !default;
+
+// *** LOADER ***
+$psv-loader-bg-color: rgba(61, 61, 61, 0.5) !default;
+$psv-loader-color: rgba(255, 255, 255, 0.7) !default;
+$psv-loader-width: 150px !default;
+$psv-loader-tickness: 10px !default;
+$psv-loader-border: 3px !default;
+$psv-loader-font: 600 16px sans-serif !default;
+
+// *** NAVBAR ***
+$psv-navbar-height: 40px !default;
+$psv-navbar-background: rgba(61, 61, 61, 0.5) !default;
+
+$psv-caption-font: 16px sans-serif !default;
+$psv-caption-text-color: rgba(255, 255, 255, 0.7) !default;
+
+$psv-buttons-height: 20px !default;
+$psv-buttons-padding: (($psv-navbar-height - $psv-buttons-height) * 0.5) !default;
+$psv-buttons-background: transparent !default;
+$psv-buttons-active-background: rgba(255, 255, 255, 0.2) !default;
+$psv-buttons-color: rgba(255, 255, 255, 0.7) !default;
+$psv-buttons-disabled-opacity: 0.5 !default;
+
+$psv-buttons-hover-scale: 1.2 !default;
+$psv-buttons-hover-scale-delay: 200ms !default;
+
+$psv-zoom-range-width: 80px !default;
+$psv-zoom-range-tickness: 1px !default;
+$psv-zoom-range-diameter: 7px !default;
+$psv-zoom-range-media-min-width: 600px !default;
+
+// *** TOOLTIP ***
+$psv-tooltip-background: rgba(61, 61, 61, 0.8) !default;
+$psv-tooltip-animate-offset: 5px !default;
+$psv-tooltip-animate-delay: 100ms !default;
+$psv-tooltip-radius: 4px !default;
+$psv-tooltip-padding: 0.5em 1em !default;
+$psv-tooltip-arrow-size: 7px !default;
+$psv-tooltip-max-width: 200px !default;
+
+$psv-tooltip-text-color: rgb(255, 255, 255) !default;
+$psv-tooltip-font: 14px sans-serif !default;
+$psv-tooltip-text-shadow: 0 1px #000 !default;
+
+$psv-tooltip-shadow-color: rgba(90, 90, 90, 0.7) !default;
+$psv-tooltip-shadow-offset: 3px !default; // the shadow is always at the opposite side of the arrow
+
+// *** PANEL ***
+$psv-panel-background: rgba(10, 10, 10, 0.7) !default;
+$psv-panel-text-color: rgb(220, 220, 220) !default;
+$psv-panel-font: 16px sans-serif !default;
+$psv-panel-width: 400px !default;
+$psv-panel-padding: 1em !default;
+$psv-panel-animate-delay: 100ms !default;
+
+$psv-panel-resizer-width: 9px !default; // must be odd
+$psv-panel-resizer-background: rgba(0, 0, 0, 0.9) !default;
+$psv-panel-resizer-grip-color: #fff !default;
+$psv-panel-resizer-grip-height: 29px !default; // must be odd
+$psv-panel-close-button-size: 32px !default;
+$psv-panel-close-button-background: $psv-panel-resizer-background !default;
+$psv-panel-close-button-color: #fff !default;
+$psv-panel-close-button-animate-delay: 300ms !default;
+
+$psv-panel-title-font: 24px sans-serif !default;
+$psv-panel-title-icon-size: 24px !default;
+$psv-panel-title-margin: 24px !default;
+
+$psv-panel-menu-item-height: 1.5em !default;
+$psv-panel-menu-item-padding: 0.5em 1em !default;
+$psv-panel-menu-item-active-outline: 1px !default;
+$psv-panel-menu-odd-background: rgba(255, 255, 255, 0.1) !default;
+$psv-panel-menu-even-background: transparent !default;
+$psv-panel-menu-hover-background: rgba(255, 255, 255, 0.2) !default;
+
+// *** NOTIFICATION ***
+$psv-notification-position-from: -$psv-navbar-height !default;
+$psv-notification-position-to: $psv-navbar-height * 2 !default;
+$psv-notification-animate-delay: 200ms !default;
+$psv-notification-background: $psv-tooltip-background !default;
+$psv-notification-radius: $psv-tooltip-radius !default;
+$psv-notification-padding: $psv-tooltip-padding !default;
+$psv-notification-font: $psv-tooltip-font !default;
+$psv-notification-text-color: $psv-tooltip-text-color !default;
+
+// *** OVERLAY ***
+$psv-overlay-opacity: 0.8 !default;
+$psv-overlay-icon-color: rgb(48, 48, 48) !default;
+$psv-overlay-title-font: 30px sans-serif !default;
+$psv-overlay-title-color: black !default;
+$psv-overlay-text-font: 20px sans-serif !default;
+$psv-overlay-text-color: rgba(0, 0, 0, 0.8) !default;
+$psv-overlay-image-size: (
+    portrait: 50%,
+    landscape: 33%,
+) !default;
+
+// *** Z-INDEXES ***
+$psv-canvas-zindex: 0 !default;
+$psv-hud-zindex: 10 !default;
+$psv-polygon-marker-zindex: 20 !default;
+$psv-marker-zindex: 30 !default;
+$psv-ui-zindex: 40 !default;
+$psv-tooltip-zindex: 50 !default;
+$psv-loader-zindex: 80 !default;
+$psv-panel-zindex: 90 !default;
+$psv-navbar-zindex: 90 !default;
+$psv-notification-zindex: 100 !default;
+$psv-overlay-zindex: 110 !default;
+
+
+$psv-progressbar-height: 3px !default;
+$psv-progressbar-height-active: 5px !default;
+$psv-progressbar-container: 20px !default;
+$psv-progressbar-progress-color: $psv-buttons-color !default;
+$psv-progressbar-buffer-color: $psv-buttons-active-background !default;
+$psv-progressbar-handle-size: 9px !default;
+$psv-progressbar-handle-color: white !default;
+
+$psv-volume-height: 80px !default;
+$psv-volume-width: $psv-progressbar-height-active !default;
+$psv-volume-bar-color: $psv-progressbar-progress-color !default;
+$psv-volume-track-color: $psv-progressbar-buffer-color !default;
+$psv-volume-handle-size: $psv-progressbar-handle-size !default;
+$psv-volume-handle-color: $psv-progressbar-handle-color !default;
+
+$psv-video-bigbutton-size: (
+    portrait: 20vw,
+    landscape: 10vw,
+) !default;
+$psv-video-bigbutton-color: $psv-buttons-color !default;
+
+.psv-container {
+    --psv-video-plugin-loaded: true;
+}
+
+.psv-video {
+    &-progressbar {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: $psv-progressbar-container;
+        cursor: pointer;
+        z-index: $psv-navbar-zindex - 1;
+
+        @at-root .psv--has-navbar & {
+            bottom: $psv-navbar-height;
+        }
+
+        & > * {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: $psv-progressbar-height;
+            transition: height 0.2s linear;
+        }
+
+        &:hover > * {
+            height: $psv-progressbar-height-active;
+        }
+
+        &__progress {
+            background-color: $psv-progressbar-progress-color;
+        }
+
+        &__buffer {
+            background-color: $psv-progressbar-buffer-color;
+        }
+
+        &__handle {
+            display: none;
+            height: $psv-progressbar-handle-size !important;
+            width: $psv-progressbar-handle-size;
+            border-radius: 50%;
+            margin-bottom: #{- ($psv-progressbar-handle-size - $psv-progressbar-height-active) * 0.5};
+            margin-left: #{- $psv-progressbar-handle-size * 0.5};
+            background: $psv-progressbar-handle-color;
+        }
+    }
+
+    &-time {
+        flex: 0 0 auto;
+
+        .psv-caption-content {
+            min-width: 6em;
+            text-align: center;
+        }
+    }
+
+    &-volume {
+        &__container {
+            position: absolute;
+            left: 0;
+            bottom: $psv-navbar-height;
+            padding: $psv-buttons-height 0;
+            width: $psv-navbar-height;
+            height: 0;
+            opacity: 0;
+            background: $psv-navbar-background;
+            transition:
+                opacity 0.2s linear,
+                height 0.3s step-end;
+
+            @at-root .psv--is-touch & {
+                display: none;
+            }
+        }
+
+        &__range {
+            position: relative;
+            height: $psv-volume-height;
+        }
+
+        &__progress,
+        &__track {
+            position: absolute;
+            bottom: 0;
+            left: #{($psv-navbar-height - $psv-volume-width) * 0.5};
+            width: $psv-volume-width;
+            background: $psv-volume-bar-color;
+        }
+
+        &__track {
+            height: 100%;
+            background: $psv-volume-track-color;
+        }
+
+        &__handle {
+            position: absolute;
+            left: #{($psv-navbar-height - $psv-volume-width) * 0.5};
+            height: $psv-volume-handle-size;
+            width: $psv-volume-handle-size;
+            border-radius: 50%;
+            margin-left: #{- ($psv-volume-handle-size - $psv-volume-width) * 0.5};
+            margin-bottom: #{- $psv-volume-handle-size * 0.5};
+            background: $psv-volume-handle-color;
+        }
+    }
+
+    &-volume-button {
+        position: relative;
+
+        &:hover .psv-video-volume__container {
+            height: $psv-volume-height;
+            opacity: 1;
+            transition-timing-function: linear, step-start;
+            transition-delay: 0.2s;
+        }
+
+        &--0 .psv-button-svg {
+            #lvl1,
+            #lvl2,
+            #lvl3 {
+                fill: none;
+            }
+        }
+
+        &--1 .psv-button-svg {
+            #lvl0,
+            #lvl2,
+            #lvl3 {
+                fill: none;
+            }
+        }
+
+        &--2 .psv-button-svg {
+            #lvl0,
+            #lvl3 {
+                fill: none;
+            }
+        }
+
+        &--3 .psv-button-svg {
+            #lvl0 {
+                fill: none;
+            }
+        }
+    }
+
+    &-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: $psv-overlay-zindex;
+        pointer-events: none;
+    }
+
+    &-bigbutton {
+        display: block;
+        border: none;
+        background: none;
+        padding: 0;
+        color: $psv-video-bigbutton-color;
+        pointer-events: auto;
+        cursor: pointer;
+        opacity: 0;
+        width: 0;
+        transition:
+            opacity 0.2s linear,
+            width 0.3s step-end;
+
+        &--pause {
+            width: map.get($psv-video-bigbutton-size, portrait);
+            opacity: 1;
+            transition-timing-function: linear, step-start;
+
+            @container psv-container (orientation: landscape) {
+                width: map.get($psv-video-bigbutton-size, landscape);
+            }
+        }
+
+        svg {
+            width: 100%;
+        }
+    }
+}
