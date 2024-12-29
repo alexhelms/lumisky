@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LumiSky.Core.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class UserSchema : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -48,6 +48,126 @@ namespace LumiSky.Core.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DataProtectionKeys",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    FriendlyName = table.Column<string>(type: "TEXT", nullable: true),
+                    Xml = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DataProtectionKeys", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Generations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CreatedOn = table.Column<DateTime>(type: "DATETIME", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    StartedOn = table.Column<DateTime>(type: "DATETIME", nullable: true),
+                    CompletedOn = table.Column<DateTime>(type: "DATETIME", nullable: true),
+                    RangeBegin = table.Column<long>(type: "INTEGER", nullable: false),
+                    RangeEnd = table.Column<long>(type: "INTEGER", nullable: false),
+                    Kind = table.Column<int>(type: "INTEGER", nullable: false),
+                    State = table.Column<int>(type: "INTEGER", nullable: false),
+                    Progress = table.Column<int>(type: "INTEGER", nullable: false),
+                    OutputFilename = table.Column<string>(type: "TEXT COLLATE NOCASE", nullable: true),
+                    JobInstanceId = table.Column<string>(type: "TEXT", nullable: true),
+                    TimelapseId = table.Column<int>(type: "INTEGER", nullable: true),
+                    PanoramaTimelapseId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Generations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Images",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CreatedOn = table.Column<DateTime>(type: "DATETIME", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    Filename = table.Column<string>(type: "TEXT COLLATE NOCASE", nullable: false),
+                    ExposedOn = table.Column<long>(type: "INTEGER", nullable: false),
+                    IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Images", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Panoramas",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CreatedOn = table.Column<DateTime>(type: "DATETIME", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    Filename = table.Column<string>(type: "TEXT COLLATE NOCASE", nullable: false),
+                    ExposedOn = table.Column<long>(type: "INTEGER", nullable: false),
+                    IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Panoramas", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PanoramaTimelapses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CreatedOn = table.Column<DateTime>(type: "DATETIME", nullable: false),
+                    Filename = table.Column<string>(type: "TEXT COLLATE NOCASE", nullable: false),
+                    RangeBegin = table.Column<long>(type: "INTEGER", nullable: false),
+                    RangeEnd = table.Column<long>(type: "INTEGER", nullable: false),
+                    IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PanoramaTimelapses", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RawImages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CreatedOn = table.Column<DateTime>(type: "DATETIME", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    Filename = table.Column<string>(type: "TEXT COLLATE NOCASE", nullable: false),
+                    ExposedOn = table.Column<long>(type: "INTEGER", nullable: false),
+                    IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RawImages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Timelapses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CreatedOn = table.Column<DateTime>(type: "DATETIME", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    Filename = table.Column<string>(type: "TEXT COLLATE NOCASE", nullable: false),
+                    RangeBegin = table.Column<long>(type: "INTEGER", nullable: false),
+                    RangeEnd = table.Column<long>(type: "INTEGER", nullable: false),
+                    IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Timelapses", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -192,6 +312,21 @@ namespace LumiSky.Core.Data.Migrations
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Images_ExposedOn",
+                table: "Images",
+                column: "ExposedOn");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Panoramas_ExposedOn",
+                table: "Panoramas",
+                column: "ExposedOn");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RawImages_ExposedOn",
+                table: "RawImages",
+                column: "ExposedOn");
         }
 
         /// <inheritdoc />
@@ -211,6 +346,27 @@ namespace LumiSky.Core.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "DataProtectionKeys");
+
+            migrationBuilder.DropTable(
+                name: "Generations");
+
+            migrationBuilder.DropTable(
+                name: "Images");
+
+            migrationBuilder.DropTable(
+                name: "Panoramas");
+
+            migrationBuilder.DropTable(
+                name: "PanoramaTimelapses");
+
+            migrationBuilder.DropTable(
+                name: "RawImages");
+
+            migrationBuilder.DropTable(
+                name: "Timelapses");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

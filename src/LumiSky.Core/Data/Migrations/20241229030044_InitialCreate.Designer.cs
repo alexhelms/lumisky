@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LumiSky.Core.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241228005106_IsFavorite")]
-    partial class IsFavorite
+    [Migration("20241229030044_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
