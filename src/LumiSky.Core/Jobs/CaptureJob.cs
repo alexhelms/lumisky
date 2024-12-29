@@ -75,7 +75,6 @@ public class CaptureJob : JobBase
                 catch (Exception e)
                 {
                     Log.Warning(e, "Error disconnecting from camera");
-                    throw;
                 }
             }
         }
