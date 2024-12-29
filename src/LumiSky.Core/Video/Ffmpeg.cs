@@ -19,7 +19,7 @@ public class Ffmpeg
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            _ffmpegPath = @"C:\ffmpeg\ffmpeg.exe";
+            _ffmpegPath = @"C:\ffmpeg\bin\ffmpeg.exe";
         }
         else
         {

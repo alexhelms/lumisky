@@ -26,11 +26,11 @@ public sealed partial class GenerationSettings : Settings, IGenerationSettings
     protected override void Reset()
     {
         FfmpegPath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? @"C:\ffmpeg\ffmpeg.exe"
+            ? @"C:\ffmpeg\bin\ffmpeg.exe"
             : "/usr/bin/ffmpeg";
 
         FfprobePath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? @"C:\ffmpeg\ffprobe.exe"
+            ? @"C:\ffmpeg\bin\ffprobe.exe"
             : "/usr/bin/ffprobe";
 
         EnableDaytimeTimelapse = true;
