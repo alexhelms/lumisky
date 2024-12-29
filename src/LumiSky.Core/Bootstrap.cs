@@ -143,6 +143,7 @@ public static class Bootstrap
         services.AddQuartz(q =>
         {
             q.UseInMemoryStore();
+            q.UseDedicatedThreadPool(maxConcurrency: 10);
             q.InterruptJobsOnShutdown = true;
             q.InterruptJobsOnShutdownWithWait = true;
 

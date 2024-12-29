@@ -121,6 +121,7 @@ public class FindExposureJob : JobBase
                 .ForJob(CaptureJob.Key)
                 .WithSimpleSchedule(o => o
                     .WithInterval(_profile.Current.Capture.CaptureInterval)
+                    .WithMisfireHandlingInstructionIgnoreMisfires()
                     .RepeatForever())
                 .Build();
 
