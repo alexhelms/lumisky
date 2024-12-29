@@ -17,7 +17,7 @@ public abstract class JobBase : IJob
             try
             {
                 await OnExecute(context);
-                OnCompletion(context);
+                OnSuccess(context);
             }
             catch (OperationCanceledException) { /* ignore */ }
             catch (Exception e)
@@ -31,6 +31,10 @@ public abstract class JobBase : IJob
 
                 throw new JobExecutionException(e.Message, e, refireImmediately: RetryJobOnException);
             }
+            finally
+            {
+                OnCompletion(context);
+            }
         }
     }
 
@@ -42,6 +46,11 @@ public abstract class JobBase : IJob
     }
 
     protected virtual void OnCompletion(IJobExecutionContext context)
+    {
+        // empty
+    }
+
+    protected virtual void OnSuccess(IJobExecutionContext context)
     {
         // empty
     }
