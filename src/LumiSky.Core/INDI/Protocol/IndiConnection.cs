@@ -80,11 +80,13 @@ public partial class IndiConnection
         }
     }
 
-    public async Task Connect(string hostname, int port = 7624)
+    public Task Connect(string hostname, int port = 7624) => Connect(hostname, port, TimeSpan.FromSeconds(5));
+
+    public async Task Connect(string hostname, int port, TimeSpan timeout)
     {
         if (IsConnected) return;
         
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var cts = new CancellationTokenSource(timeout);
 
         try
         {

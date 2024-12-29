@@ -1,4 +1,6 @@
 ﻿@using LumiSky.Core.Profile
+@using LumiSky.INDI.Protocol;
+@implements IDisposable
 @inject IProfileProvider Profile
 @inject NotificationService NotificationService
 
@@ -13,16 +15,47 @@
                 <RadzenStack>
 
                     <RadzenFormField Text="INDI Hostname" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenTextBox @bind-Value="model.IndiHostname" />
+                        <RadzenTextBox @bind-Value="model.IndiHostname" @bind-Value:after="OnIndiHostnameChanged" />
                     </RadzenFormField>
 
                     <RadzenFormField Text="INDI Port" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenNumeric @bind-Value="model.IndiPort" Min="1" Max="65535" />
+                        <RadzenNumeric @bind-Value="model.IndiPort" @bind-Value:after="OnIndiPortChanged" Min="1" Max="65535" />
                     </RadzenFormField>
 
                     <RadzenFormField Text="INDI Camera Name" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <RadzenTextBox @bind-Value="model.Name" />
                     </RadzenFormField>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start">
+                        <RadzenButton Text="Test Connection" Click="ConnectToIndi" />
+                    </RadzenStack>
+
+                    @if (connection is null)
+                    {
+                        <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" Shade="Shade.Lighter" AllowClose="false" class="rz-m-0">
+                            Cannot connect to INDI server, check hostname and port.
+                        </RadzenAlert>
+                    }
+                    
+                    @if (connection is { IsConnected: false })
+                    {
+                        <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    }
+
+                    @if (connection is { IsConnected: true })
+                    {
+                        var discoveredDevicesLabel = $"Discovered Devices ({deviceNames.Count})";
+                        <RadzenFormField Text="@discoveredDevicesLabel" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenListBox TValue="string" Data=@deviceNames ReadOnly="true" Style="height: 120px;">
+                                <Template Context="data">
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                                        <RadzenButton Text="Use" Click="@(() => OnDeviceSelected(data))" />
+                                        <RadzenText Text="@data" class="rz-m-0" />
+                                    </RadzenStack>
+                                </Template>
+                            </RadzenListBox>
+                        </RadzenFormField>
+                    }
 
                 </RadzenStack>
             </ChildContent>
@@ -177,6 +210,8 @@
 
 @code {
     private CameraSettingsModel model = new();
+    private IndiConnection? connection;
+    private HashSet<string> deviceNames = [];
 
     protected override void OnInitialized()
     {
@@ -195,6 +230,13 @@
         model.NighttimeBiasG = Profile.Current.Camera.NighttimeBiasG * ushort.MaxValue;
         model.NighttimeBiasB = Profile.Current.Camera.NighttimeBiasB * ushort.MaxValue;
         model.FocalLength = Profile.Current.Camera.FocalLength;
+
+        _ = ConnectToIndi();
+    }
+
+    public void Dispose()
+    {
+        connection?.Disconnect();
     }
 
     private void OnSubmit(CameraSettingsModel model)
@@ -221,6 +263,60 @@
             Duration = 2000,
             Summary = "Saved!",
         });
+    }
+
+    private Task OnIndiHostnameChanged() => ConnectToIndi();
+
+    private Task OnIndiPortChanged() => ConnectToIndi();
+
+    private async Task ConnectToIndi()
+    {
+        if (model.IndiHostname is { Length: >0 } &&
+            model.IndiPort > 0)
+        {
+            if (connection != null)
+            {
+                connection.DeviceFound -= OnDeviceFound;
+                connection.DeviceRemoved -= OnDeviceRemoved;
+                connection.Disconnect();
+            }
+
+            deviceNames.Clear();
+            await InvokeAsync(StateHasChanged);
+
+            connection = new IndiConnection();
+            connection.DeviceFound += OnDeviceFound;
+            connection.DeviceRemoved += OnDeviceRemoved;
+
+            try
+            {
+                await connection.Connect(model.IndiHostname, model.IndiPort, TimeSpan.FromMilliseconds(500));
+            }
+            catch (Exception)
+            {
+                connection.DeviceFound -= OnDeviceFound;
+                connection.DeviceRemoved -= OnDeviceRemoved;
+                connection = null;
+            }
+        }
+    }
+
+    private void OnDeviceFound(IndiDevice device)
+    {
+        deviceNames.Add(device.Name);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnDeviceRemoved(IndiDevice device)
+    {
+        deviceNames.Remove(device.Name);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnDeviceSelected(string deviceName)
+    {
+        model.Name = deviceName;
+        await InvokeAsync(StateHasChanged);
     }
 
     public record CameraSettingsModel
