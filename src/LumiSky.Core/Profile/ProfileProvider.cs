@@ -149,7 +149,7 @@ public class ProfileProvider : ObservableObject, IProfileProvider
 
         try
         {
-            Directory.CreateDirectory(LumiSkyPaths.Profiles);
+            Directory.CreateDirectory(LumiSkyPaths.Settings);
             if (File.Exists(filename))
                 File.Copy(filename, backupFilename, overwrite: true);
 
@@ -222,8 +222,8 @@ public class ProfileProvider : ObservableObject, IProfileProvider
 
     public IProfile LoadProfiles()
     {
-        Directory.CreateDirectory(LumiSkyPaths.Profiles);
-        var files = Directory.GetFiles(LumiSkyPaths.Profiles, $"*{ProfileExtension}");
+        Directory.CreateDirectory(LumiSkyPaths.Settings);
+        var files = Directory.GetFiles(LumiSkyPaths.Settings, $"*{ProfileExtension}");
         if (files.Length > 0)
         {
             foreach (var file in files)
@@ -290,7 +290,7 @@ public class ProfileProvider : ObservableObject, IProfileProvider
         return success;
     }
 
-    private string GetProfileFilename(string profileName) => Path.Combine(LumiSkyPaths.Profiles, $"{profileName}{ProfileExtension}");
+    private string GetProfileFilename(string profileName) => Path.Combine(LumiSkyPaths.Settings, $"{profileName}{ProfileExtension}");
 
     private void ChangeProfile(IProfile? oldProfile, IProfile newProfile)
     {

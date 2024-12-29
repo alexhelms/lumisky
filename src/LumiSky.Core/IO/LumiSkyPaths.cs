@@ -27,5 +27,5 @@ public static class LumiSkyPaths
 
     public static string Logs => Path.Combine(BasePath, "logs");
 
-    public static string Profiles => Path.Combine(BasePath, "profiles");
+    public static string Settings => Path.Combine(BasePath, "settings");
 }
