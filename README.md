@@ -13,7 +13,7 @@ docker compose -f dev.docker-compose.yml up --build
 ## Build the container to be pushed
 
 ```
-docker build -t registry.local.sdso.space/lumisky:latest -f LumiSky/Dockerfile .
+docker build -t registry.local.sdso.space/lumisky:latest -f src/LumiSky/Dockerfile .
 docker push registry.local.sdso.space/lumisky:latest
 ```
 

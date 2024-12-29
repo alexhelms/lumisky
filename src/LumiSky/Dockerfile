@@ -25,11 +25,11 @@ USER app
 FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Directory.Packages.props", "."]
-COPY ["Directory.Build.props", "."]
-COPY ["LumiSky/LumiSky.csproj", "LumiSky/"]
-COPY ["LumiSky.Core/LumiSky.Core.csproj", "LumiSky.Core/"]
-RUN dotnet restore "./LumiSky/LumiSky.csproj"
+COPY ["src/Directory.Packages.props", "."]
+COPY ["src/Directory.Build.props", "."]
+COPY ["src/LumiSky/LumiSky.csproj", "LumiSky/"]
+COPY ["src/LumiSky.Core/LumiSky.Core.csproj", "LumiSky.Core/"]
+RUN dotnet restore "./src/LumiSky/LumiSky.csproj"
 COPY . .
 WORKDIR "/src/LumiSky"
 RUN dotnet build "./LumiSky.csproj" -c $BUILD_CONFIGURATION -o /app/build

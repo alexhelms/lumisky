@@ -3,7 +3,7 @@ services:
     container_name: "lumisky"
     build:
       context: .
-      dockerfile: ./LumiSky/Dockerfile
+      dockerfile: ./src/LumiSky/Dockerfile
     restart: unless-stopped
     volumes:
       - lumisky-data:/lumisky
@@ -16,7 +16,7 @@ services:
 
   indiserver:
     container_name: "indiserver"
-    image: ghcr.io/twinkle-astronomy/indi_server:v2.0.9-1
+    image: ghcr.io/twinkle-astronomy/indi_server:v2.1.1-202412060709
     restart: unless-stopped
     pull_policy: always
     privileged: true
@@ -31,12 +31,7 @@ services:
       "-m", "1024",
       "-r", "0",
       "-d", "1024",
-      # Add your indi devices here
-      "indi_simulator_ccd",
-      #"indi_asi_ccd",
-      #"indi_asi_wheel",
-      #"indi_asi_focuser",
-      #"indi_eqmod_telescope",
+      "indi_simulator_ccd"
     ]
 
 volumes:
