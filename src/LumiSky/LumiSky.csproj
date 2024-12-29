@@ -40,4 +40,8 @@
     <ProjectReference Include="..\LumiSky.Core\LumiSky.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\img\" />
+  </ItemGroup>
+
 </Project>
