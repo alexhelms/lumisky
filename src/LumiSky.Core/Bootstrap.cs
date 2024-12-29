@@ -12,6 +12,7 @@ using SlimMessageBus.Host.Memory;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using LumiSky.Core.IO.Fits;
+using LumiSky.Core.Utilities;
 
 namespace LumiSky.Core;
 
@@ -84,6 +85,7 @@ public static class Bootstrap
         try
         {
             profile.LoadProfiles();
+            profile.Current.App.AppVersion = RuntimeUtil.Version;
         }
         catch (Exception e)
         {

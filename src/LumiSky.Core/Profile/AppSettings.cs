@@ -1,10 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using LumiSky.Core.IO;
+using LumiSky.Core.Utilities;
 
 namespace LumiSky.Core.Profile;
 
 public interface IAppSettings : ISettings
 {
+    string AppVersion { get; set; }
     string ImageDataPath { get; set; }
     bool EnableCleanup { get; set; }
     bool EnableImageCleanup { get; set; }
@@ -23,6 +25,7 @@ public sealed partial class AppSettings : Settings, IAppSettings
 {
     protected override void Reset()
     {
+        AppVersion = RuntimeUtil.Version;
         ImageDataPath = Path.Combine(LumiSkyPaths.BasePath, "data");
         EnableCleanup = true;
         EnableImageCleanup = true;
@@ -36,6 +39,9 @@ public sealed partial class AppSettings : Settings, IAppSettings
         PanoramaCleanupAge = 30;
         PanoramaTimelapseCleanupAge = 30;
     }
+
+    [ObservableProperty]
+    public partial string AppVersion { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string ImageDataPath { get; set; } = string.Empty;
