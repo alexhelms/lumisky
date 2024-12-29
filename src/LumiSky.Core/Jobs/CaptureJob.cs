@@ -45,6 +45,16 @@ public class CaptureJob : JobBase
             var filename = SaveImage(image);
             context.CancellationToken.ThrowIfCancellationRequested();
 
+            var elapsedJobTime = context.FireTimeUtc - DateTime.UtcNow;
+            if (elapsedJobTime > _profile.Current.Capture.CaptureInterval)
+            {
+                var suggestedMaxExposureSeconds = Math.Ceiling((elapsedJobTime - _profile.Current.Capture.CaptureInterval).TotalSeconds);
+                Log.Warning(
+                    "Total capture job time ({Elapsed:F3}s) exceeds capture interval ({Interval:F3}s). " +
+                    "Consider reducing your max exposure time by {Suggestion:F0} seconds.",
+                    elapsedJobTime.TotalSeconds, _profile.Current.Capture.CaptureInterval, suggestedMaxExposureSeconds);
+            }
+
             await context.Scheduler.TriggerJob(
                 ProcessingJob.Key,
                 new JobDataMap

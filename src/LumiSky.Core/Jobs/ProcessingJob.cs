@@ -115,11 +115,6 @@ public class ProcessingJob : JobBase
 
         Log.Information("Processing completed in {Elapsed:F3} seconds", processTimeElapsed.TotalSeconds);
 
-        if (processTimeElapsed > (_profile.Current.Capture.CaptureInterval - processResult.Metadata.ExposureDuration.GetValueOrDefault()))
-        {
-            Log.Warning("Processing time exceeds available time between exposures. Consider reducing your max exposure time.");
-        }
-
         context.CancellationToken.ThrowIfCancellationRequested();
 
         await context.Scheduler.TriggerJob(
