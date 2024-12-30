@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using LumiSky.Components;
 using LumiSky.Components.Account;
 using LumiSky.Core.IO;
@@ -115,6 +116,13 @@ public class Program
 
             // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
+
+            app.MapGet("/docs", async ctx =>
+            {
+                ctx.Response.ContentType = "text/html";
+                var index = Path.Combine(app.Environment.WebRootPath, "docs", "index.html");
+                await ctx.Response.SendFileAsync(index);
+            });
 
             await app.RunAsync();
         }

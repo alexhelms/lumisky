@@ -10,6 +10,9 @@
 <RadzenPanelMenuItem Text="Generate" Icon="bolt" Path="/generate" />
 <RadzenPanelMenuItem Text="Settings" Icon="settings" Path="/settings" />
 <RadzenPanelMenuItem Text="Log" Icon="article" Path="/log" ContextMenu="@(args => ShowContextMenuWithItems(args))" />
+<hr style="border-color: #3b3c3f; border-style: solid;" class="rz-mx-2" />
+<RadzenPanelMenuItem Text="About" Icon="info" Path="/about" />
+<RadzenPanelMenuItem Text="Docs" Icon="help" Path="/docs" Target="_blank" />
 @* <AuthorizeView>
     <Authorized>
         <RadzenPanelMenuItem Text="@context.User.Identity?.Name" Icon="dashboard" Path="Account/Manage" />

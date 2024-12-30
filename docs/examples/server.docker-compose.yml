@@ -1,0 +1,17 @@
+services:
+  lumisky:
+    container_name: "lumisky"
+    image: ghcr.io/alexhelms/lumisky:latest
+    restart: unless-stopped
+    user: 1654:1654
+    volumes:
+      - lumisky-data:/lumisky
+    network_mode: host
+    ports:
+      - 8080:8080
+    environment:
+      TZ: "America/Phoenix"
+      LUMISKY_PATH: "/lumisky"
+
+volumes:
+  lumisky-data:

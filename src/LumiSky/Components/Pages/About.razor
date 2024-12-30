@@ -1,0 +1,22 @@
+﻿@page "/about"
+@using LumiSky.Core.Utilities
+
+<RadzenStack>
+
+    <RadzenCard Variant="Variant.Filled" Style="max-width: 300px;">
+        <RadzenStack Gap="0">
+            <RadzenText TextStyle="TextStyle.H6"><strong>Version</strong></RadzenText>
+            <RadzenText Text="@version" TextStyle="TextStyle.Subtitle1" />
+        </RadzenStack>
+    </RadzenCard>
+
+</RadzenStack>
+
+@code {
+    string version = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        version = RuntimeUtil.Version;
+    }
+}
