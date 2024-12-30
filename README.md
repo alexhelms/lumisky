@@ -67,7 +67,7 @@ LumiSky can be run as a:
 
 ### 3D Panorama
 
-<video src="https://github.com/user-attachments/assets/94e1b260-5859-486d-a0e2-37c0faa8521c" width="300"/>
+<video src="https://github.com/user-attachments/assets/94e1b260-5859-486d-a0e2-37c0faa8521c" width="300"></video>
 
 ### Settings
 
