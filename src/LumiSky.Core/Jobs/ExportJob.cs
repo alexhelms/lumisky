@@ -74,7 +74,7 @@ public class ExportJob : JobBase
                 port: _profile.Current.Export.FtpPort,
                 config: new FtpConfig
                 {
-                    ValidateAnyCertificate = _profile.Current.Export.EnableCertificateValidation,
+                    ValidateAnyCertificate = !_profile.Current.Export.EnableCertificateValidation,
                 });
 
             await ftp.AutoConnect();

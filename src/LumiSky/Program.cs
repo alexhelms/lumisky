@@ -25,6 +25,8 @@ public class Program
                 retainedFileCountLimit: 7)
             .CreateBootstrapLogger();
 
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
         try
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -52,6 +54,8 @@ public class Program
                 .AddInteractiveServerComponents();
 
             builder.Services.AddControllers();
+
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
             builder.Services.AddRadzenComponents();
             builder.Services.AddHttpClient();
@@ -98,7 +102,7 @@ public class Program
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            app.UseExceptionHandler();
 
             app.UseAntiforgery();
 
@@ -120,6 +124,14 @@ public class Program
         finally
         {
             Log.CloseAndFlush();
+        }
+    }
+
+    private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        if (e.ExceptionObject is Exception ex)
+        {
+            Log.Error(ex, "Unhandled exception");
         }
     }
 }

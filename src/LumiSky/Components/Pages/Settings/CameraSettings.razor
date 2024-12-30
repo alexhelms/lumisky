@@ -14,15 +14,15 @@
             <ChildContent>
                 <RadzenStack>
 
-                    <RadzenFormField Text="INDI Hostname" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <RadzenFormField Text="Hostname" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <RadzenTextBox @bind-Value="model.IndiHostname" @bind-Value:after="OnIndiHostnameChanged" />
                     </RadzenFormField>
 
-                    <RadzenFormField Text="INDI Port" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <RadzenFormField Text="Port" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <RadzenNumeric @bind-Value="model.IndiPort" @bind-Value:after="OnIndiPortChanged" Min="1" Max="65535" />
                     </RadzenFormField>
 
-                    <RadzenFormField Text="INDI Camera Name" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <RadzenFormField Text="Camera Name" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <RadzenTextBox @bind-Value="model.Name" />
                     </RadzenFormField>
 
