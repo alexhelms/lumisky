@@ -1,4 +1,4 @@
-# Lumisky
+# LumiSky
 
 LumiSky is an astronomy allsky camera server for capturing images and generating timelapse videos.
 
