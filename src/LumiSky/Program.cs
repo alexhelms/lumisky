@@ -56,6 +56,7 @@ public class Program
             builder.Services.AddControllers();
 
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+            builder.Services.AddProblemDetails();
 
             builder.Services.AddRadzenComponents();
             builder.Services.AddHttpClient();
