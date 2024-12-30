@@ -1,48 +1,74 @@
-# LumiSky
+# Lumisky
 
-Astronomy allsky web server.
+LumiSky is an astronomy allsky camera server for capturing images and generating timelapse videos.
 
-# Dev Notes
+LumiSky has been deployed at [SDSO](https://sdso.space/) since August 2024.
 
-## Build and Run the Container Locally
+## Features
 
-```
-docker compose -f dev.docker-compose.yml up --build
-```
+- Supports [INDI](https://www.indilib.org/) cameras
+- Dusk/dawn transition auto exposure
+- Automatic timelapse generation
+- Panorama images and timelapse video
+- 3D panorama image and video player
+- Midtone autostretch
+- Auto contrast enhance (S Curve)
+- Accurate white balance
+- Hot pixel correction
+- Circle mask
+- Customizable overlay
+  - Cardinal directions
+  - Timestamp
+  - Latitude
+  - Longitude
+  - Elevation
+  - Exposure
+  - Gain
+  - Sun altitude
+  - Custom text
+- FTP export
+- Automatic cleanup of old data
+- Import/export settings
 
-## Build the container to be pushed
+## Requirements
 
-```
-docker build -t registry.local.sdso.space/lumisky:latest -f src/LumiSky/Dockerfile .
-docker push registry.local.sdso.space/lumisky:latest
-```
+- OS
+  - Debian 12 (bookworm)
+  - Windows 10/11
+- CPU
+  - x86_64
+  - ARM64 (linux only)
+- RAM
+  - 2GB RAM recommended, 1GB minimum
+  - More RAM is required depending on camera resolution
+- Storage
+  - Enough storage for images, panoramas, timelapse videos
+- Camera
+  - Any camera supported by [INDI](https://www.indilib.org/)
+- INDI
+  - v2.0.7 and up
 
-## Compiling cfitsio for Linux
+LumiSky can be run as a:
 
-Run these commands both on an arm64 and x64 device and grab the dynamic libraries.
+- Docker container (recommended)
+- LXC
+- Virtual machine
+- Native application
 
-`cfitsio` must be compiled with `--enable-reentrant`. Calling `fits_is_reentrant()` must return a `1`.
+## Screenshots
 
-```
-wget https://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-4.4.1.tar.gz
-tar zxvf cfitsio-4.4.1.tar.gz
-cd cfitsio-4.4.1
-./configure --enable-reentrant
-make -j4
-make utils -j4
-./testprog
-```
+### Dashboard
 
-## Compiling emgucv for Linux
+![Dashboard](/docs/_media/lumisky-dashboard.jpg "Dashboard")
 
-The opencv binary in the debian arm64 nuget package for emgucv works as-is.
-Unfortunately there is not a debian version for x64 so below are steps to compile our own.
-This was done in Debian 12 in WSL.
+### Gallery
 
-```
-git clone --recurse-submodules --shallow-submodules --branch 4.9.0 https://github.com/emgucv/emgucv.git
-cd emgucv/platforms/debian/bookworm/
-./apt_install_dependency
-# edit cmake_configure and change `--parallel 1` to `--parallel $(nproc)`
-./cmake_configure
-```
+![Gallery](/docs/_media/lumisky-gallery.jpg "Gallery")
+
+### 3D Panorama
+
+![3D Panorama](/docs/_media/lumisky-3d-panorama.mp4)
+
+### Settings
+
+![Settings](/docs/_media/lumisky-settings.jpg "Settings")

@@ -1,3 +1,5 @@
+<!-- NOTE: This is a copy of README.md in the root of the repo with the image paths changed. -->
+
 # Introduction
 
 LumiSky is an astronomy allsky camera server for capturing images and generating timelapse videos.
@@ -54,3 +56,21 @@ LumiSky can be run as a:
 - LXC
 - Virtual machine
 - Native application
+
+## Screenshots
+
+### Dashboard
+
+![Dashboard](_media/lumisky-dashboard.jpg "Dashboard")
+
+### Gallery
+
+![Gallery](_media/lumisky-gallery.jpg "Gallery")
+
+### 3D Panorama
+
+[3D Panorama](_media/lumisky-3d-panorama.mp4 ':include')
+
+### Settings
+
+![Settings](_media/lumisky-settings.jpg "Settings")

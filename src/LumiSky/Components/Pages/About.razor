@@ -1,22 +1,26 @@
 ﻿@page "/about"
 @using LumiSky.Core.Utilities
 
-<RadzenStack>
+<RadzenStack AlignItems="AlignItems.Start">
 
-    <RadzenCard Variant="Variant.Filled" Style="max-width: 300px;">
+    <RadzenText Text="About LumiSky" TextStyle="TextStyle.H5" />
+
+    <RadzenCard Variant="Variant.Filled">
         <RadzenStack Gap="0">
             <RadzenText TextStyle="TextStyle.H6"><strong>Version</strong></RadzenText>
-            <RadzenText Text="@version" TextStyle="TextStyle.Subtitle1" />
+            <RadzenText Text="@RuntimeUtil.InformationalVersion" TextStyle="TextStyle.Subtitle1" class="rz-m-0" />
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenCard Variant="Variant.Filled" Style="max-width: 400px;">
+        <RadzenStack Gap="0">
+            <RadzenText TextStyle="TextStyle.H6"><strong>Build Date</strong></RadzenText>
+            <RadzenText Text="@RuntimeUtil.CommitDate.ToString("yyyy-MM-dd")" TextStyle="TextStyle.Subtitle1" class="rz-m-0" />
         </RadzenStack>
     </RadzenCard>
 
 </RadzenStack>
 
 @code {
-    string version = string.Empty;
 
-    protected override void OnInitialized()
-    {
-        version = RuntimeUtil.Version;
-    }
 }
