@@ -31,8 +31,8 @@ COPY ["src/LumiSky/LumiSky.csproj", "LumiSky/"]
 COPY ["src/LumiSky.Core/LumiSky.Core.csproj", "LumiSky.Core/"]
 RUN dotnet restore "./LumiSky/LumiSky.csproj"
 COPY ./src .
+COPY ./.git .
 WORKDIR "/src/LumiSky"
-RUN dotnet tool restore
 RUN dotnet build "./LumiSky.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
