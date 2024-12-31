@@ -31,7 +31,7 @@ COPY ["src/LumiSky/LumiSky.csproj", "LumiSky/"]
 COPY ["src/LumiSky.Core/LumiSky.Core.csproj", "LumiSky.Core/"]
 RUN dotnet restore "./LumiSky/LumiSky.csproj"
 COPY ./src .
-COPY ./.git .
+COPY .git ./.git/
 WORKDIR "/src/LumiSky"
 RUN dotnet build "./LumiSky.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
