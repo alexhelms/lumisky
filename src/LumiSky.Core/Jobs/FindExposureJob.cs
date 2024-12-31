@@ -34,7 +34,6 @@ public class FindExposureJob : JobBase
 
     protected async override Task OnExecute(IJobExecutionContext context)
     {
-        IndiCamera? camera = null;
         bool success = _memoryCache.TryGetValue<TimeSpan>(CacheKeys.NextExposure, out var previousExposure);
 
         if (success)
@@ -44,70 +43,50 @@ public class FindExposureJob : JobBase
         }
         else
         {
-            try
-            {
-                camera = await CreateCamera(context.CancellationToken);
-                context.CancellationToken.ThrowIfCancellationRequested();
+            IndiCamera camera = await _deviceFactory.GetOrCreateConnectedCamera(context.CancellationToken);
+            context.CancellationToken.ThrowIfCancellationRequested();
             
-                bool isDay = _sunService.IsDaytime;
-                var exposure = isDay
-                    ? TimeSpan.FromSeconds(1)
-                    : TimeSpan.FromSeconds(5);
+            bool isDay = _sunService.IsDaytime;
+            var exposure = isDay
+                ? TimeSpan.FromSeconds(1)
+                : TimeSpan.FromSeconds(5);
 
-                var gain = isDay
-                    ? _profile.Current.Camera.DaytimeGain
-                    : _profile.Current.Camera.NighttimeGain;
+            var gain = isDay
+                ? _profile.Current.Camera.DaytimeGain
+                : _profile.Current.Camera.NighttimeGain;
 
-                var exposureParameters = new ExposureParameters
+            var exposureParameters = new ExposureParameters
+            {
+                Duration = exposure,
+                Gain = gain,
+                Offset = _profile.Current.Camera.Offset,
+            };
+
+            Log.Information("Finding initial exposure");
+
+            while (true)
+            {
+                context.CancellationToken.ThrowIfCancellationRequested();
+
+                var median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
+                _exposureService.AddMostRecentStatistics(exposureParameters.Duration, median, gain);
+
+                var nextExposure = _exposureService.GetNextExposure();
+                exposureParameters = exposureParameters with { Duration = nextExposure };
+
+                if (median < 0.9)
                 {
-                    Duration = exposure,
-                    Gain = gain,
-                    Offset = _profile.Current.Camera.Offset,
-                };
+                    Log.Information("Starting exposure found at {Exposure:#.000000} sec, iterating once more",
+                        exposureParameters.Duration.TotalSeconds);
 
-                Log.Information("Finding initial exposure");
-
-                while (true)
-                {
-                    context.CancellationToken.ThrowIfCancellationRequested();
-
-                    var median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
+                    median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
                     _exposureService.AddMostRecentStatistics(exposureParameters.Duration, median, gain);
 
-                    var nextExposure = _exposureService.GetNextExposure();
-                    exposureParameters = exposureParameters with { Duration = nextExposure };
+                    Log.Information("Final starting exposure is {Exposure:#.000000} sec",
+                        _exposureService.GetNextExposure().TotalSeconds);
 
-                    if (median < 0.9)
-                    {
-                        Log.Information("Starting exposure found at {Exposure:#.000000} sec, iterating once more",
-                            exposureParameters.Duration.TotalSeconds);
-
-                        median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
-                        _exposureService.AddMostRecentStatistics(exposureParameters.Duration, median, gain);
-
-                        Log.Information("Final starting exposure is {Exposure:#.000000} sec",
-                            _exposureService.GetNextExposure().TotalSeconds);
-
-                        success = true;
-                        break;
-                    }
-                }
-            }
-            finally
-            {
-                if (camera is not null)
-                {
-                    try
-                    {
-                        await camera.DisconnectAsync();
-                        camera.Dispose();
-                        camera = null;
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Warning(e, "Error disconnecting from camera");
-                        throw;
-                    }
+                    success = true;
+                    break;
                 }
             }
         }
@@ -127,19 +106,6 @@ public class FindExposureJob : JobBase
 
             await context.Scheduler.ScheduleJob(trigger);
         }
-    }
-
-    private async Task<IndiCamera> CreateCamera(CancellationToken token)
-    {
-        var camera = _deviceFactory.CreateCamera();
-        if (camera is null)
-            throw new NullReferenceException("Could not create camera.");
-
-        bool connected = await camera.ConnectAsync(token);
-        if (!connected)
-            throw new NotConnectedException($"{camera.Name} failed to connect. Check settings and try again.");
-
-        return camera;
     }
 
     private async Task<double> ExposeAndMeasureMedian(

@@ -14,6 +14,8 @@ public static class ImageMetadataExtensions
             {
                 "INSTRUME" => ParseCameraName,
                 "DATE" => ParseExposureUtc,
+                "DATE-OBS" => ParseExposureUtc,
+                "EXPTIME" => ParseExposureDuration,
                 "EXPOSURE" => ParseExposureDuration,
                 "GAIN" => ParseGain,
                 "OFFSET" => ParseOffset,
@@ -64,12 +66,16 @@ public static class ImageMetadataExtensions
         {
             if (entry is IntegerHeaderEntry intEntry)
                 metadata.Gain = intEntry.Value;
+            else if (entry is FloatHeaderEntry floatEntry)
+                metadata.Gain = (int)floatEntry.Value;
         }
 
         void ParseOffset(IHeaderEntry entry)
         {
             if (entry is IntegerHeaderEntry intEntry)
                 metadata.Offset = intEntry.Value;
+            else if (entry is FloatHeaderEntry floatEntry)
+                metadata.Offset = (int)floatEntry.Value;
         }
 
         void ParseBinning(IHeaderEntry entry)

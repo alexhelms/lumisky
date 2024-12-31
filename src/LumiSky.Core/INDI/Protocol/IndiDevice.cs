@@ -23,7 +23,7 @@ public class IndiDevice
         var vector = Properties.Get<IndiVector<T>>(propertyName);
         if (vector.GetItemWithName(elementName) is { } item)
         {
-            var timeoutCts = new CancellationTokenSource(timeout == default ? TimeSpan.FromHours(1) : timeout);
+            var timeoutCts = new CancellationTokenSource(timeout == default ? TimeSpan.FromSeconds(1) : timeout);
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, token);
 
             item.TryUpdateValue(value);
@@ -32,7 +32,7 @@ public class IndiDevice
             try
             {
                 while (vector.IsBusy && !linkedCts.Token.IsCancellationRequested)
-                    await Task.Delay(10, linkedCts.Token);
+                    await Task.Delay(1, linkedCts.Token);
             }   
             catch (OperationCanceledException)
             {
@@ -68,7 +68,7 @@ public class IndiDevice
             }
         }
 
-        var timeoutCts = new CancellationTokenSource(timeout == default ? TimeSpan.FromHours(1) : timeout);
+        var timeoutCts = new CancellationTokenSource(timeout == default ? TimeSpan.FromSeconds(1) : timeout);
         var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, token);
 
         await Properties.Set(vector, items.ToArray());
@@ -76,7 +76,7 @@ public class IndiDevice
         try
         {
             while (vector.IsBusy && !linkedCts.Token.IsCancellationRequested)
-                await Task.Delay(10, linkedCts.Token);
+                await Task.Delay(1, linkedCts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -131,9 +131,9 @@ public class IndiDevice
             await Properties.Refresh();
             await Connection.Send(new IndiEnableBlobMessage(Name, IndiBlobState.Also));
             
-            while (sw.Elapsed < TimeSpan.FromMilliseconds(250))
+            while (sw.Elapsed < TimeSpan.FromMilliseconds(100))
             {
-                await Task.Delay(25);
+                await Task.Delay(1);
             }
         }
         finally

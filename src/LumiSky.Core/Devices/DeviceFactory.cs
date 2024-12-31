@@ -6,19 +6,28 @@ public class DeviceFactory
 {
     private readonly IProfileProvider _profile;
 
+    private IndiCamera? _camera;
+
     public DeviceFactory(IProfileProvider profile)
     {
         _profile = profile;
     }
 
-    public IndiCamera CreateCamera()
+    public async Task<IndiCamera> GetOrCreateConnectedCamera(CancellationToken token)
     {
-        // This is pretty trivial now but LumiSky will eventually support
-        // other camera kinds and will need another abstraction over all
-        // cameras, aka. an LumiSkyCamera that takes a ICamera so all
-        // downstream callers have the same interface.
+        _camera ??= new IndiCamera(_profile);
 
-        var camera = new IndiCamera(_profile);
-        return camera;
+        if (!_camera.IsConnected)
+        {
+            await _camera.ConnectAsync(token);
+        }
+
+        return _camera;
+    }
+
+    public void DestroyCamera()
+    {
+        _camera?.Dispose();
+        _camera = null;
     }
 }

@@ -32,66 +32,33 @@ public class CaptureJob : JobBase
 
     protected override async Task OnExecute(IJobExecutionContext context)
     {
-        IndiCamera? camera = null;
+        IndiCamera camera = await _deviceFactory.GetOrCreateConnectedCamera(context.CancellationToken);
+        context.CancellationToken.ThrowIfCancellationRequested();
 
-        try
+        using var image = await ExposeImage(camera, context.CancellationToken);
+        context.CancellationToken.ThrowIfCancellationRequested();
+
+        var filename = SaveImage(image);
+        context.CancellationToken.ThrowIfCancellationRequested();
+
+        var elapsedJobTime = context.FireTimeUtc - DateTime.UtcNow;
+        if (elapsedJobTime > _profile.Current.Capture.CaptureInterval)
         {
-            camera = await CreateCamera(context.CancellationToken);
-            context.CancellationToken.ThrowIfCancellationRequested();
-
-            using var image = await ExposeImage(camera, context.CancellationToken);
-            context.CancellationToken.ThrowIfCancellationRequested();
-
-            var filename = SaveImage(image);
-            context.CancellationToken.ThrowIfCancellationRequested();
-
-            var elapsedJobTime = context.FireTimeUtc - DateTime.UtcNow;
-            if (elapsedJobTime > _profile.Current.Capture.CaptureInterval)
-            {
-                var suggestedMaxExposureSeconds = Math.Ceiling((elapsedJobTime - _profile.Current.Capture.CaptureInterval).TotalSeconds);
-                Log.Warning(
-                    "Total capture job time ({Elapsed:F3}s) exceeds capture interval ({Interval:F3}s). " +
-                    "Consider reducing your max exposure time by {Suggestion:F0} seconds.",
-                    elapsedJobTime.TotalSeconds, _profile.Current.Capture.CaptureInterval, suggestedMaxExposureSeconds);
-            }
-
-            await context.Scheduler.TriggerJob(
-                ProcessingJob.Key,
-                new JobDataMap
-                {
-                    [nameof(ProcessingJob.RawImageTempFilename)] = filename,
-                });
+            var suggestedMaxExposureSeconds = Math.Ceiling((elapsedJobTime - _profile.Current.Capture.CaptureInterval).TotalSeconds);
+            Log.Warning(
+                "Total capture job time ({Elapsed:F3}s) exceeds capture interval ({Interval:F3}s). " +
+                "Consider reducing your max exposure time by {Suggestion:F0} seconds.",
+                elapsedJobTime.TotalSeconds, _profile.Current.Capture.CaptureInterval, suggestedMaxExposureSeconds);
         }
-        finally
-        {
-            if (camera is not null)
+
+        await context.Scheduler.TriggerJob(
+            ProcessingJob.Key,
+            new JobDataMap
             {
-                try
-                {
-                    await camera.DisconnectAsync();
-                    camera.Dispose();
-                    camera = null;
-                }
-                catch (Exception e)
-                {
-                    Log.Warning(e, "Error disconnecting from camera");
-                }
-            }
-        }
+                [nameof(ProcessingJob.RawImageTempFilename)] = filename,
+            });
     }
 
-    private async Task<IndiCamera> CreateCamera(CancellationToken token)
-    {
-        var camera = _deviceFactory.CreateCamera();
-        if (camera is null)
-            throw new NullReferenceException("Could not create camera.");
-
-        bool connected = await camera.ConnectAsync(token);
-        if (!connected)
-            throw new NotConnectedException($"{camera.Name} failed to connect. Check settings and try again.");
-
-        return camera;
-    }
 
     private async Task<AllSkyImage> ExposeImage(IndiCamera camera, CancellationToken token)
     {

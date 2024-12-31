@@ -36,7 +36,7 @@
                             Cannot connect to INDI server, check hostname and port.
                         </RadzenAlert>
                     }
-                    
+
                     @if (connection is { IsConnected: false })
                     {
                         <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
@@ -290,7 +290,8 @@
 
             try
             {
-                await connection.Connect(model.IndiHostname, model.IndiPort, TimeSpan.FromMilliseconds(500));
+                await connection.Connect(model.IndiHostname, model.IndiPort, TimeSpan.FromSeconds(1));
+                await connection.QueryProperties();
             }
             catch (Exception)
             {

@@ -49,6 +49,9 @@ public class IndiCamera : ICamera, IDisposable
             await _client.Connect();
             if (!_client.IsConnected)
                 return false;
+
+            if (_client.Connection is not null)
+                _client.Connection.Disconnected += Connection_Disconnected;
         }
         catch (Exception e)
         {
@@ -81,6 +84,15 @@ public class IndiCamera : ICamera, IDisposable
         IsConnected = true;
         OnConnect();
         return true;
+    }
+
+    private void Connection_Disconnected()
+    {
+        IsConnected = false;
+        OnDisconnect();
+
+        if (_client?.Connection is not null)
+            _client.Connection.Disconnected -= Connection_Disconnected;
     }
 
     public async Task DisconnectAsync()
@@ -119,16 +131,23 @@ public class IndiCamera : ICamera, IDisposable
                 }
             });
 
-            await _device.Set<IndiSwitch>("CCD_TRANSFER_FORMAT", ["FORMAT_FITS", "FORMAT_NATIVE"], [true, false]);
-            await _device.Set<IndiNumber>("CCD_BINNING", ["HOR_BIN", "VER_BIN"], [1, 1]);
+            List<Task> tasks = [];
+            tasks.Add(_device.Set<IndiSwitch>("CCD_TRANSFER_FORMAT", ["FORMAT_FITS", "FORMAT_NATIVE"], [true, false]));
+
+            // TODO: support binning
+            tasks.Add(_device.Set<IndiNumber>("CCD_BINNING", ["HOR_BIN", "VER_BIN"], [1, 1]));
 
             if (HasGain)
-                await _device.Set<IndiNumber>("CCD_CONTROLS", "Gain", gain);
+                tasks.Add(_device.Set<IndiNumber>("CCD_CONTROLS", "Gain", gain));
 
             if (HasOffset)
-                await _device.Set<IndiNumber>("CCD_CONTROLS", "Offset", offset);
+                tasks.Add(_device.Set<IndiNumber>("CCD_CONTROLS", "Offset", offset));
+
+            await Task.WhenAll(tasks);
 
             var exposureStart = DateTime.UtcNow;
+
+            // This blocks for the duration of the exposure + downloading the image
             await _device.Set<IndiNumber>("CCD_EXPOSURE", "CCD_EXPOSURE_VALUE", exposure, timeout, token);
 
             token.ThrowIfCancellationRequested();
@@ -146,13 +165,13 @@ public class IndiCamera : ICamera, IDisposable
                 using var tempFitsFile = new TemporaryFile();
                 await File.WriteAllBytesAsync(tempFitsFile.Path, fitsData, token);
                 var image = AllSkyImage.FromFits(tempFitsFile.Path);
-                image.Metadata.CameraName = Name;
-                image.Metadata.ExposureUtc = exposureStart;
-                image.Metadata.ExposureDuration = parameters.Duration;
-                image.Metadata.Gain = parameters.Gain;
-                image.Metadata.Offset = parameters.Offset;
-                image.Metadata.Binning = 1;
-                image.Metadata.PixelSize = PixelSize;
+                image.Metadata.CameraName = image.Metadata.CameraName is not null ? image.Metadata.CameraName : Name;
+                image.Metadata.ExposureUtc = image.Metadata.ExposureUtc.HasValue ? image.Metadata.ExposureUtc : exposureStart;
+                image.Metadata.ExposureDuration = image.Metadata.ExposureDuration.HasValue ? image.Metadata.ExposureDuration : parameters.Duration;
+                image.Metadata.Gain = image.Metadata.Gain.HasValue ? image.Metadata.Gain : parameters.Gain;
+                image.Metadata.Offset = image.Metadata.Offset.HasValue ? image.Metadata.Offset : parameters.Offset;
+                image.Metadata.Binning = image.Metadata.Binning.HasValue ? image.Metadata.Binning : 1;
+                image.Metadata.PixelSize = image.Metadata.PixelSize.HasValue ? image.Metadata.PixelSize : PixelSize;
                 image.Metadata.FocalLength = _profile.Current.Camera.FocalLength;
                 image.Metadata.Location = _profile.Current.Location.Location;
                 image.Metadata.Latitude = _profile.Current.Location.Latitude;

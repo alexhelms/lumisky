@@ -39,11 +39,11 @@ public class IndiClient : IDisposable
         try
         {
             await connection.Connect(Host, Port);
+            await connection.QueryProperties();
 
-            // getProperties is sent on connect and indiserver responds with def messages.
             // Wait until the line goes silent for a brief time so we know we got everything.
-            while (connection.IsConnected && sw.Elapsed < TimeSpan.FromMilliseconds(250))
-                await Task.Delay(25);
+            while (connection.IsConnected && sw.Elapsed < TimeSpan.FromMilliseconds(10))
+                await Task.Delay(1);
         }
         finally
         {
@@ -67,10 +67,7 @@ public class IndiClient : IDisposable
 
     public void Disconnect()
     {
-        if (!IsConnected || Connection is null)
-            return;
-
-        Connection.Disconnect();
+        Connection?.Dispose();
         Connection = null;
     }
 }

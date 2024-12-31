@@ -8,76 +8,35 @@ using LumiSky.INDI.Primitives;
 
 namespace LumiSky.INDI.Protocol;
 
-public partial class IndiConnection
+public partial class IndiConnection : IDisposable
 {
+    private bool _disposedValue;
     private TcpClient? _client;
     private Channel<string>? _indiChannel;
-    private string? _hostname;
-    private int _port;
+
     private bool _disconnecting;
-    private bool _attemptReconnect = true;
-    private List<string> _knownConnectedDevices = new();
-    
+
     public DeviceCollection Devices { get; } = new();
 
     public bool IsConnected => _client is not null && _client.Connected;
 
-    public IndiConnection()
+    protected virtual void Dispose(bool disposing)
     {
-        ConnectionLost += IndiConnection_ConnectionLost;
-    }
-
-    ~IndiConnection()
-    {
-        _attemptReconnect = false;
-        Disconnect();
-    }
-
-    private async void IndiConnection_ConnectionLost()
-    {
-        Log.Warning("INDI connection at {Hostname}:{Port} lost, attempting to reconnect", _hostname, _port);
-
-        while (!IsConnected && _attemptReconnect)
+        if (!_disposedValue)
         {
-            try
+            if (disposing)
             {
-                await Task.Delay(TimeSpan.FromSeconds(3));
-                await Connect(_hostname!, _port);
-            }
-            catch (Exception)
-            {
+                Disconnect();
             }
 
-            if (IsConnected)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(1));
-
-                // Reconnect to each device that was previously connected.
-                foreach (var deviceName in _knownConnectedDevices)
-                {
-                    if (Devices.GetDeviceOrNull(deviceName) is { } device)
-                    {
-                        for (int i = 2; i > -1; i--)
-                        {
-                            try
-                            {
-                                await device.Connect();
-                            }
-                            catch (Exception)
-                            {
-                                // Sometimes sending CONNECTION property can time out on first try
-                            }
-
-                            if (device.IsConnected)
-                                break;
-                        }
-                    }
-                }
-
-                _knownConnectedDevices.Clear();
-                Log.Warning("Reconnected to INDI at {Hostname!}:{Port}", _hostname, _port);
-            }
+            _disposedValue = true;
         }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 
     public Task Connect(string hostname, int port = 7624) => Connect(hostname, port, TimeSpan.FromSeconds(5));
@@ -90,10 +49,8 @@ public partial class IndiConnection
 
         try
         {
-            _hostname = hostname;
-            _port = port;
             _client = new TcpClient();
-            _client.SendTimeout = 10000;
+            _client.SendTimeout = 1000;
 
             await _client.ConnectAsync(hostname, port, cts.Token);
 
@@ -108,7 +65,6 @@ public partial class IndiConnection
                 _ = Task.Factory.StartNew(ReadThread, networkStream,
                     TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach);
 
-                await QueryProperties();
                 OnConnected();
             }
         }
@@ -157,7 +113,7 @@ public partial class IndiConnection
     internal void CreateOrConfigureDevice(string name, Action<IndiDevice> config)
     {
         var originalDeviceCount = Devices.Count;
-        var device = Devices.GetOrAdd(name, new IndiDevice(name, this));
+        var device = Devices.GetOrAdd(name, deviceName => new IndiDevice(deviceName, this));
         config(device);
         if (Devices.Count > originalDeviceCount)
             OnDeviceFound(device);
@@ -196,8 +152,7 @@ public partial class IndiConnection
 
     private async Task WriteThread(object? state)
     {
-        var stream = state as NetworkStream;
-        if (stream is null)
+        if (state is not Stream stream)
             throw new ArgumentNullException(nameof(state));
         if (_indiChannel is null)
             throw new NullReferenceException(nameof(_indiChannel));
@@ -237,10 +192,9 @@ public partial class IndiConnection
 
     private void ReadThread(object? state)
     {
-        var stream = state as NetworkStream;
-        if (stream is null)
+        if (state is not Stream stream)
             throw new ArgumentNullException(nameof(state));
-        
+
         var xmlSettings = new XmlReaderSettings
         {
             IgnoreComments = true,
@@ -330,14 +284,6 @@ public partial class IndiConnection
                 {
                     if (!_disconnecting)
                     {
-                        // Capture the devices that were connected when connection was lost
-                        _knownConnectedDevices.Clear();
-                        _knownConnectedDevices.AddRange(
-                            Devices.AllDevices
-                                .Where(x => x.IsConnected)
-                                .Select(x => x.Name)
-                        );
-
                         Disconnect();
                         OnConnectionLost();
                     }
@@ -424,10 +370,9 @@ public partial class IndiConnection
         // "format" varies, can be .bin, .z, .fits.z ...
         // TODO: do something with the format
         var format = reader.GetAttribute("format") ?? ".bin";
-        
-        byte[] base64Buffer = new byte[8192];  // TODO: Benchmarks to tune this buffer size for large images
-        byte[] blobBuffer = new byte[length];  // TODO: more sophisticated memory management for large blobs
 
+        byte[] base64Buffer = new byte[65536];
+        byte[] blobBuffer = new byte[length];  // TODO: more sophisticated memory management for large blobs
         // Move to the element contents
         reader.Read();
 
