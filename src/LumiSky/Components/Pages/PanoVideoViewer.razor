@@ -59,12 +59,12 @@
         if (firstRender)
         {
             module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/PanoVideoViewer.razor.js");
+        }
 
-            if (module is not null &&
-                videoUrl is not null)
-            {
-                await module.InvokeVoidAsync("createPanoVideoViewer", videoUrl, _videoWidth, _videoHeight);
-            }
+        if (module is not null &&
+            videoUrl is not null)
+        {
+            await module.InvokeVoidAsync("createPanoVideoViewer", videoUrl, _videoWidth, _videoHeight);
         }
     }
 

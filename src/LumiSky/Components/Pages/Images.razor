@@ -45,7 +45,7 @@
     </style>
 </HeadContent>
 
-<RadzenTabs @bind-SelectedIndex="selectedTabIndex" Change="OnTabChange" Style="height: 100%;">
+<RadzenTabs @bind-SelectedIndex="selectedTabIndex" Style="height: 100%;">
     <Tabs>
         <RadzenTabsItem Text="Fisheye">
             @if (latestFisheyeUrl is not null)
@@ -99,7 +99,6 @@
     private string? latestPanoramaUrl;
     private string? prevPanoramaUrl;
     private int selectedTabIndex;
-    private int prevSelectedTabIndex;
     private IJSObjectReference? module;
 
     protected override void OnInitialized()
@@ -123,18 +122,10 @@
             if (module is not null)
             {
                 var size = ImageService.LatestPanoramaSize ?? default;
-                await module.InvokeVoidAsync("createPanoViewer");
-                await module.InvokeVoidAsync("updatePanoViewer", latestPanoramaUrl, size.Width, size.Height);
+                await module.InvokeVoidAsync("updatePanoViewer", latestPanoramaUrl, size.Height * 2, size.Height);
             }
 
             prevPanoramaUrl = latestPanoramaUrl;
-        }
-        else
-        {
-            if (module is not null)
-            {
-                await module.InvokeVoidAsync("destroyPanoViewer");
-            }
         }
     }
 
@@ -147,7 +138,10 @@
         try
         {
             if (module is not null)
+            {
+                await module.InvokeVoidAsync("destroyPanoViewer");
                 await module.DisposeAsync();
+            }
         }
         catch (JSDisconnectedException) { }
     }
@@ -176,18 +170,5 @@
     {
         latestPanoramaUrl = GeneratePanoramaUrl();
         InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnTabChange(int index)
-    {
-        if (prevSelectedTabIndex == Pano3dTabIndex && index != Pano3dTabIndex)
-        {
-            if (module is not null)
-            {
-                await module.InvokeVoidAsync("destroyPanoViewer");
-            }
-        }
-
-        prevSelectedTabIndex = index;
     }
 }

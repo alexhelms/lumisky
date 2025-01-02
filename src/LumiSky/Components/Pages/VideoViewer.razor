@@ -22,23 +22,8 @@
     <video id="player" controls class="video-js"></video>
 </div>
 
-<script src="@Assets["lib/video.js/dist/video.min.js"]"></script>
-<script>
-    function loadPlayer(id, options) {
-        disposePlayer(id);
-        videojs(id, options);
-    }
-
-    function disposePlayer(id) {
-        const player = videojs.getPlayer(id);
-        if (player) {
-            player.dispose();
-        }
-    }
-</script>
-
 @code {
-    private bool initialized;
+    private IJSObjectReference? module;
     private string? videoUrl;
 
     [Parameter]
@@ -69,20 +54,13 @@
     {
         if (firstRender)
         {
-            await JS.InvokeVoidAsync("loadPlayer", "player", new
-            {
-                autoplay = true,
-                controls = true,
-                loop = true,
-                preload = "auto",
-                playbackRates = new[] { 0.25, 0.5, 1, 1.5, 2},
-                sources = new[]
-                {
-                    new { type = "video/mp4", src = videoUrl },
-                },
-            });
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/VideoViewer.razor.js");
+        }
 
-            initialized = true;
+        if (module is not null &&
+            videoUrl is not null)
+        {
+            await module.InvokeVoidAsync("loadPlayer", videoUrl);
         }
     }
 
@@ -92,8 +70,11 @@
 
         try
         {
-            if (initialized)
-                await JS.InvokeVoidAsync("disposePlayer", "player");
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("disposePlayer");
+                await module.DisposeAsync();
+            }
         }
         catch (JSDisconnectedException) { }
     }

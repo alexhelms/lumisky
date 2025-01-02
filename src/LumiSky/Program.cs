@@ -150,7 +150,6 @@ public class Program
         if (e.Exception is not null)
         {
             Log.Error(e.Exception, "Unhandled task scheduler exception");
-            Log.Error(e.Exception.GetBaseException(), "Unhandled task scheduler base exception");
         }
     }
 }
