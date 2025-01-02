@@ -27,6 +27,7 @@ public class Program
             .CreateBootstrapLogger();
 
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
 
         try
         {
@@ -140,7 +141,16 @@ public class Program
     {
         if (e.ExceptionObject is Exception ex)
         {
-            Log.Error(ex, "Unhandled exception");
+            Log.Error(ex, "Unhandled domain exception");
+        }
+    }
+
+    private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        if (e.Exception is not null)
+        {
+            Log.Error(e.Exception, "Unhandled task scheduler exception");
+            Log.Error(e.Exception.GetBaseException(), "Unhandled task scheduler base exception");
         }
     }
 }
