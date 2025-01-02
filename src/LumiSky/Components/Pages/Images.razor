@@ -4,7 +4,8 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject ImageService ImageService
-@page "/"
+@inject NavigationManager NavigationManager
+@page "/{TabName?}"
 
 <PageTitle>Images</PageTitle>
 
@@ -12,50 +13,50 @@
     <link rel="stylesheet" href="@Assets["lib/photo-sphere-viewer/core/index.css"]" />
     <style>
         .rz-tabview-panels {
-        display: flex;
+            display: flex;
         }
 
         .rz-tabview-panel {
-        width: 100%;
+        w   idth: 100%;
         }
 
-        .fisheye-img {
-        display: block;
-        margin: auto;
-        max-width: 100%;
-        max-height: 100%;
+        .allsky-img {
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            max-height: 100%;
         }
 
         .panorama-img {
-        display: block;
-        margin: auto;
-        max-width: 100%;
-        max-height: 100%;
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            max-height: 100%;
         }
 
         .panorama-3d {
-        display: block;
-        width: calc(100vw - 160px);
-        height: calc(100vh - 200px);
+            display: block;
+            width: calc(100vw - 160px);
+            height: calc(100vh - 200px);
         }
 
         .psv-loader {
-        display: none;
+            display: none;
         }
     </style>
 </HeadContent>
 
-<RadzenTabs @bind-SelectedIndex="selectedTabIndex" Style="height: 100%;">
+<RadzenTabs @bind-SelectedIndex="selectedTabIndex" Change="OnTabChanged" Style="height: 100%;">
     <Tabs>
-        <RadzenTabsItem Text="Fisheye">
-            @if (latestFisheyeUrl is not null)
+        <RadzenTabsItem Text="Image">
+            @if (latestImageUrl is not null)
             {
-                <RadzenImage Path="@latestFisheyeUrl" AlternateText="Fisheye" class="fisheye-img" />
+                <RadzenImage Path="@latestImageUrl" AlternateText="Image" class="allsky-img" />
             }
             else
             {
                 <RadzenRow JustifyContent="JustifyContent.Center">
-                    <RadzenText>No Fisheye Available</RadzenText>
+                    <RadzenText>No Image Available</RadzenText>
                 </RadzenRow>
             }
         </RadzenTabsItem>
@@ -63,7 +64,7 @@
         <RadzenTabsItem Text="Panorama">
             @if (latestPanoramaUrl is not null)
             {
-                <RadzenImage Path="@latestPanoramaUrl" AlternateText="Panorama" class="fisheye-img" />
+                <RadzenImage Path="@latestPanoramaUrl" AlternateText="Panorama" class="allsky-img" />
             }
             else
             {
@@ -93,20 +94,59 @@
 {
     private const int Pano3dTabIndex = 2;
 
-    private const string LatestFisheyeUrlBase = "/api/image/latest/image";
+    private const string LatestImageUrlBase = "/api/image/latest/image";
     private const string LatestPanoramaUrlBase = "/api/image/latest/panorama";
-    private string? latestFisheyeUrl;
+    private string? latestImageUrl;
     private string? latestPanoramaUrl;
     private string? prevPanoramaUrl;
     private int selectedTabIndex;
     private IJSObjectReference? module;
 
+    [Parameter]
+    public string? TabName { get; set; }
+
     protected override void OnInitialized()
     {
-        latestFisheyeUrl = GenerateFisheyeUrl();
+        latestImageUrl = GenerateFisheyeUrl();
         latestPanoramaUrl = GeneratePanoramaUrl();
         ImageService.NewImage += OnNewImage;
         ImageService.NewPanorama += OnNewPanorama;
+    }
+
+    protected override void OnParametersSet()
+    {
+        TabName ??= "images";
+        SetTabIndexFromName(TabName);
+    }
+
+    private void SetTabIndexFromName(string name)
+    {
+        var newIndex = name switch
+        {
+            "image" => 0,
+            "panorama" => 1,
+            "panorama3d" => 2,
+            _ => 0,
+        };
+
+        if (newIndex != selectedTabIndex)
+        {
+            selectedTabIndex = newIndex;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnTabChanged(int index)
+    {
+        string name = index switch
+        {
+            0 => "image",
+            1 => "panorama",
+            2 => "panorama3d",
+            _ => "image",
+        };
+
+        NavigationManager.NavigateTo($"/{name}");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -149,7 +189,7 @@
     private string? GenerateFisheyeUrl()
     {
         if (ImageService.LatestImagePath is not null)
-            return LatestFisheyeUrlBase + $"?time={DateTime.Now.Ticks}";
+            return LatestImageUrlBase + $"?time={DateTime.Now.Ticks}";
         return null;
     }
 
@@ -162,7 +202,7 @@
 
     private void OnNewImage(object? sender, EventArgs e)
     {
-        latestFisheyeUrl = GenerateFisheyeUrl();
+        latestImageUrl = GenerateFisheyeUrl();
         InvokeAsync(StateHasChanged);
     }
 

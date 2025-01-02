@@ -1,7 +1,9 @@
-﻿@page "/gallery"
+﻿@page "/gallery/{TabName?}"
+@inject NavigationManager NavigationManager
+
 <PageTitle>Gallery</PageTitle>
 
-<RadzenTabs>
+<RadzenTabs @bind-SelectedIndex=selectedTabIndex Change="OnTabChanged">
     <Tabs>
 
         <RadzenTabsItem Text="Images">
@@ -32,3 +34,50 @@
 
     </Tabs>
 </RadzenTabs>
+
+@code {
+    int selectedTabIndex = 0;
+
+    [Parameter]
+    public string? TabName { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        TabName ??= "images";
+        SetTabIndexFromName(TabName);
+    }
+
+    private void SetTabIndexFromName(string name)
+    {
+        var newIndex = name switch
+        {
+            "images" => 0,
+            "timelapses" => 1,
+            "panoramas" => 2,
+            "panorama-timelapses" => 3,
+            "raw-images" => 4,
+            _ => 0,
+        };
+
+        if (newIndex != selectedTabIndex)
+        {
+            selectedTabIndex = newIndex;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnTabChanged(int index)
+    {
+        string name = index switch
+        {
+            0 => "images",
+            1 => "timelapses",
+            2 => "panoramas",
+            3 => "panorama-timelapses",
+            4 => "raw-images",
+            _ => "images",
+        };
+
+        NavigationManager.NavigateTo($"/gallery/{name}");
+    }
+}
