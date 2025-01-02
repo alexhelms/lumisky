@@ -40,6 +40,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        GC.SuppressFinalize(this);
         cts.Cancel();
         await logReader;
         cts.Dispose();

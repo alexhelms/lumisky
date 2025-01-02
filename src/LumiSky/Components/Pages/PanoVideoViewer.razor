@@ -70,6 +70,8 @@
 
     public async ValueTask DisposeAsync()
     {
+        GC.SuppressFinalize(this);
+
         try
         {
             if (module is not null)
