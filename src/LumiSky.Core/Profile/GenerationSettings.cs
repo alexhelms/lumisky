@@ -1,5 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System.Runtime.InteropServices;
+using LumiSky.Core.Video;
 
 namespace LumiSky.Core.Profile;
 
@@ -25,13 +25,8 @@ public sealed partial class GenerationSettings : Settings, IGenerationSettings
 {
     protected override void Reset()
     {
-        FfmpegPath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? @"C:\ffmpeg\bin\ffmpeg.exe"
-            : "/usr/bin/ffmpeg";
-
-        FfprobePath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? @"C:\ffmpeg\bin\ffprobe.exe"
-            : "/usr/bin/ffprobe";
+        FfmpegPath = Ffmpeg.DefaultFfmpegPath;
+        FfprobePath = Ffprobe.DefaultFfprobePath;
 
         EnableDaytimeTimelapse = true;
         EnableNighttimeTimelapse = true;

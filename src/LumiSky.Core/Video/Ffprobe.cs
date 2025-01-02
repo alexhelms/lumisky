@@ -8,16 +8,20 @@ public static class Ffprobe
 {
     private static string _ffprobePath;
 
+    public static string DefaultFfprobePath { get; }
+
     static Ffprobe()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            _ffprobePath = @"C:\ffmpeg\ffprobe.exe";
+            DefaultFfprobePath = @"C:\ffmpeg\ffprobe.exe";
         }
         else
         {
-            _ffprobePath = "/usr/bin/ffprobe";
+            DefaultFfprobePath = "/usr/bin/ffprobe";
         }
+
+        _ffprobePath = DefaultFfprobePath;
     }
 
     public static void SetFfprobePath(string path)

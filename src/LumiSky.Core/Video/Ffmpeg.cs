@@ -15,16 +15,20 @@ public class Ffmpeg
     private Channel<string> _stdoutChannel;
     private Channel<string> _stderrChannel;
 
+    public static string DefaultFfmpegPath { get; }
+
     static Ffmpeg()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            _ffmpegPath = @"C:\ffmpeg\bin\ffmpeg.exe";
+            DefaultFfmpegPath = @"C:\ffmpeg\bin\ffmpeg.exe";
         }
         else
         {
-            _ffmpegPath = "/usr/bin/ffmpeg";
+            DefaultFfmpegPath = "/usr/bin/ffmpeg";
         }
+
+        _ffmpegPath = DefaultFfmpegPath;
     }
 
     public Ffmpeg(ProcessPriorityClass priority)

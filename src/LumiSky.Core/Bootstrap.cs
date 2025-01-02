@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using LumiSky.Core.IO.Fits;
 using LumiSky.Core.Utilities;
+using LumiSky.Core.Video;
 
 namespace LumiSky.Core;
 
@@ -103,6 +104,8 @@ public static class Bootstrap
             throw;
         }
 
+        ConfigureFfmpeg(profile);
+
         if (profile.Current.Capture.AutoStart)
         {
             var allSkyScheduler = provider.GetRequiredService<AllSkyScheduler>();
@@ -191,6 +194,29 @@ public static class Bootstrap
         _ = Emgu.CV.CvInvoke.BuildInformation;
 
         await Python.Initialize();
+    }
+
+    private static void ConfigureFfmpeg(IProfileProvider profile)
+    {
+        // Do not throw if ffmpeg/ffprobe not found, user can set these in the settings.
+
+        try
+        {
+            Ffmpeg.SetFfmpegPath(profile.Current.Generation.FfmpegPath);
+        }
+        catch (FileNotFoundException)
+        {
+            Log.Error("Ffmpeg not found at {Path}", profile.Current.Generation.FfmpegPath);
+        }
+
+        try
+        {
+            Ffprobe.SetFfprobePath(profile.Current.Generation.FfprobePath);
+        }
+        catch (FileNotFoundException)
+        {
+            Log.Error("Ffprobe not found at {Path}", profile.Current.Generation.FfprobePath);
+        }
     }
 
     private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
