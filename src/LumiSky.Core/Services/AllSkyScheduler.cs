@@ -57,11 +57,6 @@ public class AllSkyScheduler
             .StoreDurably()
             .Build(), true);
 
-        await scheduler.AddJob(JobBuilder.Create<ExportJob>()
-            .WithIdentity(ExportJob.Key)
-            .StoreDurably()
-            .Build(), true);
-
         // Resume jobs since they may have been previously paused
         await scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(JobConstants.Groups.Allsky));
 
@@ -122,7 +117,6 @@ public class AllSkyScheduler
             FindExposureJob.Key,
             CaptureJob.Key,
             ProcessingJob.Key,
-            ExportJob.Key,
         ]);
 
         _deviceFactory.DestroyCamera();

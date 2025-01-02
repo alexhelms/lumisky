@@ -23,6 +23,7 @@ public class TimelapseJob : JobBase
     private readonly FilenameGenerator _filenameGenerator;
 
     public int GenerationId { get; set; }
+    public bool ManualGeneration { get; set; }
 
     private GenerationKind Kind => GenerationKind.Timelapse;
 
@@ -118,12 +119,16 @@ public class TimelapseJob : JobBase
 
             context.CancellationToken.ThrowIfCancellationRequested();
 
-            await context.Scheduler.TriggerJob(
-                ExportJob.Key,
-                new JobDataMap
-                {
-                    [nameof(ExportJob.TimelapseFilename)] = outputFilename!,
-                });
+            // Only export automatically generated timelapses.
+            if (!ManualGeneration)
+            {
+                await context.Scheduler.TriggerJob(
+                    ExportJob.Key,
+                    new JobDataMap
+                    {
+                        [nameof(ExportJob.TimelapseFilename)] = outputFilename!,
+                    });
+            }
 
             Log.Information("Timelapse finished in {Elapsed:F3} seconds", ffmpeg.Elapsed.TotalSeconds);
         }

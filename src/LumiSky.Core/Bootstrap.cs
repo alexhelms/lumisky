@@ -153,6 +153,11 @@ public static class Bootstrap
 
             q.AddJobListener<JobExceptionListener>(GroupMatcher<JobKey>.GroupEquals(JobConstants.Groups.Allsky));
 
+            q.AddJob<ExportJob>(c => c
+                .WithIdentity(ExportJob.Key)
+                .StoreDurably()
+                .Build());
+
             q.AddJob<CleanupJob>(c => c
                 .WithIdentity(CleanupJob.Key)
                 .StoreDurably()

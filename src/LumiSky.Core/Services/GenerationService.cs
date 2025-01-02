@@ -49,7 +49,7 @@ public class GenerationService
         Complete?.Invoke(this, message);
     }
 
-    public async Task GenerateTimelapse(DateTime beginUtc, DateTime endUtc)
+    public async Task GenerateTimelapse(DateTime beginUtc, DateTime endUtc, bool userInitiated = false)
     {
         var generation = new Generation
         {
@@ -73,6 +73,7 @@ public class GenerationService
         var jobData = new JobDataMap
         {
             [nameof(TimelapseJob.GenerationId)] = generation.Id,
+            [nameof(TimelapseJob.ManualGeneration)] = userInitiated,
         };
 
         var trigger = await scheduler.GetTrigger(TriggerKeys.Timelapse);
@@ -93,7 +94,7 @@ public class GenerationService
         }
     }
 
-    public async Task GeneratePanoramaTimelapse(DateTime beginUtc, DateTime endUtc)
+    public async Task GeneratePanoramaTimelapse(DateTime beginUtc, DateTime endUtc, bool userInitiated = false)
     {
         var generation = new Generation
         {
@@ -117,6 +118,7 @@ public class GenerationService
         var jobData = new JobDataMap
         {
             [nameof(PanoramaTimelapseJob.GenerationId)] = generation.Id,
+            [nameof(PanoramaTimelapseJob.ManualGeneration)] = userInitiated,
         };
 
         var trigger = await scheduler.GetTrigger(TriggerKeys.PanoramaTimelapse);
