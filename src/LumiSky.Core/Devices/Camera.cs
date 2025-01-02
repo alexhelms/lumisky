@@ -58,8 +58,19 @@ public class IndiCamera : ICamera, IDisposable
             Log.Error(e, "Error connecting to INDI server {Hostname}:{Port}", hostname, port);
             return false;
         }
+
+        // The device can take a few moments to show up since we are waiting for INDI messages to arrive.
+        using (var deviceCts = CancellationTokenSource.CreateLinkedTokenSource(token))
+        {
+            deviceCts.CancelAfter(TimeSpan.FromSeconds(3));
+            do
+            {
+                _device = _client.Connection!.Devices.GetDeviceOrNull(deviceName);
+                if (_device is not null)
+                    break;
+            } while (!deviceCts.IsCancellationRequested);
+        }
         
-        _device = _client.Connection!.Devices.GetDeviceOrNull(deviceName);
         if (_device is null)
         {
             _client.Disconnect();
