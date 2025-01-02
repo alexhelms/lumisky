@@ -51,7 +51,7 @@ public class OverlayRenderer
         {
             value = variable switch
             {
-                OverlayVariable.Timestamp => metadata.ExposureUtc.GetValueOrDefault(),
+                OverlayVariable.Timestamp => metadata.ExposureUtc.GetValueOrDefault().ToLocalTime(),
                 OverlayVariable.Latitude => metadata.Latitude.GetValueOrDefault(),
                 OverlayVariable.Longitude => metadata.Longitude.GetValueOrDefault(),
                 OverlayVariable.Elevation => metadata.Elevation.GetValueOrDefault(),

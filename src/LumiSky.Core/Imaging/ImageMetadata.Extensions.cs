@@ -1,4 +1,5 @@
 ﻿using LumiSky.Core.IO.Fits;
+using System.Globalization;
 
 namespace LumiSky.Core.Imaging;
 
@@ -52,8 +53,10 @@ public static class ImageMetadataExtensions
         void ParseExposureUtc(IHeaderEntry entry)
         {
             if (entry is StringHeaderEntry stringEntry &&
-                DateTime.TryParse(stringEntry.Value, out var timestamp))
+                DateTime.TryParse(stringEntry.Value, null, DateTimeStyles.RoundtripKind, out var timestamp))
+            {
                 metadata.ExposureUtc = timestamp;
+            }
         }
 
         void ParseExposureDuration(IHeaderEntry entry)

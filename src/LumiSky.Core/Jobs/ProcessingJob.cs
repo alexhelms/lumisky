@@ -65,7 +65,7 @@ public class ProcessingJob : JobBase
         var startTime = Stopwatch.GetTimestamp();
 
         using var processResult = _imageService.ProcessFits(rawImageFileInfo.FullName);
-        var exposureUtc = processResult.Metadata.ExposureUtc ?? DateTime.Now;
+        var exposureUtc = processResult.Metadata.ExposureUtc ?? DateTime.UtcNow;
 
         // Process, Save, and Persis the Image
         await DrawImageOverlays(processResult.Image, processResult.Metadata);

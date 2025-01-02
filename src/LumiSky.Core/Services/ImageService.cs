@@ -211,8 +211,6 @@ public class ImageService
         if (!fileInfo.Exists)
             throw new FileNotFoundException(filename);
 
-        // TODO: CFA-aware hot pixel correction
-
         using var rawImage = AllSkyImage.FromFits(filename);
         RemoveHotPixels(rawImage);
 
