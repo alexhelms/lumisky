@@ -11,6 +11,7 @@
     <PackageReference Include="Emgu.CV" />
     <PackageReference Include="Emgu.CV.runtime.windows" Condition=" '$(IsWindows)' == 'true' " />
     <PackageReference Include="FluentFTP" />
+    <PackageReference Include="Flurl.Http" />
     <PackageReference Include="MathNet.Numerics" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />

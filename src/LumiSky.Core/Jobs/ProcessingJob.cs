@@ -25,6 +25,7 @@ public class ProcessingJob : JobBase
     private readonly ImageService _imageService;
     private readonly FilenameGenerator _filenameGenerator;
     private readonly ExposureService _exposureTrackingService;
+    private readonly OverlayRenderer _overlayRenderer;
 
     public string RawImageTempFilename { get; set; } = string.Empty;
 
@@ -34,7 +35,8 @@ public class ProcessingJob : JobBase
         IDbContextFactory<AppDbContext> dbContextFactory,
         ImageService imageService,
         FilenameGenerator filenameGenerator,
-        ExposureService exposureTrackingService)
+        ExposureService exposureTrackingService,
+        OverlayRenderer overlayRenderer)
     {
         _profile = profile;
         _bus = bus;
@@ -42,6 +44,7 @@ public class ProcessingJob : JobBase
         _imageService = imageService;
         _filenameGenerator = filenameGenerator;
         _exposureTrackingService = exposureTrackingService;
+        _overlayRenderer = overlayRenderer;
     }
 
     protected override async Task OnExecute(IJobExecutionContext context)
@@ -207,16 +210,14 @@ public class ProcessingJob : JobBase
 
     private async Task DrawImageOverlays(Mat image, ImageMetadata metadata)
     {
-        var renderer = new OverlayRenderer(_profile);
-        await renderer.DrawImageOverlays(image, metadata);
+        await _overlayRenderer.DrawImageOverlays(image, metadata);
     }
 
     private async Task DrawPanoramaOverlays(Mat panorama)
     {
         if (_profile.Current.Processing.DrawCardinalOverlay)
         {
-            var renderer = new OverlayRenderer(_profile);
-            await renderer.DrawPanoramaOverlays(panorama);
+            await _overlayRenderer.DrawPanoramaOverlays(panorama);
         }
     }
 }

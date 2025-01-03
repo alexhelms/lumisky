@@ -4,8 +4,10 @@
 @using LumiSky.Core.Profile
 @using System.ComponentModel.DataAnnotations
 @using System.Text
+@using LumiSky.Core.Services
 @inject IProfileProvider Profile
-@inject NotificationService NotificationService
+@inject Radzen.NotificationService NotificationService
+@inject IEnumerable<IMountPositionProvider> PositionProviders
 
 <RadzenTemplateForm TItem="ProcessingSettingsModel" Data="@model" Submit="OnSubmit">
     <RadzenStack>
@@ -155,7 +157,7 @@
                         <RadzenNumeric @bind-Value="model.TextOutline" Min="0" Max="50" Step="1" />
                     </RadzenFormField>
 
-                    
+
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem">
                         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem">
                             <RadzenLabel Text="Text Color" Component="TextColor" />
@@ -206,11 +208,18 @@
 
                     <RadzenCard class="rz-p-4" Variant="Variant.Outlined">
                         <RadzenStack Orientation="Orientation.Vertical">
+
                             <RadzenText><strong>Variable Overlays</strong></RadzenText>
-                            <RadzenDataGrid @ref=_overlayDataGrid TItem="TextOverlayModel" Data="@overlays" AllowFiltering="false" AllowPaging="false" AllowSorting="false" AllowColumnResize="true"
-                                            AllowAlternatingRows="false" EditMode="DataGridEditMode.Single" RowUpdate="OnUpdateRow" RowCreate="OnCreateRow">
+
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                                <RadzenSwitch Name="EnableTextOverlays" @bind-Value="model.EnableTextOverlays" />
+                                <RadzenLabel Text="Enable Variable Overlays" Component="EnableTextOverlays" />
+                            </RadzenStack>
+
+                            <RadzenDataGrid @ref=_textOverlayDataGrid TItem="TextOverlayModel" Data="@textOverlays" AllowFiltering="false" AllowPaging="false" AllowSorting="false" AllowColumnResize="true"
+                            AllowAlternatingRows="false" EditMode="DataGridEditMode.Single" RowUpdate="OnUpdateTextOverlayRow" RowCreate="OnCreateTextOverlayRow">
                                 <HeaderTemplate>
-                                    <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="add_circle" Text="Add New Text Overlay" Click="InsertRow" Disabled="@(overlaysToInsert.Count > 0)" />
+                                    <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="add_circle" Text="Add New Text Overlay" Click="InsertTextOverlayRow" Disabled="@(textOverlaysToInsert.Count > 0)" />
                                 </HeaderTemplate>
                                 <EmptyTemplate>
                                     <RadzenText TextAlign="TextAlign.Center">No overlays.</RadzenText>
@@ -219,7 +228,7 @@
 
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.Variable)" Title="Variable" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
-                                            <RadzenDropDown @bind-Value=item.Variable Data="@(Enum.GetValues<OverlayVariable>())" Change="@(() => OnOverlayVariableChanged(item))" Style="width: 90%;" />
+                                            <RadzenDropDown @bind-Value=item.Variable Data="@(Enum.GetValues<OverlayVariable>())" Change="@(() => OnTextOverlayVariableChanged(item))" Style="width: 90%;" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
 
@@ -231,31 +240,31 @@
                                             <RadzenTextBox @bind-Value=item.TextFormat Style="width: 90%;" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.X)" Title="X (from Left)" Width="128px" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
                                             <RadzenNumeric @bind-Value=item.X TValue="int" Min="-10000" Max="10000" Step="1" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.Y)" Title="Y (from Top)" Width="128px" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
                                             <RadzenNumeric @bind-Value=item.Y TValue="int" Min="-10000" Max="10000" Step="1" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.FontSize)" Title="Font Size" Width="72px" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
                                             <RadzenNumeric @bind-Value=item.FontSize TValue="int" Min="8" Max="1000" Step="1" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.TextAnchor)" Title="Text Anchor" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
                                             <RadzenDropDown @bind-Value=item.TextAnchor Data="@(Enum.GetValues<TextAnchor>())" Style="width: 90%;" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.TextColor)" Title="Text Color" Width="128px" TextAlign="TextAlign.Center">
                                         <Template Context="item">
                                             <svg width="32" height="32">
@@ -266,7 +275,7 @@
                                             <RadzenColorPicker @bind-Value=item.TextColor ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.StrokeColor)" Title="Stroke Color" Width="128px" TextAlign="TextAlign.Center">
                                         <Template Context="item">
                                             <svg width="32" height="32">
@@ -283,16 +292,187 @@
                                             <RadzenNumeric @bind-Value=item.StrokeWidth TValue="int" Min="0" Max="100" Step="1" Style="width: 100px;" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Frozen="true" FrozenPosition="FrozenColumnPosition.Right" TextAlign="TextAlign.Right">
                                         <Template Context="item">
-                                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(item))" @onclick:stopPropagation="true" />
-                                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(item))" @onclick:stopPropagation="true" />
+                                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditTextOverlayRow(item))" @onclick:stopPropagation="true" />
+                                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteTextOverlayRow(item))" @onclick:stopPropagation="true" />
                                         </Template>
                                         <EditTemplate Context="item">
-                                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(item))" aria-label="Save" />
-                                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@((args) => CancelEdit(item))" aria-label="Cancel" />
-                                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(item))" aria-label="Delete" />
+                                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveTextOverlayRow(item))" aria-label="Save" />
+                                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@((args) => CancelEditTextOverlay(item))" aria-label="Cancel" />
+                                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteTextOverlayRow(item))" aria-label="Delete" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                </Columns>
+                            </RadzenDataGrid>
+                        </RadzenStack>
+                    </RadzenCard>
+
+                    <RadzenCard class="rz-p-4" Variant="Variant.Outlined">
+                        <RadzenStack Orientation="Orientation.Vertical">
+
+                            <RadzenText><strong>Telescope Pointing</strong></RadzenText>
+
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                Overlay the pointing position of one or more telescopes.
+                            </RadzenText>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                                <RadzenSwitch Name="EnablePointingOverlays" @bind-Value="model.EnablePointingOverlays" />
+                                <RadzenLabel Text="Enable Pointing Overlays" Component="EnablePointingOverlays" />
+                            </RadzenStack>
+
+                            @* There is only one position provider for now so this is mostly there to show the user they *could* change it but it isnt supported. *@
+                            <RadzenFormField Text="Position Provider" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <ChildContent>
+                                    <RadzenDropDown TValue="string" Data=@positionProviderNames @bind-Value=selectedPositionProvider />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                        The method to get mount position.
+                                    </RadzenText>
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Prometheus URL" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="model.PrometheusMountPositionUrl" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                        The base URL to prometheus, for example: <span>https://prometheus.mynetwork.local/</span>
+                                    </RadzenText>
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Altitude Threshold" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="model.PointingOverlayAltitudeThreshold" Min="0" Max="90" Step="5" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                        The pointing overlay will not be rendered when the mount is pointing below this altitude.
+                                    </RadzenText>
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="X Offset" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="model.PointingOverlayXOffset" Min="-10000" Max="10000" Step="10" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                        Adjust the pointing overlay in the X direction.
+                                    </RadzenText>
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Y Offset" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="model.PointingOverlayYOffset" Min="-10000" Max="10000" Step="10" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                        Adjust the pointing overlay in the Y direction.
+                                    </RadzenText>
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Rotation" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="model.PointingOverlayRotation" Min="-180" Max="180" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                        Positive values mean counter-clockwise rotation. Rotation occurs before flipping.
+                                    </RadzenText>
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                                <RadzenSwitch Name="PointingOverlayFlipVertical" @bind-Value="model.PointingOverlayFlipVertical" />
+                                <RadzenLabel Text="Flip Vertical" Component="PointingOverlayFlipVertical" />
+                            </RadzenStack>
+
+                            <RadzenDataGrid @ref=_pointingOverlayDataGrid TItem="PointingOverlayModel" Data="@pointingOverlays" AllowFiltering="false" AllowPaging="false" AllowSorting="false" AllowColumnResize="true"
+                            AllowAlternatingRows="false" EditMode="DataGridEditMode.Single" RowUpdate="OnUpdatePointingOverlayRow" RowCreate="OnCreatePointingOverlayRow">
+                                <HeaderTemplate>
+                                    <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="add_circle" Text="Add New Pointing Overlay" Click="InsertPointingOverlayRow" Disabled="@(pointingOverlaysToInsert.Count > 0)" />
+                                </HeaderTemplate>
+                                <EmptyTemplate>
+                                    <RadzenText TextAlign="TextAlign.Center">No overlays.</RadzenText>
+                                </EmptyTemplate>
+                                <Columns>
+
+                                    <RadzenDataGridColumn Property="@nameof(PointingOverlayModel.Hostname)" title="Hostname" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenTextBox @bind-Value=item.Hostname Style="width: 90%;" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(PointingOverlayModel.DisplayName)" title="Display Name" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenTextBox @bind-Value=item.DisplayName Style="width: 90%;" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(PointingOverlayModel.Color)" Title="Color" Width="96px" TextAlign="TextAlign.Center">
+                                        <Template Context="item">
+                                            <svg width="32" height="32">
+                                                <circle cx="16" cy="16" r="12" fill="@item.Color" />
+                                            </svg>
+                                        </Template>
+                                        <EditTemplate Context="item">
+                                            <RadzenColorPicker @bind-Value=item.Color ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(PointingOverlayModel.Size)" Title="Crosshair Size" Width="136px" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenNumeric @bind-Value=item.Size TValue="int" Min="8" Max="1000" Step="1" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(PointingOverlayModel.LineWidth)" Title="Line Width" Width="96px" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenNumeric @bind-Value=item.LineWidth TValue="int" Min="1" Max="100" Step="1" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(PointingOverlayModel.FontSize)" Title="Font Size" Width="96px" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenNumeric @bind-Value=item.FontSize TValue="int" Min="8" Max="1000" Step="1" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(PointingOverlayModel.StrokeColor)" Title="Stroke Color" Width="96px" TextAlign="TextAlign.Center">
+                                        <Template Context="item">
+                                            <svg width="32" height="32">
+                                                <circle cx="16" cy="16" r="12" fill="@item.StrokeColor" />
+                                            </svg>
+                                        </Template>
+                                        <EditTemplate Context="item">
+                                            <RadzenColorPicker @bind-Value=item.StrokeColor ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Property="@nameof(PointingOverlayModel.StrokeWidth)" Title="Stroke Width" Width="96px" TextAlign="TextAlign.Center">
+                                        <EditTemplate Context="item">
+                                            <RadzenNumeric @bind-Value=item.StrokeWidth TValue="int" Min="0" Max="100" Step="1" />
+                                        </EditTemplate>
+                                    </RadzenDataGridColumn>
+
+                                    <RadzenDataGridColumn Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Width="150px" TextAlign="TextAlign.Right">
+                                        <Template Context="item">
+                                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditPointingOverlayRow(item))" @onclick:stopPropagation="true" />
+                                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeletePointingOverlayRow(item))" @onclick:stopPropagation="true" />
+                                        </Template>
+                                        <EditTemplate Context="item">
+                                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SavePointingOverlayRow(item))" aria-label="Save" />
+                                            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@((args) => CancelEditPointingOverlay(item))" aria-label="Cancel" />
+                                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeletePointingOverlayRow(item))" aria-label="Delete" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
 
@@ -313,18 +493,33 @@
 </RadzenTemplateForm>
 
 @code {
-    private RadzenDataGrid<TextOverlayModel> _overlayDataGrid = null!;
+    private RadzenDataGrid<TextOverlayModel> _textOverlayDataGrid = null!;
+    private RadzenDataGrid<PointingOverlayModel> _pointingOverlayDataGrid = null!;
+
     private ProcessingSettingsModel model = new();
     private string selectedTextColor = "rgb(255, 255, 255)";
     private string selectedTextOutlineColor = "rgb(0, 0, 0)";
     private List<string> cardinalDirections = ["N", "S", "E", "W"];
-    private List<TextOverlayModel> overlays = [];
-    private List<TextOverlayModel> overlaysToInsert = [];
-    private List<TextOverlayModel> overlaysToUpdate = [];
-    private TextOverlayModel? _originalOverlay;
+    private List<string> positionProviderNames = [];
+    private string selectedPositionProvider = string.Empty;
+
+    // Text Overlays
+    private List<TextOverlayModel> textOverlays = [];
+    private List<TextOverlayModel> textOverlaysToInsert = [];
+    private List<TextOverlayModel> textOverlaysToUpdate = [];
+    private TextOverlayModel? _originalTextOverlay;
+
+    // Pointing Overlays
+    private List<PointingOverlayModel> pointingOverlays = [];
+    private List<PointingOverlayModel> pointingOverlaysToInsert = [];
+    private List<PointingOverlayModel> pointingOverlaysToUpdate = [];
+    private PointingOverlayModel? _originalPointingOverlay;
 
     protected override void OnInitialized()
     {
+        positionProviderNames = new(PositionProviders.Select(x => x.Name));
+        selectedPositionProvider = positionProviderNames.FirstOrDefault() ?? "None";
+
         model.WbRedScale = Profile.Current.Processing.WbRedScale;
         model.WbGreenScale = Profile.Current.Processing.WbGreenScale;
         model.WbBlueScale = Profile.Current.Processing.WbBlueScale;
@@ -349,8 +544,16 @@
         model.AutoSCurveContrast = Profile.Current.Processing.AutoSCurveContrast;
         model.HotPixelCorrection = Profile.Current.Processing.HotPixelCorrection;
         model.HotPixelThresholdPercent = Profile.Current.Processing.HotPixelThresholdPercent;
+        model.EnableTextOverlays = Profile.Current.Processing.EnableTextOverlays;
+        model.EnablePointingOverlays = Profile.Current.Processing.EnablePointingOverlays;
+        model.PrometheusMountPositionUrl = Profile.Current.Processing.PrometheusMountPositionUrl;
+        model.PointingOverlayAltitudeThreshold = Profile.Current.Processing.PointingOverlayAltitudeThreshold;
+        model.PointingOverlayXOffset = Profile.Current.Processing.PointingOverlayXOffset;
+        model.PointingOverlayYOffset = Profile.Current.Processing.PointingOverlayYOffset;
+        model.PointingOverlayRotation = Profile.Current.Processing.PointingOverlayRotation;
+        model.PointingOverlayFlipVertical = Profile.Current.Processing.PointingOverlayFlipVertical;
 
-        overlays = new(Profile.Current.Processing.TextOverlays
+        textOverlays = new(Profile.Current.Processing.TextOverlays
             .Select(item => new TextOverlayModel
             {
                 Variable = item.Variable,
@@ -362,6 +565,19 @@
                 TextColor = HexToRgb(item.Color),
                 StrokeColor = HexToRgb(item.StrokeColor),
                 StrokeWidth = item.StrokeWidth,
+            }));
+
+        pointingOverlays = new(Profile.Current.Processing.PointingOverlays
+            .Select(item => new PointingOverlayModel
+            {
+                Hostname = item.Hostname,
+                DisplayName = item.DisplayName,
+                Size = item.Size,
+                LineWidth = item.LineWidth,
+                FontSize = item.FontSize,
+                StrokeColor = HexToRgb(item.StrokeColor),
+                StrokeWidth = item.StrokeWidth,
+                Color = HexToRgb(item.Color),
             }));
     }
 
@@ -391,9 +607,17 @@
         Profile.Current.Processing.AutoSCurveContrast = model.AutoSCurveContrast;
         Profile.Current.Processing.HotPixelCorrection = model.HotPixelCorrection;
         Profile.Current.Processing.HotPixelThresholdPercent = model.HotPixelThresholdPercent;
+        Profile.Current.Processing.EnableTextOverlays = model.EnableTextOverlays;
+        Profile.Current.Processing.EnablePointingOverlays = model.EnablePointingOverlays;
+        Profile.Current.Processing.PrometheusMountPositionUrl = model.PrometheusMountPositionUrl;
+        Profile.Current.Processing.PointingOverlayAltitudeThreshold = model.PointingOverlayAltitudeThreshold;
+        Profile.Current.Processing.PointingOverlayXOffset = model.PointingOverlayXOffset;
+        Profile.Current.Processing.PointingOverlayYOffset = model.PointingOverlayYOffset;
+        Profile.Current.Processing.PointingOverlayRotation = model.PointingOverlayRotation;
+        Profile.Current.Processing.PointingOverlayFlipVertical = model.PointingOverlayFlipVertical;
 
         Profile.Current.Processing.TextOverlays.Clear();
-        foreach (var item in overlays)
+        foreach (var item in textOverlays)
         {
             Profile.Current.Processing.TextOverlays.Add(new()
             {
@@ -409,7 +633,23 @@
             });
         }
 
-        NotificationService.Notify(new NotificationMessage
+        Profile.Current.Processing.PointingOverlays.Clear();
+        foreach (var item in pointingOverlays)
+        {
+            Profile.Current.Processing.PointingOverlays.Add(new()
+            {
+                Hostname = item.Hostname,
+                DisplayName = item.DisplayName,
+                Size = item.Size,
+                LineWidth = item.LineWidth,
+                FontSize = item.FontSize,
+                StrokeColor = RgbToHex(item.StrokeColor),
+                StrokeWidth = item.StrokeWidth,
+                Color = RgbToHex(item.Color),
+            });
+        }
+
+        NotificationService.Notify(new Radzen.NotificationMessage
         {
             Severity = NotificationSeverity.Success,
             Duration = 2000,
@@ -417,96 +657,98 @@
         });
     }
 
-    private void ResetOverlayGrid()
+    #region Text Overlay DataGrid
+
+    private void ResetTextOverlayGrid()
     {
-        overlaysToInsert.Clear();
-        overlaysToUpdate.Clear();
+        textOverlaysToInsert.Clear();
+        textOverlaysToUpdate.Clear();
     }
 
-    private void ResetOverlayGrid(TextOverlayModel model)
+    private void ResetTextOverlayGrid(TextOverlayModel model)
     {
-        overlaysToInsert.Remove(model);
-        overlaysToUpdate.Remove(model);
+        textOverlaysToInsert.Remove(model);
+        textOverlaysToUpdate.Remove(model);
     }
 
-    private async Task EditRow(TextOverlayModel model)
+    private async Task EditTextOverlayRow(TextOverlayModel model)
     {
         // Only allow a single row to be edited at any time
-        if (overlaysToUpdate.Count > 0) return;
+        if (textOverlaysToUpdate.Count > 0) return;
 
-        if (overlaysToInsert.Count > 0)
+        if (textOverlaysToInsert.Count > 0)
         {
-            ResetOverlayGrid();
+            ResetTextOverlayGrid();
         }
 
-        _originalOverlay = model with { Key = Guid.NewGuid() };
-        overlaysToUpdate.Add(model);
-        await _overlayDataGrid.EditRow(model);
+        _originalTextOverlay = model with { Key = Guid.NewGuid() };
+        textOverlaysToUpdate.Add(model);
+        await _textOverlayDataGrid.EditRow(model);
     }
 
-    private void OnUpdateRow(TextOverlayModel model)
+    private void OnUpdateTextOverlayRow(TextOverlayModel model)
     {
-        ResetOverlayGrid(model);
+        ResetTextOverlayGrid(model);
     }
 
-    private async Task SaveRow(TextOverlayModel model)
+    private async Task SaveTextOverlayRow(TextOverlayModel model)
     {
-        await _overlayDataGrid.UpdateRow(model);
+        await _textOverlayDataGrid.UpdateRow(model);
     }
 
-    private async Task CancelEdit(TextOverlayModel model)
+    private async Task CancelEditTextOverlay(TextOverlayModel model)
     {
-        ResetOverlayGrid(model);
+        ResetTextOverlayGrid(model);
 
-        _overlayDataGrid.CancelEditRow(model);
+        _textOverlayDataGrid.CancelEditRow(model);
 
-        int index = overlays.IndexOf(model);
-        if (index != -1 && _originalOverlay is not null)
+        int index = textOverlays.IndexOf(model);
+        if (index != -1 && _originalTextOverlay is not null)
         {
-            overlays[index] = _originalOverlay;
+            textOverlays[index] = _originalTextOverlay;
         }
 
-        await _overlayDataGrid.Reload();
+        await _textOverlayDataGrid.Reload();
     }
 
-    private async Task DeleteRow(TextOverlayModel model)
+    private async Task DeleteTextOverlayRow(TextOverlayModel model)
     {
-        ResetOverlayGrid(model);
+        ResetTextOverlayGrid(model);
 
-        if (overlays.Contains(model))
+        if (textOverlays.Contains(model))
         {
-            overlays.Remove(model);
-            await _overlayDataGrid.Reload();
+            textOverlays.Remove(model);
+            await _textOverlayDataGrid.Reload();
         }
         else
         {
-            _overlayDataGrid.CancelEditRow(model);
-            await _overlayDataGrid.Reload();
+            _textOverlayDataGrid.CancelEditRow(model);
+            await _textOverlayDataGrid.Reload();
         }
     }
 
-    private async Task InsertRow()
+    private async Task InsertTextOverlayRow()
     {
-        ResetOverlayGrid();
+        ResetTextOverlayGrid();
 
         var model = new TextOverlayModel();
-        OnOverlayVariableChanged(model);
-        overlaysToInsert.Add(model);
-        await _overlayDataGrid.InsertRow(model);
+        OnTextOverlayVariableChanged(model);
+        textOverlaysToInsert.Add(model);
+        await _textOverlayDataGrid.InsertRow(model);
     }
 
-    private void OnCreateRow(TextOverlayModel model)
+    private void OnCreateTextOverlayRow(TextOverlayModel model)
     {
-        overlays.Add(model);
-        overlaysToInsert.Remove(model);
+        textOverlays.Add(model);
+        textOverlaysToInsert.Remove(model);
     }
 
-    private void OnOverlayVariableChanged(TextOverlayModel model)
+    private void OnTextOverlayVariableChanged(TextOverlayModel model)
     {
-        model.TextFormat = GetDefaultFormat(model.Variable);
+        model.TextFormat = GetTextOverlayDefaultFormat(model.Variable);
     }
 
-    private string GetDefaultFormat(OverlayVariable variable) => variable switch
+    private string GetTextOverlayDefaultFormat(OverlayVariable variable) => variable switch
     {
         OverlayVariable.Timestamp => "{0:yyyy-MM-dd HH:mm:ss}",
         OverlayVariable.Latitude => "LAT {0:F2}",
@@ -518,6 +760,99 @@
         OverlayVariable.Text => "Text Here",
         _ => "",
     };
+
+    #endregion
+
+    #region Pointing Overlay DataGrid
+
+    private void ResetPointingOverlayGrid()
+    {
+        pointingOverlaysToInsert.Clear();
+        pointingOverlaysToUpdate.Clear();
+    }
+
+    private void ResetPointingOverlayGrid(PointingOverlayModel model)
+    {
+        pointingOverlaysToInsert.Remove(model);
+        pointingOverlaysToUpdate.Remove(model);
+    }
+
+    private async Task EditPointingOverlayRow(PointingOverlayModel model)
+    {
+        // Only allow a single row to be edited at any time
+        if (pointingOverlaysToUpdate.Count > 0) return;
+
+        if (pointingOverlaysToInsert.Count > 0)
+        {
+            ResetPointingOverlayGrid();
+        }
+
+        _originalPointingOverlay = model with { Key = Guid.NewGuid() };
+        pointingOverlaysToUpdate.Add(model);
+        await _pointingOverlayDataGrid.EditRow(model);
+    }
+
+    private void OnUpdatePointingOverlayRow(PointingOverlayModel model)
+    {
+        ResetPointingOverlayGrid(model);
+    }
+
+    private async Task SavePointingOverlayRow(PointingOverlayModel model)
+    {
+        await _pointingOverlayDataGrid.UpdateRow(model);
+    }
+
+    private async Task CancelEditPointingOverlay(PointingOverlayModel model)
+    {
+        ResetPointingOverlayGrid(model);
+
+        _pointingOverlayDataGrid.CancelEditRow(model);
+
+        int index = pointingOverlays.IndexOf(model);
+        if (index != -1 && _originalPointingOverlay is not null)
+        {
+            pointingOverlays[index] = _originalPointingOverlay;
+        }
+
+        await _pointingOverlayDataGrid.Reload();
+    }
+
+    private async Task DeletePointingOverlayRow(PointingOverlayModel model)
+    {
+        ResetPointingOverlayGrid(model);
+
+        if (pointingOverlays.Contains(model))
+        {
+            pointingOverlays.Remove(model);
+            await _pointingOverlayDataGrid.Reload();
+        }
+        else
+        {
+            _pointingOverlayDataGrid.CancelEditRow(model);
+            await _pointingOverlayDataGrid.Reload();
+        }
+    }
+
+    private async Task InsertPointingOverlayRow()
+    {
+        ResetPointingOverlayGrid();
+
+        var model = new PointingOverlayModel
+        {
+            Hostname = "COMPUTERNAME",
+            DisplayName = "Astro PC",
+        };
+        pointingOverlays.Add(model);
+        await _pointingOverlayDataGrid.InsertRow(model);
+    }
+
+    private void OnCreatePointingOverlayRow(PointingOverlayModel model)
+    {
+        pointingOverlays.Add(model);
+        pointingOverlaysToInsert.Remove(model);
+    }
+
+    #endregion
 
     private string RgbToHex(string rgb)
     {
@@ -580,6 +915,14 @@
         public double AutoSCurveContrast { get; set; }
         public bool HotPixelCorrection { get; set; }
         public int HotPixelThresholdPercent { get; set; }
+        public bool EnableTextOverlays { get; set; }
+        public bool EnablePointingOverlays { get; set; }
+        public string PrometheusMountPositionUrl { get; set; } = null!;
+        public int PointingOverlayAltitudeThreshold { get; set; }
+        public int PointingOverlayXOffset { get; set; }
+        public int PointingOverlayYOffset { get; set; }
+        public int PointingOverlayRotation { get; set; }
+        public bool PointingOverlayFlipVertical { get; set; }
     }
 
     public record TextOverlayModel
@@ -594,5 +937,18 @@
         public TextAnchor TextAnchor { get; set; }
         public string StrokeColor { get; set; } = "rgb(0, 0, 0)";
         public int StrokeWidth { get; set; } = 2;
+    }
+
+    public record PointingOverlayModel
+    {
+        public Guid Key { get; set; } = Guid.NewGuid();
+        public string Hostname { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public int Size { get; set; } = 30;
+        public int LineWidth { get; set; } = 5;
+        public int FontSize { get; set; } = 30;
+        public string StrokeColor { get; set; } = "rgb(0, 0, 0)";
+        public int StrokeWidth { get; set; } = 4;
+        public string Color { get; set; } = "rgb(255, 255, 255)";
     }
 }

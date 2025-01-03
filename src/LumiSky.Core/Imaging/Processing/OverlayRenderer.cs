@@ -1,8 +1,11 @@
 ﻿using CliWrap;
 using Emgu.CV;
 using LumiSky.Core.IO;
+using LumiSky.Core.Mathematics;
 using LumiSky.Core.Memory;
 using LumiSky.Core.Profile;
+using LumiSky.Core.Services;
+using System.Numerics;
 using System.Text;
 using System.Text.Json;
 
@@ -14,6 +17,11 @@ public class OverlayRenderer
     private static string PythonOverlayRendererPath;
 
     private readonly IProfileProvider _profile;
+    private readonly IMountPositionProvider _mountPositionProvider;
+    private readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    };
 
     static OverlayRenderer()
     {
@@ -23,9 +31,12 @@ public class OverlayRenderer
         PythonOverlayRendererPath = Path.Combine(directory, "python", "overlay.py");
     }
 
-    public OverlayRenderer(IProfileProvider profile)
+    public OverlayRenderer(
+        IProfileProvider profile,
+        IMountPositionProvider mountPositionProvider)
     {
         _profile = profile;
+        _mountPositionProvider = mountPositionProvider;
     }
 
     private string TextAnchorToPillow(TextAnchor anchor) => anchor switch
@@ -90,6 +101,7 @@ public class OverlayRenderer
             ImageWidth = width,
             ImageHeight = height,
             TextOverlays = [],
+            CrosshairOverlays = [],
         };
 
         // Cardinal Overlays
@@ -159,30 +171,77 @@ public class OverlayRenderer
         }
 
         // User-defined Text Overlays
-        foreach (var overlay in _profile.Current.Processing.TextOverlays)
+        if (_profile.Current.Processing.EnableTextOverlays)
         {
-            dto.TextOverlays.Add(new TextOverlayDto
+            foreach (var overlay in _profile.Current.Processing.TextOverlays)
             {
-                X = overlay.X,
-                Y = overlay.Y,
-                FontSize = overlay.FontSize,
-                StrokeFill = overlay.StrokeColor,
-                StrokeWidth = overlay.StrokeWidth,
-                Text = FormatOverlayText(overlay.Variable, overlay.Format ?? "{0}", metadata),
-                TextAnchor = TextAnchorToPillow(overlay.Anchor),
-                TextFill = overlay.Color,
-            });
+                dto.TextOverlays.Add(new TextOverlayDto
+                {
+                    X = overlay.X,
+                    Y = overlay.Y,
+                    FontSize = overlay.FontSize,
+                    StrokeFill = overlay.StrokeColor,
+                    StrokeWidth = overlay.StrokeWidth,
+                    Text = FormatOverlayText(overlay.Variable, overlay.Format ?? "{0}", metadata),
+                    TextAnchor = TextAnchorToPillow(overlay.Anchor),
+                    TextFill = overlay.Color,
+                });
+            }
         }
 
-        var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions
+        // User-defined Pointing Overlays
+        if (_profile.Current.Processing.EnablePointingOverlays)
         {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        });
+            var pointingOverlays = _profile.Current.Processing.PointingOverlays
+                .DistinctBy(x => x.Hostname)
+                .ToDictionary(x => x.Hostname, StringComparer.OrdinalIgnoreCase);
+            var mountPositions = await _mountPositionProvider.GetMountPositions();
+            foreach (var position in mountPositions)
+            {
+                // Skip telescopes pointing too low.
+                if (position.Altitude < _profile.Current.Processing.PointingOverlayAltitudeThreshold)
+                {
+                    continue;
+                }
+
+                // Skip hostnames that are not configured.
+                if (!pointingOverlays.TryGetValue(position.Name, out var pointingOverlay))
+                {
+                    continue;
+                }
+
+                (int x, int y) = TransformAltAzToImage(
+                    position.Altitude,
+                    position.Azimuth,
+                    width,
+                    height,
+                    _profile.Current.Processing.PointingOverlayXOffset,
+                    _profile.Current.Processing.PointingOverlayYOffset,
+                    _profile.Current.Processing.PointingOverlayRotation,
+                    _profile.Current.Processing.PointingOverlayFlipVertical
+                );
+
+                dto.CrosshairOverlays.Add(new CrosshairOverlayDto
+                {
+                    X = x,
+                    Y = y,
+                    Size = pointingOverlay.Size,
+                    Width = pointingOverlay.LineWidth,
+                    Text = pointingOverlay.DisplayName,
+                    FontSize = pointingOverlay.FontSize,
+                    StrokeFill = pointingOverlay.StrokeColor,
+                    StrokeWidth = pointingOverlay.StrokeWidth,
+                    Color = pointingOverlay.Color,
+                });
+            }
+        }
+
+        var json = JsonSerializer.Serialize(dto, _serializerOptions);
         
         mat.ToBlob(rawData.Path);
 
-        var stdout = new StringBuilder(512);
-        var stderr = new StringBuilder(512);
+        var stdout = new StringBuilder(4096);
+        var stderr = new StringBuilder(4096);
         var result = await Cli.Wrap(Python.PythonExecutablePath)
             .WithArguments(c => c
                 .Add($"\"{PythonOverlayRendererPath}\"", escape: false))
@@ -278,10 +337,7 @@ public class OverlayRenderer
             TextFill = textFill,
         });
 
-        var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        });
+        var json = JsonSerializer.Serialize(dto, _serializerOptions);
 
         mat.ToBlob(rawData.Path);
 
@@ -308,6 +364,43 @@ public class OverlayRenderer
         }
     }
 
+    private static (int, int) TransformAltAzToImage(
+        double altitude,
+        double azimuth,
+        int width,
+        int height,
+        int offsetX,
+        int offsetY,
+        int rotation,
+        bool flipVertical)
+    {
+        // All parameters are in degrees.
+
+        double radius = Math.Min(width, height) / 2.0;
+        double altitudeRad = altitude * LumiSkyMath.Deg2Rad;
+        double azimuthRad = azimuth * LumiSkyMath.Deg2Rad;
+        double x = radius * Math.Cos(altitudeRad) * Math.Sin(azimuthRad);
+        double y = radius * Math.Cos(altitudeRad) * Math.Cos(azimuthRad);
+        
+        // Rotate the points about the center.
+        var mat = Matrix3x2.CreateRotation((float)(rotation * LumiSkyMath.Deg2Rad));
+        var vec = Vector2.Transform(new Vector2((float)x, (float)y), mat);
+
+        // Assumption: Center +/- x/y offset is zenith.
+        double cx = offsetX + width / 2.0;
+        double cy = offsetY + height / 2.0;
+
+        int xOut = (int)(cx + vec.X);
+        int yOut = (int)(cy + vec.Y);
+
+        if (flipVertical)
+        {
+            yOut = -1 * yOut;
+        }
+
+        return (xOut, yOut);
+    }
+
     private record ConfigDto
     {
         public required string DataFilename { get; init; }
@@ -315,6 +408,7 @@ public class OverlayRenderer
         public required int ImageHeight { get; init; }
         public required string FontFilename { get; init; }
         public List<TextOverlayDto> TextOverlays { get; init; } = [];
+        public List<CrosshairOverlayDto> CrosshairOverlays { get; init; } = [];
     }
 
     private record TextOverlayDto
@@ -327,5 +421,18 @@ public class OverlayRenderer
         public required string TextAnchor { get; init; }
         public required string StrokeFill { get; init; }
         public required int StrokeWidth { get; init; }
+    }
+
+    private record CrosshairOverlayDto
+    {
+        public required int X { get; init; }
+        public required int Y { get; init; }
+        public required int Size { get; init; }
+        public required int Width { get; init; }
+        public required string Text { get; init; }
+        public required int FontSize { get; init; }
+        public required string StrokeFill { get; init; }
+        public required int StrokeWidth { get; init; }
+        public required string Color { get; init; }
     }
 }

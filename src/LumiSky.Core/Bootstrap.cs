@@ -14,6 +14,7 @@ using System.Runtime.InteropServices;
 using LumiSky.Core.IO.Fits;
 using LumiSky.Core.Utilities;
 using LumiSky.Core.Video;
+using LumiSky.Core.Imaging.Processing;
 
 namespace LumiSky.Core;
 
@@ -39,6 +40,8 @@ public static class Bootstrap
         services.AddSingleton<ExposureService>();
         services.AddSingleton<GenerationService>();
         services.AddSingleton<NotificationService>();
+        services.AddTransient<OverlayRenderer>();
+        services.AddTransient<IMountPositionProvider, PrometheusMountPosition>();
 
         services.AddSlimMessageBus(config => config
             .WithProviderMemory()

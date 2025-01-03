@@ -250,7 +250,7 @@ Blur size the circle's edge, in pixels.
 
 ### Overlay
 
-When enabled, the text overlay will be drawn on the image.
+`Draw Cardinal Directions` draws the cardinal direction text overlay on both normal and panorama images.
 
 Set the top, bottom, right, and left labels to the correct cardinal direction
 for images.
@@ -305,7 +305,57 @@ Each variable overlay can have a:
   - Bottom right
 - Text color
 - Stroke color
-- Stroke width
+- Stroke width, 0 to disable
+
+### Telescope Pointing
+
+Draw a crosshair at the pointing position of one or more telescopes.
+
+'Enable Pointing Overlays' draws a crosshair on the normal image at the position where one or more telescopes are pointing.
+
+#### Position Provider
+
+LumiSky supports reading mount position from [prometheus](https://prometheus.io/) metrics created by
+the [prometheus exporter NINA plugin](https://github.com/alexhelms/nina-prometheus-exporter).
+
+##### Prometheus
+
+Set `Prometheus URL` to the base URL of your prometheus server. For example, `https://prometheus.mynetwork.local/`.
+
+#### Altitude Threshold
+
+Telescopes pointing lower than this altitude will not have their overlay rendered.
+
+#### Pointing X Offset
+
+Adjust the X position of the pointing overlay, in pixels.
+
+#### Pointing Y Offset
+
+Adjust the Y position of the pointing overlay, in pixels.
+
+#### Pointing Rotation
+
+Adjust the rotation of the pointing overlay.
+Positive value is clockwise, -180 to 180 degrees.
+
+#### Pointing Flip Vertical
+
+Mirror the pointing overlay's Y position.
+
+#### Pointing Overlay
+
+- Hostname
+  - Computer's hostname / PC name
+- Display Name
+  - Text rendered on the overlay
+- Color
+  - Crosshair and text
+- Crosshair size, in pixels
+- Line width, in pixels
+- Font size, in pixels
+- Stroke Color
+- Stroke width, 0 to disable
 
 ## Location
 

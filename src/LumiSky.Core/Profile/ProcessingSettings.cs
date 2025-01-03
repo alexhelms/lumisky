@@ -31,7 +31,16 @@ public interface IProcessingSettings : ISettings
     double AutoSCurveContrast { get; set; }
     bool HotPixelCorrection { get; set; }
     int HotPixelThresholdPercent { get; set; }
+    bool EnableTextOverlays { get; set; }
+    bool EnablePointingOverlays { get; set; }
+    string PrometheusMountPositionUrl { get; set; }
+    int PointingOverlayAltitudeThreshold { get; set; }
+    int PointingOverlayXOffset { get; set; }
+    int PointingOverlayYOffset { get; set; }
+    int PointingOverlayRotation { get; set; }
+    bool PointingOverlayFlipVertical { get; set; }
     ObservableCollection<TextOverlay> TextOverlays { get; set; }
+    ObservableCollection<PointingOverlay> PointingOverlays { get; set; }
 }
 
 public sealed partial class ProcessingSettings : Settings, IProcessingSettings
@@ -72,7 +81,16 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         AutoSCurveContrast = 2.2;
         HotPixelCorrection = true;
         HotPixelThresholdPercent = 25;
+        EnableTextOverlays = true;
+        EnablePointingOverlays = false;
+        PrometheusMountPositionUrl = string.Empty;
+        PointingOverlayAltitudeThreshold = 10;
+        PointingOverlayXOffset = 0;
+        PointingOverlayYOffset = 0;
+        PointingOverlayRotation = 0;
+        PointingOverlayFlipVertical = false;
         TextOverlays = [];
+        PointingOverlays = [];
     }
 
     [ObservableProperty]
@@ -146,9 +164,36 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
 
     [ObservableProperty]
     public partial int HotPixelThresholdPercent { get; set; }
+    
+    [ObservableProperty]
+    public partial bool EnableTextOverlays { get; set; }
+
+    [ObservableProperty]
+    public partial bool EnablePointingOverlays { get; set; }
+
+    [ObservableProperty]
+    public partial string PrometheusMountPositionUrl { get; set; }
+
+    [ObservableProperty]
+    public partial int PointingOverlayAltitudeThreshold { get; set; }
+
+    [ObservableProperty]
+    public partial int PointingOverlayXOffset { get; set; }
+
+    [ObservableProperty]
+    public partial int PointingOverlayYOffset { get; set; }
+
+    [ObservableProperty]
+    public partial int PointingOverlayRotation { get; set; }
+
+    [ObservableProperty]
+    public partial bool PointingOverlayFlipVertical { get; set; }
 
     [ObservableProperty]
     public partial ObservableCollection<TextOverlay> TextOverlays { get; set; } = [];
+
+    [ObservableProperty]
+    public partial ObservableCollection<PointingOverlay> PointingOverlays { get; set; } = [];
 }
 
 public record TextOverlay
@@ -162,4 +207,16 @@ public record TextOverlay
     public TextAnchor Anchor { get; set; }
     public string StrokeColor { get; set; } = "#000000";
     public int StrokeWidth { get; set; } = 2;
+}
+
+public record PointingOverlay
+{
+    public string Hostname { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public int Size { get; set; } = 30;
+    public int LineWidth { get; set; } = 5;
+    public int FontSize { get; set; } = 30;
+    public string StrokeColor { get; set; } = "#000000";
+    public int StrokeWidth { get; set; } = 4;
+    public string Color { get; set; } = "#ffffff";
 }
