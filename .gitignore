@@ -456,4 +456,4 @@ $RECYCLE.BIN/
 dist/
 
 # Except videojs dist
-!/LumiSky/wwwroot/lib/video.js/dist
+!src/LumiSky/wwwroot/lib/video-js/dist
