@@ -15,13 +15,25 @@
                     <RadzenText TextStyle="TextStyle.Body2">
                         Absolute path to ffmpeg and ffprobe executables.
                     </RadzenText>
-                    
+
                     <RadzenFormField Text="Ffmpeg Path" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenTextBox @bind-Value="model.FfmpegPath" />
+                        <ChildContent>
+                            <RadzenTextBox Name="FfmpegPath" @bind-Value="model.FfmpegPath" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenCustomValidator Component="FfmpegPath" Validator="@(() => CheckFileExists(model.FfmpegPath))"
+                                                   Text="Ffmpeg not found." Popup="true" Style="z-index: 1;" />
+                        </Helper>
                     </RadzenFormField>
 
                     <RadzenFormField Text="Ffprobe Path" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenTextBox @bind-Value="model.FfprobePath" />
+                        <ChildContent>
+                            <RadzenTextBox Name="FfprobePath" @bind-Value="model.FfprobePath" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenCustomValidator Component="FfprobePath" Validator="@(() => CheckFileExists(model.FfprobePath))"
+                                                   Text="FfprobePath not found." Popup="true" Style="z-index: 1;" />
+                        </Helper>
                     </RadzenFormField>
 
                 </RadzenStack>
@@ -187,6 +199,12 @@
             Duration = 2000,
             Summary = "Saved!",
         });
+    }
+
+    private bool CheckFileExists(string? path)
+    {
+        if (path is null) return false;
+        return File.Exists(path);
     }
 
     private record TimelapseSettingsModel
