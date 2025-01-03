@@ -55,6 +55,7 @@ public static class ImageMetadataExtensions
             if (entry is StringHeaderEntry stringEntry &&
                 DateTime.TryParse(stringEntry.Value, null, DateTimeStyles.RoundtripKind, out var timestamp))
             {
+                timestamp = DateTime.SpecifyKind(timestamp, DateTimeKind.Utc);
                 metadata.ExposureUtc = timestamp;
             }
         }
