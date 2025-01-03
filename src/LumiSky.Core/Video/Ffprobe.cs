@@ -14,7 +14,7 @@ public static class Ffprobe
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            DefaultFfprobePath = @"C:\ffmpeg\ffprobe.exe";
+            DefaultFfprobePath = @"C:\ffmpeg\bin\ffprobe.exe";
         }
         else
         {
