@@ -16,7 +16,7 @@
     },
     {
       "library": "video.js@8.21.0",
-      "destination": "wwwroot/lib/video.js/",
+      "destination": "wwwroot/lib/video-js/",
       "files": [
         "dist/video.min.js",
         "dist/video-js.min.css"

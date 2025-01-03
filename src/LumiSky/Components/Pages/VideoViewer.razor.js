@@ -1,4 +1,4 @@
-﻿import '/lib/video.js/dist/video.min.js';
+﻿import '/lib/video-js/dist/video.min.js';
 
 const playerId = 'player';
 
