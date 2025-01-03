@@ -81,7 +81,7 @@ public class CleanupJob : JobBase
                 Log.Information("{Count} panorama timelapse generations deleted", deletedCount);
         }
 
-        await PrunOrphanedEntities();
+        //await PruneOrphanedEntities();
         
         DeleteEmptyDirectories(_profile.Current.App.ImageDataPath);
 
@@ -127,7 +127,7 @@ public class CleanupJob : JobBase
         }
     }
 
-    private async Task PrunOrphanedEntities()
+    private async Task PruneOrphanedEntities()
     {
         using var dbContext = _dbContextFactory.CreateDbContext();
         await PruneOrphanedDbEntries(dbContext.Images);
