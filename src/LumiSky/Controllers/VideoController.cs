@@ -24,7 +24,8 @@ public class VideoController : Controller
         var extension = fileInfo.Extension.ToLowerInvariant();
         var contentType = "video/mp4";
 
-        HttpContext.Response.Headers.Append("Cache-Control", "max-age=31536000");
+        // 1 hour
+        HttpContext.Response.Headers.Append("Cache-Control", "max-age=3600");
 
         if (downloadFile)
         {
