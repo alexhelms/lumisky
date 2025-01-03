@@ -3,6 +3,7 @@ using LumiSky.Core.Data;
 using LumiSky.Core.Profile;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
+using System.Linq.Expressions;
 
 namespace LumiSky.Core.Jobs;
 
@@ -81,8 +82,8 @@ public class CleanupJob : JobBase
                 Log.Information("{Count} panorama timelapse generations deleted", deletedCount);
         }
 
-        //await PruneOrphanedEntities();
-        
+        await PruneOrphanedEntities();
+
         DeleteEmptyDirectories(_profile.Current.App.ImageDataPath);
 
         Log.Information("Cleanup complete");
@@ -129,45 +130,73 @@ public class CleanupJob : JobBase
 
     private async Task PruneOrphanedEntities()
     {
-        using var dbContext = _dbContextFactory.CreateDbContext();
-        await PruneOrphanedDbEntries(dbContext.Images);
-        await PruneOrphanedDbEntries(dbContext.RawImages);
-        await PruneOrphanedDbEntries(dbContext.Timelapses);
-        await PruneOrphanedDbEntries(dbContext.Panoramas);
-        await PruneOrphanedDbEntries(dbContext.PanoramaTimelapses);
+        await PruneOrphanedDbEntries(_dbContextFactory.CreateDbContext, dbCtx => dbCtx.Images);
+        await PruneOrphanedDbEntries(_dbContextFactory.CreateDbContext, dbCtx => dbCtx.RawImages);
+        await PruneOrphanedDbEntries(_dbContextFactory.CreateDbContext, dbCtx => dbCtx.Timelapses);
+        await PruneOrphanedDbEntries(_dbContextFactory.CreateDbContext, dbCtx => dbCtx.Panoramas);
+        await PruneOrphanedDbEntries(_dbContextFactory.CreateDbContext, dbCtx => dbCtx.PanoramaTimelapses);
     }
 
-    private static async Task PruneOrphanedDbEntries(IQueryable<ICanBeCleanedUp> items)
+    private static async Task PruneOrphanedDbEntries(
+        Func<AppDbContext> dbContextFactory,
+        Expression<Func<AppDbContext, IQueryable<ICanBeCleanedUp>>> itemExpression)
     {
         // Delete any db rows where the filename associated with that entity cannot be found.
 
-        var entities = await items
-            .AsNoTracking()
-            .Select(x => new { x.Id, x.Filename })
-            .ToListAsync();
+        IQueryable<ICanBeCleanedUp>? items = null;
 
-        var entitiesToDelete = new HashSet<int>(entities.Count);
-
-        foreach (var item in entities)
+        try
         {
-            var fileInfo = new FileInfo(item.Filename);
-            if (!fileInfo.Exists)
+            using var dbContext = dbContextFactory();
+            items = itemExpression.Compile()(dbContext);
+
+            var entities = await items
+                .AsNoTracking()
+                .Select(x => new { x.Id, x.Filename })
+                .ToListAsync();
+
+            var entitiesToDelete = new HashSet<int>(entities.Count);
+
+            foreach (var item in entities)
             {
-                entitiesToDelete.Add(item.Id);
+                try
+                {
+                    var fileInfo = new FileInfo(item.Filename);
+                    if (!fileInfo.Exists)
+                    {
+                        entitiesToDelete.Add(item.Id);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Error getting file properties for {File}", item.Filename);
+                }
+            }
+
+            if (entitiesToDelete.Count > 0)
+            {
+                int deletedCount = await items
+                    .Where(x => entitiesToDelete.Contains(x.Id))
+                    .ExecuteDeleteAsync();
+
+                if (deletedCount > 0)
+                {
+                    Log.Information("{Count} orphaned {Type} pruned",
+                        deletedCount,
+                        items.GetType().GenericTypeArguments[0].Name.Titleize().ToLowerInvariant().Pluralize());
+                }
             }
         }
-
-        if (entitiesToDelete.Count > 0)
+        catch (Exception e)
         {
-            int deletedCount = await items
-                .Where(x => entitiesToDelete.Contains(x.Id))
-                .ExecuteDeleteAsync();
-
-            if (deletedCount > 0)
+            if (items is not null)
             {
-                Log.Information("{Count} orphaned {Type} pruned",
-                    deletedCount,
-                    items.GetType().GenericTypeArguments[0].Name.Titleize().ToLowerInvariant().Pluralize());
+                var name = items.GetType().GetGenericArguments()[0].Name.Titleize();
+                Log.Warning(e, "Error pruning orphaned {Name} db entities", name);
+            }
+            else
+            {
+                Log.Warning(e, "Error pruning orphaned db entities");
             }
         }
     }
@@ -194,5 +223,9 @@ public class CleanupJob : JobBase
             }
         }
         catch (UnauthorizedAccessException) { }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Error deleting empty directories");
+        }
     }
 }
