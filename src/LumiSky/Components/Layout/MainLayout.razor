@@ -1,5 +1,6 @@
 ﻿@using LumiSky.Core.Utilities
 @inherits LayoutComponentBase
+@inject IHostEnvironment HostEnvironment
 
 <RadzenComponents @rendermode="InteractiveServer" />
 
@@ -34,9 +35,16 @@
 </RadzenLayout>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    @if (HostEnvironment.IsProduction())
+    {
+        <span>An error has occurred.</span>
+    }
+    else
+    {
+        <span>An unhandled exception occurred.</span>
+    }
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
 </div>
 
 @code {

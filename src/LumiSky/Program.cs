@@ -52,8 +52,15 @@ public class Program
             builder.Services.ConfigureLumiSkyCore();
 
             // Add services to the container.
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
+            builder.Services
+                .AddRazorComponents(o =>
+                {
+                    o.DetailedErrors = builder.Environment.IsDevelopment();
+                })
+                .AddInteractiveServerComponents(o =>
+                {
+                    o.DetailedErrors = builder.Environment.IsDevelopment();
+                });
 
             builder.Services.AddControllers();
 
@@ -111,7 +118,10 @@ public class Program
 
             app.MapStaticAssets();
             app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode();
+                .AddInteractiveServerRenderMode(o =>
+                {
+                    o.DisableWebSocketCompression = true;
+                });
 
             app.MapControllers();
 
@@ -141,7 +151,7 @@ public class Program
     {
         if (e.ExceptionObject is Exception ex)
         {
-            Log.Error(ex, "Unhandled domain exception");
+            Log.Debug(ex, "Unhandled domain exception");
         }
     }
 
@@ -149,7 +159,7 @@ public class Program
     {
         if (e.Exception is not null)
         {
-            Log.Error(e.Exception, "Unhandled task scheduler exception");
+            Log.Debug(e.Exception, "Unhandled task scheduler exception");
         }
     }
 }
