@@ -38,7 +38,7 @@ public interface IProcessingSettings : ISettings
     int PointingOverlayRadius { get; set; }
     int PointingOverlayXOffset { get; set; }
     int PointingOverlayYOffset { get; set; }
-    int PointingOverlayRotation { get; set; }
+    double PointingOverlayRotation { get; set; }
     bool PointingOverlayFlipVertical { get; set; }
     ObservableCollection<TextOverlay> TextOverlays { get; set; }
     ObservableCollection<PointingOverlay> PointingOverlays { get; set; }
@@ -189,7 +189,7 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
     public partial int PointingOverlayYOffset { get; set; }
 
     [ObservableProperty]
-    public partial int PointingOverlayRotation { get; set; }
+    public partial double PointingOverlayRotation { get; set; }
 
     [ObservableProperty]
     public partial bool PointingOverlayFlipVertical { get; set; }

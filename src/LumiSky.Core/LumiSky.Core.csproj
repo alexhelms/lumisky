@@ -29,6 +29,8 @@
     <PackageReference Include="Quartz.Extensions.DependencyInjection" />
     <PackageReference Include="Quartz.Extensions.Hosting" />
     <PackageReference Include="Serilog" />
+    <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" />
     <PackageReference Include="SlimMessageBus" />
     <PackageReference Include="SlimMessageBus.Host.Memory" />
   </ItemGroup>

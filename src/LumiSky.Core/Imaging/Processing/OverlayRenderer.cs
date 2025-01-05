@@ -373,10 +373,11 @@ public class OverlayRenderer
         int radius,
         int offsetX,
         int offsetY,
-        int rotation,
+        double rotation,
         bool flipVertical)
     {
         // All parameters are in degrees.
+        // Rotation parameter assumes CCW is positive.
 
         radius = radius > 0 ? radius : (int)(Math.Max(width, height) / 2.0);
         double altitudeRad = altitude * LumiSkyMath.Deg2Rad;
@@ -385,7 +386,7 @@ public class OverlayRenderer
         double y = radius * Math.Cos(altitudeRad) * Math.Cos(azimuthRad);
         
         // Rotate the points about the center.
-        var mat = Matrix3x2.CreateRotation((float)(rotation * LumiSkyMath.Deg2Rad));
+        var mat = Matrix3x2.CreateRotation((float)(-1 * rotation * LumiSkyMath.Deg2Rad));
         var vec = Vector2.Transform(new Vector2((float)x, (float)y), mat);
 
         // Assumption: Center +/- x/y offset is zenith.

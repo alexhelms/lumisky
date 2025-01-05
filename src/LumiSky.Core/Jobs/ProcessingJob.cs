@@ -12,6 +12,12 @@ using LumiSky.Core.Services;
 using Quartz;
 using SlimMessageBus;
 using System.Diagnostics;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing;
+using Size = LumiSky.Core.Primitives.Size;
+using Path = System.IO.Path;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp;
 
 namespace LumiSky.Core.Jobs;
 
@@ -74,6 +80,25 @@ public class ProcessingJob : JobBase
         await DrawImageOverlays(processResult.Image, processResult.Metadata);
         var imageFilename = SaveImage(processResult.Image, "image", exposureUtc);
         await PersistImage(imageFilename, exposureUtc);
+
+        // TESTING HACK: Make this better, this is a hack for testing, users may need this.
+        if (_profile.Current.Processing.EnablePointingOverlays)
+        {
+            using (var img = await SixLabors.ImageSharp.Image.LoadAsync(imageFilename))
+            {
+                img.Mutate(x =>
+                {
+                    var redPen = Pens.Solid(SixLabors.ImageSharp.Color.Red, 3);
+                    var circle = new EllipsePolygon(
+                    (float)(processResult.Image.Width / 2.0 + _profile.Current.Processing.PointingOverlayXOffset),
+                    (float)(processResult.Image.Height / 2.0 + _profile.Current.Processing.PointingOverlayYOffset),
+                    _profile.Current.Processing.PointingOverlayRadius);
+                    x.Draw(redPen, circle);
+                });
+
+                await img.SaveAsync(imageFilename);
+            }
+        }
 
         // Process, Save, and Persis the Panorama
         string? panoramaFilename = null;
