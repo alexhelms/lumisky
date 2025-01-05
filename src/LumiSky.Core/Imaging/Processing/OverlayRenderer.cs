@@ -215,6 +215,7 @@ public class OverlayRenderer
                     position.Azimuth,
                     width,
                     height,
+                    _profile.Current.Processing.PointingOverlayRadius,
                     _profile.Current.Processing.PointingOverlayXOffset,
                     _profile.Current.Processing.PointingOverlayYOffset,
                     _profile.Current.Processing.PointingOverlayRotation,
@@ -369,6 +370,7 @@ public class OverlayRenderer
         double azimuth,
         int width,
         int height,
+        int radius,
         int offsetX,
         int offsetY,
         int rotation,
@@ -376,7 +378,7 @@ public class OverlayRenderer
     {
         // All parameters are in degrees.
 
-        double radius = Math.Min(width, height) / 2.0;
+        radius = radius > 0 ? radius : (int)(Math.Max(width, height) / 2.0);
         double altitudeRad = altitude * LumiSkyMath.Deg2Rad;
         double azimuthRad = azimuth * LumiSkyMath.Deg2Rad;
         double x = radius * Math.Cos(altitudeRad) * Math.Sin(azimuthRad);

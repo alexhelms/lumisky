@@ -347,7 +347,7 @@
                                 </Helper>
                             </RadzenFormField>
 
-                            <RadzenFormField Text="Altitude Threshold" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenFormField Text="Altitude Threshold [deg]" Variant="Variant.Outlined" AllowFloatingLabel="false">
                                 <ChildContent>
                                     <RadzenNumeric @bind-Value="model.PointingOverlayAltitudeThreshold" Min="0" Max="90" Step="5" />
                                 </ChildContent>
@@ -358,7 +358,19 @@
                                 </Helper>
                             </RadzenFormField>
 
-                            <RadzenFormField Text="X Offset" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenFormField Text="Radius [px]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="model.PointingOverlayRadius" Min="0" Max="10000" Step="10" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                        Radius from zenith to the horizon.
+                                        This value could be larger than your FOV depending on lens and sensor size.
+                                    </RadzenText>
+                                </Helper>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="X Offset [px]" Variant="Variant.Outlined" AllowFloatingLabel="false">
                                 <ChildContent>
                                     <RadzenNumeric @bind-Value="model.PointingOverlayXOffset" Min="-10000" Max="10000" Step="10" />
                                 </ChildContent>
@@ -369,7 +381,7 @@
                                 </Helper>
                             </RadzenFormField>
 
-                            <RadzenFormField Text="Y Offset" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenFormField Text="Y Offset [px]" Variant="Variant.Outlined" AllowFloatingLabel="false">
                                 <ChildContent>
                                     <RadzenNumeric @bind-Value="model.PointingOverlayYOffset" Min="-10000" Max="10000" Step="10" />
                                 </ChildContent>
@@ -380,7 +392,7 @@
                                 </Helper>
                             </RadzenFormField>
 
-                            <RadzenFormField Text="Rotation" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenFormField Text="Rotation [deg]" Variant="Variant.Outlined" AllowFloatingLabel="false">
                                 <ChildContent>
                                     <RadzenNumeric @bind-Value="model.PointingOverlayRotation" Min="-180" Max="180" />
                                 </ChildContent>
@@ -548,6 +560,7 @@
         model.EnablePointingOverlays = Profile.Current.Processing.EnablePointingOverlays;
         model.PrometheusMountPositionUrl = Profile.Current.Processing.PrometheusMountPositionUrl;
         model.PointingOverlayAltitudeThreshold = Profile.Current.Processing.PointingOverlayAltitudeThreshold;
+        model.PointingOverlayRadius = Profile.Current.Processing.PointingOverlayRadius;
         model.PointingOverlayXOffset = Profile.Current.Processing.PointingOverlayXOffset;
         model.PointingOverlayYOffset = Profile.Current.Processing.PointingOverlayYOffset;
         model.PointingOverlayRotation = Profile.Current.Processing.PointingOverlayRotation;
@@ -611,6 +624,7 @@
         Profile.Current.Processing.EnablePointingOverlays = model.EnablePointingOverlays;
         Profile.Current.Processing.PrometheusMountPositionUrl = model.PrometheusMountPositionUrl;
         Profile.Current.Processing.PointingOverlayAltitudeThreshold = model.PointingOverlayAltitudeThreshold;
+        Profile.Current.Processing.PointingOverlayRadius = model.PointingOverlayRadius;
         Profile.Current.Processing.PointingOverlayXOffset = model.PointingOverlayXOffset;
         Profile.Current.Processing.PointingOverlayYOffset = model.PointingOverlayYOffset;
         Profile.Current.Processing.PointingOverlayRotation = model.PointingOverlayRotation;
@@ -919,6 +933,7 @@
         public bool EnablePointingOverlays { get; set; }
         public string PrometheusMountPositionUrl { get; set; } = null!;
         public int PointingOverlayAltitudeThreshold { get; set; }
+        public int PointingOverlayRadius { get; set; }
         public int PointingOverlayXOffset { get; set; }
         public int PointingOverlayYOffset { get; set; }
         public int PointingOverlayRotation { get; set; }

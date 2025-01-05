@@ -35,6 +35,7 @@ public interface IProcessingSettings : ISettings
     bool EnablePointingOverlays { get; set; }
     string PrometheusMountPositionUrl { get; set; }
     int PointingOverlayAltitudeThreshold { get; set; }
+    int PointingOverlayRadius { get; set; }
     int PointingOverlayXOffset { get; set; }
     int PointingOverlayYOffset { get; set; }
     int PointingOverlayRotation { get; set; }
@@ -85,6 +86,7 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         EnablePointingOverlays = false;
         PrometheusMountPositionUrl = string.Empty;
         PointingOverlayAltitudeThreshold = 10;
+        PointingOverlayRadius = 0;
         PointingOverlayXOffset = 0;
         PointingOverlayYOffset = 0;
         PointingOverlayRotation = 0;
@@ -176,6 +178,9 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
 
     [ObservableProperty]
     public partial int PointingOverlayAltitudeThreshold { get; set; }
+
+    [ObservableProperty]
+    public partial int PointingOverlayRadius { get; set; }
 
     [ObservableProperty]
     public partial int PointingOverlayXOffset { get; set; }

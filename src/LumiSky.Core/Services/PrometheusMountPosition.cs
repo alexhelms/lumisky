@@ -38,11 +38,13 @@ public class PrometheusMountPosition : IMountPositionProvider
             var altTask = new Url(baseUrl)
                 .AppendPathSegments("api", "v1", "query")
                 .AppendQueryParam("query", "nina_mount_alt")
+                .WithTimeout(TimeSpan.FromSeconds(3))
                 .GetJsonAsync<RootObject>();
 
             var azTask = new Url(baseUrl)
                 .AppendPathSegments("api", "v1", "query")
                 .AppendQueryParam("query", "nina_mount_az")
+                .WithTimeout(TimeSpan.FromSeconds(3))
                 .GetJsonAsync<RootObject>();
 
             await Task.WhenAll(altTask, azTask);
