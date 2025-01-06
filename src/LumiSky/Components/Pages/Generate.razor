@@ -17,7 +17,7 @@
 <HeadContent>
     <style>
         .rz-message-popup {
-            z-index: 99;
+        z-index: 99;
         }
     </style>
 </HeadContent>
@@ -207,7 +207,19 @@
     {
         if (firstRender)
         {
+            await RefreshDataAsync();
+        }
+    }
+
+    private async Task RefreshDataAsync()
+    {
+        try
+        {
             await dataGrid.RefreshDataAsync();
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error refreshing generation table data");
         }
     }
 
@@ -223,33 +235,40 @@
     {
         isLoading = true;
 
-        await Task.Yield();
+        try
+        {
+            var query = DbContext.Generations
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedOn)
+                .AsQueryable();
 
-        var query = DbContext.Generations
-            .AsNoTracking()
-            .OrderByDescending(x => x.CreatedOn)
-            .AsQueryable();
+            count = query.Count();
 
-        count = query.Count();
-
-        jobs = query
-            .Skip(args.Skip.GetValueOrDefault())
-            .Take(args.Top.GetValueOrDefault())
-            .Select(x => new GenerationJob
-            {
-                Id = x.Id,
-                Kind = x.Kind,
-                State = x.State,
-                Created = x.CreatedOn,
-                Started = x.StartedOn,
-                Finished = x.CompletedOn,
-                Progress = x.Progress,
-                Begin = DateTimeOffset.FromUnixTimeSeconds(x.RangeBegin).ToLocalTime().DateTime,
-                End = DateTimeOffset.FromUnixTimeSeconds(x.RangeEnd).ToLocalTime().DateTime,
-            })
-            .ToList();
-
-        isLoading = false;
+            jobs = await query
+                .Skip(args.Skip.GetValueOrDefault())
+                .Take(args.Top.GetValueOrDefault())
+                .Select(x => new GenerationJob
+                {
+                    Id = x.Id,
+                    Kind = x.Kind,
+                    State = x.State,
+                    Created = x.CreatedOn,
+                    Started = x.StartedOn,
+                    Finished = x.CompletedOn,
+                    Progress = x.Progress,
+                    Begin = DateTimeOffset.FromUnixTimeSeconds(x.RangeBegin).ToLocalTime().DateTime,
+                    End = DateTimeOffset.FromUnixTimeSeconds(x.RangeEnd).ToLocalTime().DateTime,
+                })
+                .ToListAsync();
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error loading generation table data");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void OnGenerationQueued(object? sender, GenerationQueued message)
@@ -257,7 +276,7 @@
         InvokeAsync(async () =>
         {
             if (dataGrid is not null)
-                await dataGrid.RefreshDataAsync();
+                await RefreshDataAsync();
         });
     }
 
@@ -346,7 +365,7 @@
     private async Task OnDelete(GenerationJob item)
     {
         await GenerationService.DeleteGeneration(item.Id);
-        await dataGrid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 
     private async Task OnSubmit(GenerateForm data)
@@ -364,7 +383,7 @@
                 model.EndDateTime.ToUniversalTime());
         }
 
-        await dataGrid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 
     private void OnLastNightSelected()
