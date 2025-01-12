@@ -21,7 +21,12 @@
 
 <body>
     <Routes @rendermode="PageRenderMode" />
-    <script src="_framework/blazor.web.js"></script>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Blazor.start();
+        })
+    </script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
 </body>
 
