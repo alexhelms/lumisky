@@ -19,15 +19,15 @@
 else
 {
     <RadzenDataGrid @ref=grid TItem="PanoramaTimelapse" Data="@panoramaTimelapses" AllowFiltering="true" AllowColumnResize="true"
-                    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
-                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
+    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
 
             <RadzenDataGridColumn Title="Favorite" Width="90px" TextAlign="TextAlign.Center">
                 <Template Context="timelapse">
                     <RadzenToggleButton @key=timelapse.Id @bind-Value=timelapse.IsFavorite Change="@(value => OnFavorite(timelapse, value))" Icon="heart_plus" ToggleIcon="favorite"
-                                        ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
-                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
+                    ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
+                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
                 </Template>
             </RadzenDataGridColumn>
 
@@ -77,10 +77,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        panoramaTimelapses = DbContext.PanoramaTimelapses;
-        timelapsesAvailable = await DbContext.PanoramaTimelapses.AnyAsync();
+        try
+        {
+            panoramaTimelapses = DbContext.PanoramaTimelapses;
+            timelapsesAvailable = await DbContext.PanoramaTimelapses.AnyAsync();
 
-        GenerationService.Complete += OnGenerationComplete;
+            GenerationService.Complete += OnGenerationComplete;
+        }
+        catch (Exception e )
+        {
+            Log.Error(e, "Error getting gallery table data");
+        }
     }
 
     public void Dispose()
@@ -88,18 +95,29 @@ else
         GenerationService.Complete -= OnGenerationComplete;
     }
 
-    private void OnGenerationComplete(object? sender, GenerationComplete message)
+    private async Task RefreshDataAsync()
     {
-        InvokeAsync(async () =>
+        await InvokeAsync(async () =>
         {
-            timelapsesAvailable = true;
-            StateHasChanged();
-
-            if (grid is not null)
+            try
             {
-                await grid.RefreshDataAsync();
+                if (grid is not null)
+                {
+                    await grid.RefreshDataAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error refreshing generation table data");
             }
         });
+    }
+
+    private async void OnGenerationComplete(object? sender, GenerationComplete message)
+    {
+        timelapsesAvailable = true;
+        await InvokeAsync(StateHasChanged);
+        await RefreshDataAsync();
     }
 
     private void OnPlayClick(int id)
@@ -110,14 +128,12 @@ else
     private async Task OnDelete(PanoramaTimelapse panoramaTimelapse)
     {
         await ImageService.DeletePanoramaTimelapse(panoramaTimelapse.Id);
-        if (grid is not null)
-            await grid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 
     private async Task OnFavorite(PanoramaTimelapse panoramaTimelapse, bool isFavorite)
     {
         await ImageService.FavoritePanoramaTimelapse(panoramaTimelapse.Id, isFavorite);
-        if (grid is not null)
-            await grid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 }

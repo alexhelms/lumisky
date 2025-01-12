@@ -16,15 +16,15 @@
 else
 {
     <RadzenDataGrid @ref=grid TItem="RawImage" Data="@rawImages" AllowFiltering="true" AllowColumnResize="true"
-                    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
-                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
+    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
 
             <RadzenDataGridColumn Title="Favorite" Width="90px" TextAlign="TextAlign.Center">
                 <Template Context="rawImage">
                     <RadzenToggleButton @key=rawImage.Id @bind-Value=rawImage.IsFavorite Change="@(value => OnFavorite(rawImage, value))" Icon="heart_plus" ToggleIcon="favorite"
-                                        ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
-                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
+                    ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
+                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
                 </Template>
             </RadzenDataGridColumn>
 
@@ -67,10 +67,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        rawImages = DbContext.RawImages;
-        rawImagesAvailable = await DbContext.RawImages.AnyAsync();
+        try
+        {
+            rawImages = DbContext.RawImages;
+            rawImagesAvailable = await DbContext.RawImages.AnyAsync();
 
-        ImageService.NewImage += OnNewImage;
+            ImageService.NewImage += OnNewImage;
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error getting gallery table data");
+        }
     }
 
     public void Dispose()
@@ -78,29 +85,43 @@ else
         ImageService.NewImage -= OnNewImage;
     }
 
-    private void OnNewImage(object? sender, EventArgs e)
+    private async Task RefreshDataAsync()
+    {
+        await InvokeAsync(async () =>
+        {
+            try
+            {
+                if (grid is not null)
+                {
+                    await grid.RefreshDataAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error refreshing generation table data");
+            }
+        });
+    }
+
+    private async void OnNewImage(object? sender, EventArgs e)
     {
         if (Profile.Current.Image.KeepRawImages)
         {
             rawImagesAvailable = true;
-            InvokeAsync(StateHasChanged);
-
-            if (grid is not null)
-                InvokeAsync(grid.RefreshDataAsync);
+            await InvokeAsync(StateHasChanged);
+            await RefreshDataAsync();
         }
     }
 
     private async Task OnDelete(RawImage rawImage)
     {
         await ImageService.DeleteRawImage(rawImage.Id);
-        if (grid is not null)
-            await grid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 
     private async Task OnFavorite(RawImage rawImage, bool isFavorite)
     {
         await ImageService.FavoriteImage(rawImage.Id, isFavorite);
-        if (grid is not null)
-            await grid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 }

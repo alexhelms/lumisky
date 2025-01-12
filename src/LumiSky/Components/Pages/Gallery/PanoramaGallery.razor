@@ -73,10 +73,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        panoramas = DbContext.Panoramas;
-        panoramasAvailable = await DbContext.Panoramas.AnyAsync();
+        try
+        {
+            panoramas = DbContext.Panoramas;
+            panoramasAvailable = await DbContext.Panoramas.AnyAsync();
 
-        ImageService.NewPanorama += OnNewPanorama;
+            ImageService.NewPanorama += OnNewPanorama;
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error getting gallery table data");
+        }
     }
 
     public void Dispose()
@@ -84,26 +91,40 @@ else
         ImageService.NewPanorama -= OnNewPanorama;
     }
 
-    private void OnNewPanorama(object? sender, EventArgs e)
+    private async Task RefreshDataAsync()
     {
-        if (grid is not null)
-            InvokeAsync(grid.RefreshDataAsync);
+        await InvokeAsync(async () =>
+        {
+            try
+            {
+                if (grid is not null)
+                {
+                    await grid.RefreshDataAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error refreshing generation table data");
+            }
+        });
+    }
 
+    private async void OnNewPanorama(object? sender, EventArgs e)
+    {
         panoramasAvailable = true;
-        InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
+        await RefreshDataAsync();
     }
 
     private async Task OnDelete(Panorama panorama)
     {
         await ImageService.DeletePanorama(panorama.Id);
-        if (grid is not null)
-            await grid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 
     private async Task OnFavorite(Panorama panorama, bool isFavorite)
     {
         await ImageService.FavoritePanorama(panorama.Id, isFavorite);
-        if (grid is not null)
-            await grid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 }

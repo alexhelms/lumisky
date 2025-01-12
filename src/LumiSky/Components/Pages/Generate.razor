@@ -195,12 +195,19 @@
 
     protected override void OnInitialized()
     {
-        OnLastNightSelected();
+        try
+        {
+            OnLastNightSelected();
 
-        GenerationService.Queued += OnGenerationQueued;
-        GenerationService.Starting += OnGenerationStarting;
-        GenerationService.Progress += OnGenerationProgress;
-        GenerationService.Complete += OnGenerationComplete;
+            GenerationService.Queued += OnGenerationQueued;
+            GenerationService.Starting += OnGenerationStarting;
+            GenerationService.Progress += OnGenerationProgress;
+            GenerationService.Complete += OnGenerationComplete;
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error initializing generation page");
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

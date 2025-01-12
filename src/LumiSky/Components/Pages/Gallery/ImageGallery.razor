@@ -14,15 +14,15 @@
 else
 {
     <RadzenDataGrid @ref=grid TItem="Image" Data="@images" AllowFiltering="true" AllowColumnResize="true"
-                    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
-                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
+    FilterMode="FilterMode.Simple" PageSize="25" AllowPaging="true" AllowSorting="true"
+    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive">
         <Columns>
 
             <RadzenDataGridColumn Title="Favorite" Width="90px" TextAlign="TextAlign.Center">
                 <Template Context="image">
                     <RadzenToggleButton @key=image.Id @bind-Value=image.IsFavorite Change="@(value => OnFavorite(image, value))" Icon="heart_plus" ToggleIcon="favorite"
-                                        ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
-                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
+                    ButtonStyle="ButtonStyle.Light" ToggleButtonStyle="ButtonStyle.Danger" ToggleShade="Shade.Dark" Size="ButtonSize.Small"
+                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Favorite button" }})" />
                 </Template>
             </RadzenDataGridColumn>
 
@@ -73,10 +73,17 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        images = DbContext.Images;
-        imagesAvailable = await DbContext.Images.AnyAsync();
+        try
+        {
+            images = DbContext.Images;
+            imagesAvailable = await DbContext.Images.AnyAsync();
 
-        ImageService.NewImage += OnNewImage;
+            ImageService.NewImage += OnNewImage;
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error getting gallery table data");
+        }
     }
 
     public void Dispose()
@@ -84,26 +91,40 @@ else
         ImageService.NewImage -= OnNewImage;
     }
 
-    private void OnNewImage(object? sender, EventArgs e)
+    private async Task RefreshDataAsync()
     {
-        if (grid is not null)
-            InvokeAsync(grid.RefreshDataAsync);
+        await InvokeAsync(async () =>
+        {
+            try
+            {
+                if (grid is not null)
+                {
+                    await grid.RefreshDataAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error refreshing generation table data");
+            }
+        });
+    }
 
+    private async void OnNewImage(object? sender, EventArgs e)
+    {
         imagesAvailable = true;
-        InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
+        await RefreshDataAsync();
     }
 
     private async Task OnDelete(Image image)
     {
         await ImageService.DeleteImage(image.Id);
-        if (grid is not null)
-            await grid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 
     private async Task OnFavorite(Image image, bool isFavorite)
     {
         await ImageService.FavoriteImage(image.Id, isFavorite);
-        if (grid is not null)
-            await grid.RefreshDataAsync();
+        await RefreshDataAsync();
     }
 }
