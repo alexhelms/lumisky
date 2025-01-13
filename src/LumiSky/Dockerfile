@@ -43,7 +43,7 @@ COPY --from=publish --chown=app:app /app/publish .
 # and both are loaded in the process but are incompatible and causes
 # segfaults on *some* queries.
 COPY ./src/fix_sqlite.sh .
-RUN chmod +x fix_sqlite.sh && ./fix_sqlite.sh
+RUN chmod +x fix_sqlite.sh && ./fix_sqlite.sh $TARGETARCH
 
 USER app
 ENTRYPOINT ["dotnet", "LumiSky.dll"]
