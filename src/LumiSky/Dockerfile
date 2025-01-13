@@ -25,14 +25,13 @@ RUN mkdir /lumisky \
     && chown app:app /lumisky
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS build
-ARG BUILD_CONFIGURATION=Release
+ARG TARGETARCH
 WORKDIR /src
 COPY . .
-RUN dotnet build "./src/LumiSky/LumiSky.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./src/LumiSky/LumiSky.csproj" -c Release -a $TARGETARCH -o /app/build
 
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./src/LumiSky/LumiSky.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./src/LumiSky/LumiSky.csproj" -c Release -a $TARGETARCH -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 ARG TARGETARCH
