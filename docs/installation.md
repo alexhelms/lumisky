@@ -13,14 +13,13 @@ and monitor on the raspi. Use the lite version if you are going to use ssh.
 Install docker.
 
 ```bash
-curl -fsSL https://test.docker.com -o test-docker.sh
-sudo sh test-docker.sh
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh ./get-docker.sh
 ```
 
 Allow non-sudo docker usage.
 
 ```bash
-sudo groupadd docker
 sudo usermod -aG docker $USER
 newgrp docker
 ```
@@ -35,11 +34,15 @@ sudo systemctl enable containerd.service
 Create the docker compose file.
 
 ```bash
-cd ~
-mkdir lumisky
-cd lumisky
+mkdir -p ~/lumisky/data
+cd ~/lumisky
+sudo groupadd -g 1654 lumisky && sudo useradd -u 1654 -g lumisky lumisky
+sudo chown lumisky:lumisky data
 touch docker-compose.yml
 ```
+
+You can do `nano docker-compose.yml` to edit the docker compose file.
+When you are ready to save and exit, press `ctrl+x`, press `y`, then `enter`. 
 
 Copy the following into `docker-compose.yml` and change the following as needed:
 * Environment variable `TZ` to your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
@@ -50,10 +53,12 @@ Copy the following into `docker-compose.yml` and change the following as needed:
 Start LumiSky.
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
 Go to the LumiSky dashboard on port 8080.
+
+?> You can stop LumiSky by going to the directory that contains `docker-compose.yml` and running `docker compose down`.
 
 ## Docker
 

@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     user: 1654:1654
     volumes:
-      - lumisky-data:/lumisky
+      - ~/lumisky/data:/lumisky
     network_mode: host
     ports:
       - 8080:8080
@@ -33,5 +33,4 @@ services:
     ]
 
 volumes:
-  lumisky-data:
   indi_server-config:
