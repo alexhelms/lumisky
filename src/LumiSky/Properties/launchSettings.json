@@ -24,9 +24,9 @@
       "launchUrl": "https://localhost:7093",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "https://localhost:7093;http://localhost:5135"
+        "ASPNETCORE_URLS": "http://localhost:5135"
       },
-      "distributionName": "Ubuntu-24.04"
+      "distributionName": "Debian"
     },
     "Container (Dockerfile)": {
       "commandName": "Docker",

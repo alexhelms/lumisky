@@ -58,7 +58,14 @@
                     </RadzenStack>
 
                     <RadzenFormField Text="Codec" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenDropDown @bind-Value=model.TimelapseCodec Data="@(Enum.GetValues<Core.Profile.VideoCodec>())" Style="width: 90%;" />
+                        <ChildContent>
+                            <RadzenDropDown @bind-Value=model.TimelapseCodec Data="@(Enum.GetValues<Core.Profile.VideoCodec>())" Style="width: 90%;" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                H264 is more portable. H265 is typically smaller in file size but cannot be viewed in the browser.
+                            </RadzenText>
+                        </Helper>
                     </RadzenFormField>
 
                     <RadzenFormField Text="Frame Rate" Variant="Variant.Outlined" AllowFloatingLabel="false">
@@ -112,7 +119,14 @@
                     </RadzenStack>
 
                     <RadzenFormField Text="Codec" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenDropDown @bind-Value=model.PanoramaCodec Data="@(Enum.GetValues<Core.Profile.VideoCodec>())" Style="width: 90%;" />
+                        <ChildContent>
+                            <RadzenDropDown @bind-Value=model.PanoramaCodec Data="@(Enum.GetValues<Core.Profile.VideoCodec>())" Style="width: 90%;" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                H264 is more portable. H265 is typically smaller in file size but cannot be viewed in the browser.
+                            </RadzenText>
+                        </Helper>
                     </RadzenFormField>
 
                     <RadzenFormField Text="Frame Rate" Variant="Variant.Outlined" AllowFloatingLabel="false">
