@@ -8,30 +8,35 @@ LumiSky and INDI server both run as containers on a raspi.
 
 Create a clean raspi image following [the official instructions](https://www.raspberrypi.com/software/).
 Install Raspberry Pi OS 64-bit, full or lite. Use the full version if you are going to use a mouse, keyboard,
-and monitor on the raspi. Use the lite version if you are going to use ssh.
+and monitor on the raspi. Use the lite version if you are going to use SSH.
 
-Install docker.
+?> If you are on Windows and unfamiliar with Linux, use [PuTTY](https://www.putty.org/) for an SSH client
+   and [WinSCP](https://winscp.net) for an SCP client so you can copy files to and from the raspi.
+
+SSH into your raspi, or if you are using a mouse and keyboard, run the following commands in a terminal.
+
+1. Install docker.
 
 ```bash
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh ./get-docker.sh
 ```
 
-Allow non-sudo docker usage.
+2. Allow non-sudo docker usage.
 
 ```bash
 sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-Enable docker to start on boot.
+3. Enable docker to start on boot.
 
 ```bash
 sudo systemctl enable docker.service
 sudo systemctl enable containerd.service
 ```
 
-Create the docker compose file.
+4. Setup Lumisky.
 
 ```bash
 mkdir -p ~/lumisky/data
@@ -41,16 +46,24 @@ sudo chown lumisky:lumisky data
 touch docker-compose.yml
 ```
 
-You can do `nano docker-compose.yml` to edit the docker compose file.
-When you are ready to save and exit, press `ctrl+x`, press `y`, then `enter`. 
+?> You can run `nano docker-compose.yml` to edit the docker compose file.
+   When you are ready to save and exit, press `ctrl+x`, press `y`, then `enter`.
+   Or, you can use an SCP client to download, edit, and upload the file.
 
 Copy the following into `docker-compose.yml` and change the following as needed:
 * Environment variable `TZ` to your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
-* INDI camera driver. The example uses `indi_asi_ccd`.
+* INDI camera driver. See the [INDI devices](https://www.indilib.org/devices.html)
+  page to find the name of the INDI driver.
+  Common driver names:
+    * ZWO - `indi_asi_ccd`
+    * QHY - `indi_qhy_ccd`
+    * Player One - `indi_playerone_ccd`
+    * Raspberry Pi Camera - `indi_rpicam`
+    * Touptek - `indi_toupcam_ccd`
 
 [docker-compose.yml](examples/raspi.docker-compose.yml ':include :type=code') 
 
-Start LumiSky.
+5. Start LumiSky.
 
 ```bash
 docker compose up -d
