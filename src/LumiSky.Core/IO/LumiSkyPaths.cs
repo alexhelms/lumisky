@@ -28,4 +28,8 @@ public static class LumiSkyPaths
     public static string Logs => Path.Combine(BasePath, "logs");
 
     public static string Settings => Path.Combine(BasePath, "settings");
+
+    public static string Temp => Path.Combine(BasePath, "temp");
+
+    public static string LatestFocusImage => Path.Join(Temp, "latest_focus.jpg");
 }

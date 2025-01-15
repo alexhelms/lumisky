@@ -29,6 +29,7 @@ LumiSky has been deployed at [SDSO](https://sdso.space/) since August 2024.
 - FTP export
 - Automatic cleanup of old data
 - Import/export settings
+- Focus mode
 
 ## Requirements
 

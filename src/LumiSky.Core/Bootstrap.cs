@@ -14,6 +14,7 @@ using System.Runtime.InteropServices;
 using LumiSky.Core.IO.Fits;
 using LumiSky.Core.Utilities;
 using LumiSky.Core.Video;
+using LumiSky.Core.IO;
 
 namespace LumiSky.Core;
 
@@ -39,6 +40,7 @@ public static class Bootstrap
         services.AddSingleton<ExposureService>();
         services.AddSingleton<GenerationService>();
         services.AddSingleton<NotificationService>();
+        services.AddSingleton<FocusService>();
 
         services.AddSlimMessageBus(config => config
             .WithProviderMemory()
@@ -105,6 +107,8 @@ public static class Bootstrap
         }
 
         ConfigureFfmpeg(profile);
+
+        Directory.CreateDirectory(LumiSkyPaths.Temp);
 
         if (profile.Current.Capture.AutoStart)
         {

@@ -107,7 +107,7 @@
 
     protected override void OnInitialized()
     {
-        latestImageUrl = GenerateFisheyeUrl();
+        latestImageUrl = GenerateImageUrl();
         latestPanoramaUrl = GeneratePanoramaUrl();
         ImageService.NewImage += OnNewImage;
         ImageService.NewPanorama += OnNewPanorama;
@@ -186,7 +186,7 @@
         catch (JSDisconnectedException) { }
     }
 
-    private string? GenerateFisheyeUrl()
+    private string? GenerateImageUrl()
     {
         if (ImageService.LatestImagePath is not null)
             return LatestImageUrlBase + $"?time={DateTime.Now.Ticks}";
@@ -202,7 +202,7 @@
 
     private void OnNewImage(object? sender, EventArgs e)
     {
-        latestImageUrl = GenerateFisheyeUrl();
+        latestImageUrl = GenerateImageUrl();
         InvokeAsync(StateHasChanged);
     }
 

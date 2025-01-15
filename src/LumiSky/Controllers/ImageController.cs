@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LumiSky.Core.Services;
+using LumiSky.Core.IO;
 
 namespace LumiSky.Controllers;
 
@@ -54,6 +55,7 @@ public class ImageController : Controller
         string? latest;
         if (type == "image") latest = _service.LatestImagePath;
         else if (type == "panorama") latest = _service.LatestPanoramaPath;
+        else if (type == "focus") latest = _service.LatestFocusPath;
         else return NotFound();
 
         if (latest == null)
@@ -99,6 +101,10 @@ public class ImageController : Controller
 
             filename = rawImage.Filename;
         }
+        else if (type == "focus")
+        {
+            filename = LumiSkyPaths.LatestFocusImage;
+        }
         else
         {
             return NotFound();
@@ -133,6 +139,10 @@ public class ImageController : Controller
                 return NotFound();
 
             filename = panorama.Filename;
+        }
+        else if (type == "focus")
+        {
+            filename = LumiSkyPaths.LatestFocusImage;
         }
         else
         {

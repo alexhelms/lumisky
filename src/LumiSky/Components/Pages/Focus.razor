@@ -1,2 +1,219 @@
 ﻿@page "/focus"
+@using LumiSky.Core.Services
+@implements IAsyncDisposable
+@inject AllSkyScheduler AllSkyScheduler
+@inject FocusService FocusService
+@inject ImageService ImageService
+
 <PageTitle>Focus</PageTitle>
+
+<HeadContent>
+    <style>
+        .focus-img-container {
+            height: 30vw;
+            width: auto;
+            overflow: hidden;
+            position: relative;
+        }
+        .focus-img-100p-container {
+            height: 30vw;
+            overflow: scroll;
+        }
+        .allsky-img {
+            max-height: 100%;
+            width: auto;
+            display: block;
+            margin: auto;
+        }
+        .allsky-100p-img {
+            width: auto;
+            height: auto;
+            transform: scale(2);
+            transform-origin: top left;
+            image-rendering: pixelated;
+        }
+    </style>
+</HeadContent>
+
+<RadzenStack>
+
+    <RadzenRow JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Start">
+
+        <RadzenColumn SizeLG="6">
+            <RadzenCard>
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.H6" TextAlign="TextAlign.Center">Image</RadzenText>
+                    <div class="focus-img-container">
+                        @if (latestFocusUrl is not null)
+                        {
+                            <RadzenImage Path="@latestFocusUrl" class="allsky-img" />
+                        }
+                        else 
+                        {
+                            <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Style="height: 100%;">
+                                <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center">No Image</RadzenText>
+                            </RadzenRow>
+                        }
+                    </div>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn SizeLG="6">
+            <RadzenCard>
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.H6" TextAlign="TextAlign.Center">Image 200%</RadzenText>
+                    <div class="focus-img-100p-container">
+                        @if (latestFocusUrl is not null)
+                        {
+                            <RadzenImage Path="@latestFocusUrl" class="allsky-100p-img" />
+                        }
+                        else
+                        {
+                            <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Style="height: 100%;">
+                                <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center">No Image</RadzenText>
+                            </RadzenRow>
+                        }
+                    </div>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+    </RadzenRow>
+
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn SizeLG="6">
+
+            <RadzenCard>
+                <RadzenStack>
+
+                    <RadzenFieldset>
+                        <HeaderTemplate>
+                            <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Camera</strong></RadzenText>
+                        </HeaderTemplate>
+                        <ChildContent>
+                            <RadzenStack>
+
+                                <RadzenFormField Text="Exposure [sec]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                    <RadzenNumeric TValue="double" @bind-Value=exposure @bind-Value:after=OnExposureChanged Step="0.1" Min="0" Max="30" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Gain" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                                    <RadzenNumeric TValue="int" @bind-Value=gain @bind-Value:after=OnGainChanged Min="0" Max="10000" />
+                                </RadzenFormField>
+
+                                <RadzenStack Orientation="Orientation.Horizontal">
+
+                                    <RadzenButton ButtonType="ButtonType.Button" Text="Start" Click="StartCamera" Disabled="@(isAllSkyRunning || FocusService.IsRunning)" />
+                                    <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Text="Stop" Click="StopCamera" Disabled="@(isAllSkyRunning || !FocusService.IsRunning)" />
+                                    @if (FocusService.IsRunning)
+                                    {
+                                        <RadzenProgressBarCircular Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Small" ShowValue="false" />
+                                    }
+
+                                </RadzenStack>
+
+                            </RadzenStack>
+                        </ChildContent>
+                    </RadzenFieldset>
+
+                    @if (isAllSkyRunning)
+                    {
+                        <RadzenAlert AlertStyle="AlertStyle.Warning" Shade="Shade.Lighter" AllowClose=false class="rz-m-0">
+                            You can only focus the camera when the allsky is stopped.
+                        </RadzenAlert>
+                    }
+
+                </RadzenStack>
+            </RadzenCard>
+
+        </RadzenColumn>
+    </RadzenRow>
+
+</RadzenStack>
+
+@code
+{
+    private const string LatestFocusUrlBase = "/api/image/latest/focus";
+
+    private bool isAllSkyRunning;
+    private string? latestFocusUrl;
+    private double exposure = 1;
+    private int gain;
+
+    protected override void OnInitialized()
+    {
+        isAllSkyRunning = AllSkyScheduler.IsRunning;
+
+        FocusService.Stopped += OnFocusStopped;
+
+        AllSkyScheduler.AllSkyStarted += OnAllSkyStarted;
+        AllSkyScheduler.AllSkyStopped += OnAllSkyStopped;
+
+        ImageService.NewFocus += OnNewFocus;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await FocusService.Stop();
+
+        FocusService.Stopped -= OnFocusStopped;
+
+        AllSkyScheduler.AllSkyStarted -= OnAllSkyStarted;
+        AllSkyScheduler.AllSkyStopped -= OnAllSkyStopped;
+
+        ImageService.NewFocus -= OnNewFocus;
+    }
+
+    private void OnFocusStopped(object? sender, EventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnAllSkyStarted(object? sender, EventArgs e)
+    {
+        isAllSkyRunning = AllSkyScheduler.IsRunning;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnAllSkyStopped(object? sender, EventArgs e)
+    {
+        isAllSkyRunning = AllSkyScheduler.IsRunning;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnNewFocus(object? sender, EventArgs e)
+    {
+        latestFocusUrl = GenerateFocusUrl();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string? GenerateFocusUrl()
+    {
+        if (ImageService.LatestFocusPath is not null)
+            return LatestFocusUrlBase + $"?time={DateTime.Now.Ticks}";
+        return null;
+    }
+
+    private async Task StartCamera()
+    {
+        await FocusService.Start(TimeSpan.FromSeconds(exposure), gain);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StopCamera()
+    {
+        await FocusService.Stop();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnExposureChanged()
+    {
+        FocusService.Exposure = TimeSpan.FromSeconds(exposure);
+    }
+
+    private void OnGainChanged()
+    {
+        FocusService.Gain = gain;
+    }
+}

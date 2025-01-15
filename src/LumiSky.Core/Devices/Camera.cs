@@ -220,6 +220,10 @@ public class IndiCamera : ICamera, IDisposable
                 await _device.Set<IndiSwitch>("CCD_ABORT_EXPOSURE", "ABORT", true);
             }
         }
+        catch (TimeoutException te)
+        {
+            Log.Debug(te, "Error aborting exposure");
+        }
         catch (Exception e)
         {
             Log.Warning(e, "Error aborting exposure");

@@ -39,11 +39,14 @@ public class ImageService
 
     public event EventHandler? NewImage;
     public event EventHandler? NewPanorama;
+    public event EventHandler? NewFocus;
 
     public string? LatestImagePath { get; private set; }
     public string? LatestPanoramaPath { get; private set; }
+    public string? LatestFocusPath { get; private set; }
     public Size? LatestImageSize { get; private set; }
     public Size? LatestPanoramaSize { get; private set; }
+    public Size? LatestFocusSize { get; private set; }
 
     public ImageService(
         IProfileProvider profile,
@@ -67,6 +70,13 @@ public class ImageService
         LatestPanoramaPath = path;
         LatestPanoramaSize = size;
         NewPanorama?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void SetLatestFocus(string path, Size size)
+    {
+        LatestFocusPath = path;
+        LatestFocusSize = size;
+        NewFocus?.Invoke(this, EventArgs.Empty);
     }
 
     public async Task FavoriteRawImage(int id, bool value)

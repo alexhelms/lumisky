@@ -4,10 +4,9 @@
 @inject ContextMenuService ContextMenuService
 
 <RadzenPanelMenuItem Text="Images" Icon="image" Path="/"/>
-@* <RadzenPanelMenuItem Text="Video" Icon="videocam" Path="/video" /> *@
 <RadzenPanelMenuItem Text="Gallery" Icon="perm_media" Path="/gallery" />
-@* <RadzenPanelMenuItem Text="Focus" Icon="center_focus_weak" Path="/focus" /> *@
 <RadzenPanelMenuItem Text="Generate" Icon="bolt" Path="/generate" />
+ <RadzenPanelMenuItem Text="Focus" Icon="center_focus_weak" Path="/focus" />
 <RadzenPanelMenuItem Text="Settings" Icon="settings" Path="/settings" />
 <RadzenPanelMenuItem Text="Log" Icon="article" Path="/log" ContextMenu="@(args => ShowContextMenuWithItems(args))" />
 <hr style="border-color: #3b3c3f; border-style: solid;" class="rz-mx-2" />
