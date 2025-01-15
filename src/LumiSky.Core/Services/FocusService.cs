@@ -77,8 +77,6 @@ public class FocusService : IDisposable
 
         try
         {
-            throw new Exception("Test exception!");
-
             if (_cts is null)
                 throw new NullReferenceException("Token is null");
 
