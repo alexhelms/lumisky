@@ -61,6 +61,11 @@ Copy the following into `docker-compose.yml` and change the following as needed:
     * Raspberry Pi Camera - `indi_rpicam`
     * Touptek - `indi_toupcam_ccd`
 
+?> If you already have a web server listening on 8080, you must change the LumiSky port.
+   To change the port to `8081`, in the `docker-compose.yml` file in the `ports` section,
+   change `8080:8080` to `8081:8080`. See [docker docs](https://docs.docker.com/engine/network/#published-ports)
+   for more information.
+
 [docker-compose.yml](examples/raspi.docker-compose.yml ':include :type=code') 
 
 5. Start LumiSky.
@@ -140,8 +145,9 @@ WantedBy=multi-user.target
 Enable and start LumiSky
 
 ```bash
-systemctl enable lumisky
-systemctl start lumisky
+sudo systemctl daemon-reload
+sudo systemctl enable lumisky
+sudo systemctl start lumisky
 ```
 
 Go to the LumiSky dashboard on port 8080.
