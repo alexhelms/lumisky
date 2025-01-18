@@ -10,7 +10,10 @@
 
     <RadzenRow JustifyContent="JustifyContent.Left">
         <RadzenColumn>
-            <RadzenButton Text="Download Log" ButtonStyle="ButtonStyle.Secondary" class="rz-mb-4" Click="DownloadLog" />
+            <RadzenStack Orientation="Orientation.Horizontal" class="rz-mb-4" Gap="1rem">
+                <RadzenButton Text="Download Log" ButtonStyle="ButtonStyle.Secondary" Icon="Download" Click="DownloadLog" />
+                <RadzenButton Text="Clear" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Darker" Icon="Close" Click="ClearLog" />
+            </RadzenStack>
         </RadzenColumn>
     </RadzenRow>
 
@@ -69,6 +72,15 @@
     private async Task DownloadLog()
     {
         await JS.InvokeVoidAsync("open", "/api/logs/download", "_blank");
+    }
+
+    private async Task ClearLog()
+    {
+        await InvokeAsync(() =>
+        {
+            logItems.Clear();
+            StateHasChanged();
+        });
     }
 
     private string GetLineColor(LogEventLevel level) => level switch
