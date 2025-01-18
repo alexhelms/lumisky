@@ -13,8 +13,8 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.AutoStart" />
-                        <RadzenLabel Text="Auto Start" Component="True" />
+                        <RadzenSwitch Name="AutoStart" @bind-Value="model.AutoStart" />
+                        <RadzenLabel Text="Auto Start" Component="AutoStart" />
                     </RadzenStack>
 
                     <RadzenFormField Text="Interval [sec]" Variant="Variant.Outlined" AllowFloatingLabel="false">

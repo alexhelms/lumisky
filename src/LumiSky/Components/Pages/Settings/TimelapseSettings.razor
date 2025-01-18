@@ -48,13 +48,13 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.EnableDaytimeTimelapse" />
-                        <RadzenLabel Text="Daytime Timelapse" Component="True" />
+                        <RadzenSwitch Name="EnableDaytimeTimelapse" @bind-Value="model.EnableDaytimeTimelapse" />
+                        <RadzenLabel Text="Daytime Timelapse" Component="EnableDaytimeTimelapse" />
                     </RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.EnableNighttimeTimelapse" />
-                        <RadzenLabel Text="Nighttime Timelapse" Component="True" />
+                        <RadzenSwitch Name="EnableNighttimeTimelapse" @bind-Value="model.EnableNighttimeTimelapse" />
+                        <RadzenLabel Text="Nighttime Timelapse" Component="EnableNighttimeTimelapse" />
                     </RadzenStack>
 
                     <RadzenFormField Text="Codec" Variant="Variant.Outlined" AllowFloatingLabel="false">
@@ -109,13 +109,13 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.EnableDaytimePanorama" />
-                        <RadzenLabel Text="Daytime Panorama Timelapse" Component="True" />
+                        <RadzenSwitch Name="EnableDaytimePanorama" @bind-Value="model.EnableDaytimePanorama" />
+                        <RadzenLabel Text="Daytime Panorama Timelapse" Component="EnableDaytimePanorama" />
                     </RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.EnableNighttimePanorama" />
-                        <RadzenLabel Text="Nighttime Panorama Timelapse" Component="True" />
+                        <RadzenSwitch Name="EnableNighttimePanorama" @bind-Value="model.EnableNighttimePanorama" />
+                        <RadzenLabel Text="Nighttime Panorama Timelapse" Component="EnableNighttimePanorama" />
                     </RadzenStack>
 
                     <RadzenFormField Text="Codec" Variant="Variant.Outlined" AllowFloatingLabel="false">

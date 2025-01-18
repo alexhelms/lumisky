@@ -62,8 +62,8 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.HotPixelCorrection" />
-                        <RadzenLabel Text="Hot Pixel Correction" Component="True" />
+                        <RadzenSwitch Name="HotPixelCorrection" @bind-Value="model.HotPixelCorrection" />
+                        <RadzenLabel Text="Hot Pixel Correction" Component="HotPixelCorrection" />
                     </RadzenStack>
 
                     <RadzenFormField Text="Threshold Percent" Variant="Variant.Outlined" AllowFloatingLabel="false">
@@ -91,8 +91,8 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.AutoSCurve" />
-                        <RadzenLabel Text="Auto S Curve" Component="True" />
+                        <RadzenSwitch Name="AutoSCurve" @bind-Value="model.AutoSCurve" />
+                        <RadzenLabel Text="Auto S Curve" Component="AutoSCurve" />
                     </RadzenStack>
 
                     <RadzenFormField Text="Contrast" Variant="Variant.Outlined" AllowFloatingLabel="false">
@@ -143,8 +143,8 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.DrawCardinalOverlay" />
-                        <RadzenLabel Text="Draw Cardinal Directions" Component="True" />
+                        <RadzenSwitch Name="DrawCardinalOverlay" @bind-Value="model.DrawCardinalOverlay" />
+                        <RadzenLabel Text="Draw Cardinal Directions" Component="DrawCardinalOverlay" />
                     </RadzenStack>
 
                     <RadzenFormField Text="Text Size" Variant="Variant.Outlined" AllowFloatingLabel="false">

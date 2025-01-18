@@ -27,8 +27,8 @@
                     </RadzenFormField>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.KeepRawImages" />
-                        <RadzenLabel Text="Keep Raw Images" Component="True" />
+                        <RadzenSwitch Name="KeepRawImages" @bind-Value="model.KeepRawImages" />
+                        <RadzenLabel Text="Keep Raw Images" Component="KeepRawImages" />
                     </RadzenStack>
 
                 </RadzenStack>
@@ -95,13 +95,13 @@
                     </RadzenFormField>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.FlipHorizontal" />
-                        <RadzenLabel Text="Flip Horizontal" Component="True" />
+                        <RadzenSwitch Name="FlipHorizontal" @bind-Value="model.FlipHorizontal" />
+                        <RadzenLabel Text="Flip Horizontal" Component="FlipHorizontal" />
                     </RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.FlipVertical" />
-                        <RadzenLabel Text="Flip Vertical" Component="True" />
+                        <RadzenSwitch Name="FlipVertical" @bind-Value="model.FlipVertical" />
+                        <RadzenLabel Text="Flip Vertical" Component="FlipVertical" />
                     </RadzenStack>
 
                 </RadzenStack>
@@ -116,8 +116,8 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.CreatePano" />
-                        <RadzenLabel Text="Create Panoramas" Component="True" />
+                        <RadzenSwitch Name="CreatePano" @bind-Value="model.CreatePano" />
+                        <RadzenLabel Text="Create Panoramas" Component="CreatePano" />
                     </RadzenStack>
 
                     <RadzenFormField Text="Diameter [px]" Variant="Variant.Outlined" AllowFloatingLabel="false">
@@ -152,8 +152,8 @@
                     </RadzenFormField>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.PanoFlipHorizontal" />
-                        <RadzenLabel Text="Flip Horizontal" Component="True" />
+                        <RadzenSwitch Name="PanoFlipHorizontal" @bind-Value="model.PanoFlipHorizontal" />
+                        <RadzenLabel Text="Flip Horizontal" Component="PanoFlipHorizontal" />
                     </RadzenStack>
 
                 </RadzenStack>

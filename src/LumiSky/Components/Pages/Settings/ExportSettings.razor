@@ -13,33 +13,33 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.EnableExport" />
-                        <RadzenLabel Text="Enable Exporting" Component="True" />
+                        <RadzenSwitch Name="EnableExport" @bind-Value="model.EnableExport" />
+                        <RadzenLabel Text="Enable Exporting" Component="EnableExport" />
                     </RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.ExportRaws" />
-                        <RadzenLabel Text="Export Raws" Component="True" />
+                        <RadzenSwitch Name="ExportRaws" @bind-Value="model.ExportRaws" />
+                        <RadzenLabel Text="Export Raws" Component="ExportRaws" />
                     </RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.ExportImages" />
-                        <RadzenLabel Text="Export Images" Component="True" />
+                        <RadzenSwitch Name="ExportImages" @bind-Value="model.ExportImages" />
+                        <RadzenLabel Text="Export Images" Component="ExportImages" />
                     </RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.ExportPanoramas" />
-                        <RadzenLabel Text="Export Panorama" Component="True" />
+                        <RadzenSwitch Name="ExportPanoramas" @bind-Value="model.ExportPanoramas" />
+                        <RadzenLabel Text="Export Panorama" Component="ExportPanoramas" />
                     </RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.ExportTimelapses" />
-                        <RadzenLabel Text="Export Timelapses" Component="True" />
+                        <RadzenSwitch Name="ExportTimelapses" @bind-Value="model.ExportTimelapses" />
+                        <RadzenLabel Text="Export Timelapses" Component="ExportTimelapses" />
                     </RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.ExportPanoramaTimelapses" />
-                        <RadzenLabel Text="Export Panorama Timelapses" Component="True" />
+                        <RadzenSwitch Name="ExportPanoramaTimelapses" @bind-Value="model.ExportPanoramaTimelapses" />
+                        <RadzenLabel Text="Export Panorama Timelapses" Component="ExportPanoramaTimelapses" />
                     </RadzenStack>
 
                 </RadzenStack>
@@ -54,8 +54,8 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.EnableFtp" />
-                        <RadzenLabel Text="Enable FTP" Component="True" />
+                        <RadzenSwitch Name="EnableFtp" @bind-Value="model.EnableFtp" />
+                        <RadzenLabel Text="Enable FTP" Component="EnableFtp" />
                     </RadzenStack>
 
                     <RadzenFormField Text="Host" Variant="Variant.Outlined" AllowFloatingLabel="false">
@@ -79,8 +79,8 @@
                     </RadzenFormField>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenSwitch @bind-Value="model.EnableCertificateValidation" />
-                        <RadzenLabel Text="Validate Certificates" Component="True" />
+                        <RadzenSwitch Name="EnableCertificateValidation" @bind-Value="model.EnableCertificateValidation" />
+                        <RadzenLabel Text="Validate Certificates" Component="EnableCertificateValidation" />
                     </RadzenStack>
 
                 </RadzenStack>
@@ -112,7 +112,6 @@
         model.FtpPassword = Profile.Current.Export.FtpPassword;
         model.FtpRemotePath = Profile.Current.Export.FtpRemotePath;
         model.EnableCertificateValidation = Profile.Current.Export.EnableCertificateValidation;
-
     }
 
     private void OnSubmit(ExportSettingsModel model)
