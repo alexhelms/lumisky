@@ -21,34 +21,37 @@ public class PublishService
         };
     }
 
-    private HttpClient CreateHttpClient(string? baseUrl = null)
+    private HttpClient CreateHttpClient(string? baseUrl = null, string? apiKey = null)
     {
         baseUrl ??= _profile.Current.Publish.CfWorkerUrl;
+        apiKey ??= _profile.Current.Publish.CfWorkerApiKey;
+
         if (baseUrl.EndsWith('/'))
             baseUrl = baseUrl[..^1];
 
         var httpClient = new HttpClient
         {
             BaseAddress = new Uri(baseUrl),
-            Timeout = TimeSpan.FromSeconds(3)
+            Timeout = TimeSpan.FromSeconds(10),
         };
 
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _profile.Current.Publish.CfWorkerApiKey);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", RuntimeUtil.UserAgent);
         return httpClient;
     }
 
-    public async Task<bool> CheckConnection(string? baseUrl = null)
+    public async Task<bool> CheckConnection(string? baseUrl = null, string? apiKey = null)
     {
         try
         {
-            using var client = CreateHttpClient(baseUrl);
+            using var client = CreateHttpClient(baseUrl, apiKey);
             var response = await client.GetAsync("/api/check");
             response.EnsureSuccessStatusCode();
             return true;
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Log.Error(e, "Cloudflare worker check failed");
             return false;
         }
     }

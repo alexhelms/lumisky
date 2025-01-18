@@ -188,7 +188,7 @@
             testingConnection = true;
             await InvokeAsync(StateHasChanged);
 
-            success = await PublishService.CheckConnection(model.CfWorkerUrl);
+            success = await PublishService.CheckConnection(model.CfWorkerUrl, model.CfWorkerApiKey);
         }
         finally
         {
