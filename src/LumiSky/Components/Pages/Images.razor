@@ -161,8 +161,7 @@
         {
             if (module is not null)
             {
-                var size = ImageService.LatestPanoramaSize ?? default;
-                await module.InvokeVoidAsync("updatePanoViewer", latestPanoramaUrl, size.Height * 2, size.Height);
+                await module.InvokeVoidAsync("updatePanoViewer", latestPanoramaUrl);
             }
 
             prevPanoramaUrl = latestPanoramaUrl;

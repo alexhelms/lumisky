@@ -28,11 +28,25 @@ export class DOMCleanup {
     }
 }
 
+const panoDataProvider = (image, xmpData) => {
+    const panoData = {
+        fullWidth: image.width,
+        fullHeight: image.height,
+        croppedX: 0,
+        croppedY: 0,
+        croppedWidth: image.width,
+        croppedHeight: image.height / 2,
+        isEquirectangular: true,
+    };
+    return panoData;
+};
+
 export function createPanoViewer() {
     if (viewer === null) {
         viewer = new Viewer({
             container: document.querySelector('#pano-viewer'),
             adapter: EquirectangularAdapter,
+            panoData: panoDataProvider,
             defaultZoomLvl: 0,
             defaultPitch: 0.75,
         });
@@ -41,16 +55,13 @@ export function createPanoViewer() {
     }
 }
 
-export async function updatePanoViewer(url, width, height) {
+export async function updatePanoViewer(url) {
     if (viewer === null) {
         createPanoViewer();
     }
     await viewer.setPanorama(url, {
-        panoData: {
-            fullWidth: width,
-            fullHeight: height,
-            croppedWidth: width,
-            croppedHeight: height / 2
+        options: {
+            showLoader: false,
         },
     });
 }

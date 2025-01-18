@@ -111,12 +111,11 @@ public class FocusService : IDisposable
                     failedCaptureCount = 0;
                 }
 
-                var size = ProcessAndSaveImage(image);
+                ProcessAndSaveImage(image);
                 
                 await _bus.Publish(new NewFocusEvent
                 {
                     Filename = LumiSkyPaths.LatestFocusImage,
-                    Size = size,
                 });
             }
         }
@@ -143,7 +142,7 @@ public class FocusService : IDisposable
         }
     }
 
-    private Size ProcessAndSaveImage(AllSkyImage rawImage)
+    private void ProcessAndSaveImage(AllSkyImage rawImage)
     {
         using AllSkyImage debayeredImage = Debayer.FromImage(rawImage);
         debayeredImage.StretchLinked();
@@ -153,7 +152,5 @@ public class FocusService : IDisposable
 
         var encoderParameters = new List<KeyValuePair<ImwriteFlags, int>>();
         CvInvoke.Imwrite(LumiSkyPaths.LatestFocusImage, image, encoderParameters.ToArray());
-
-        return new Size(image.Width, image.Height);
     }
 }

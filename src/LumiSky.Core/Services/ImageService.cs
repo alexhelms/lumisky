@@ -44,9 +44,6 @@ public class ImageService
     public string? LatestImagePath { get; private set; }
     public string? LatestPanoramaPath { get; private set; }
     public string? LatestFocusPath { get; private set; }
-    public Size? LatestImageSize { get; private set; }
-    public Size? LatestPanoramaSize { get; private set; }
-    public Size? LatestFocusSize { get; private set; }
 
     public ImageService(
         IProfileProvider profile,
@@ -58,24 +55,21 @@ public class ImageService
         _sunService = sunService;
     }
 
-    public void SetLatestImage(string path, Size size)
+    public void SetLatestImage(string path)
     {
         LatestImagePath = path;
-        LatestImageSize = size;
         NewImage?.Invoke(this, EventArgs.Empty);
     }
 
-    public void SetLatestPanorama(string path, Size size)
+    public void SetLatestPanorama(string path)
     {
         LatestPanoramaPath = path;
-        LatestPanoramaSize = size;
         NewPanorama?.Invoke(this, EventArgs.Empty);
     }
 
-    public void SetLatestFocus(string path, Size size)
+    public void SetLatestFocus(string path)
     {
         LatestFocusPath = path;
-        LatestFocusSize = size;
         NewFocus?.Invoke(this, EventArgs.Empty);
     }
 

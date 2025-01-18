@@ -103,14 +103,12 @@ public class ProcessingJob : JobBase
         await _bus.Publish(new NewImageEvent
         {
             Filename = imageFilename,
-            Size = (Size)processResult.Image.Size,
         });
 
         if (panoramaFilename is not null && processResult.Panorama is not null)
             await _bus.Publish(new NewPanoramaEvent
             { 
-                Filename = panoramaFilename,
-                Size = (Size)processResult.Panorama.Size,
+                Filename = panoramaFilename
             });
 
         Log.Information("Processing completed in {Elapsed:F3} seconds", processTimeElapsed.TotalSeconds);

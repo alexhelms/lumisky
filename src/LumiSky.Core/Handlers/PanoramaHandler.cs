@@ -16,7 +16,7 @@ public class PanoramaHandler :
 
     public Task OnHandle(NewPanoramaEvent message)
     {
-        _imageService.SetLatestPanorama(message.Filename, message.Size);
+        _imageService.SetLatestPanorama(message.Filename);
         return Task.CompletedTask;
     }
 }

@@ -16,7 +16,7 @@ public class ImageHandler :
 
     public Task OnHandle(NewImageEvent message)
     {
-        _imageService.SetLatestImage(message.Filename, message.Size);
+        _imageService.SetLatestImage(message.Filename);
         return Task.CompletedTask;
     }
 }

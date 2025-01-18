@@ -16,7 +16,7 @@ public class FocusHandler :
 
     public Task OnHandle(NewFocusEvent message)
     {
-        _imageService.SetLatestFocus(message.Filename, message.Size);
+        _imageService.SetLatestFocus(message.Filename);
         return Task.CompletedTask;
     }
 }
