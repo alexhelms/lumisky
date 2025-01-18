@@ -62,7 +62,7 @@ public class PublishService
         return await client.GetFromJsonAsync<PublishMetadata>("/api/metadata", _jsonOptions) ?? new();
     }
 
-    public Task SetMetadata()
+    public Task SetMetadata(CancellationToken token = default)
     {
         PublishMetadata metadata = new()
         {
@@ -73,33 +73,33 @@ public class PublishService
             ShowDayTimelapse = _profile.Current.Publish.ShowPublishedDayTimelapse,
         };
 
-        return SetMetadata(metadata);
+        return SetMetadata(metadata, token);
     }
 
-    public async Task SetMetadata(PublishMetadata metadata)
+    public async Task SetMetadata(PublishMetadata metadata, CancellationToken token = default)
     {
         using var client = CreateHttpClient();
-        var response = await client.PostAsJsonAsync("/api/metadata", metadata, _jsonOptions);
+        var response = await client.PostAsJsonAsync("/api/metadata", metadata, _jsonOptions, token);
         response.EnsureSuccessStatusCode();
 
         Log.Information("Published metadata");
     }
 
-    public async Task Upload(string filename, string keyName)
+    public async Task Upload(string filename, string keyName, CancellationToken token = default)
     {
         using var stream = new FileStream(filename, FileMode.Open, FileAccess.Read);
         string justFilename = Path.GetFileName(filename) ?? string.Empty;
         string extension = Path.GetExtension(filename);
         string contentType = Util.ExtensionToMimeType(extension);
-        await SendToCloudflareWorker(stream, keyName, filename, contentType);
+        await SendToCloudflareWorker(stream, keyName, filename, contentType, token);
     }
 
-    public Task Upload(Stream stream, string keyName, string filename, string contentType)
+    public Task Upload(Stream stream, string keyName, string filename, string contentType, CancellationToken token = default)
     {
-        return SendToCloudflareWorker(stream, keyName, filename, contentType);
+        return SendToCloudflareWorker(stream, keyName, filename, contentType, token);
     }
 
-    private async Task SendToCloudflareWorker(Stream stream, string keyName, string filename, string contentType)
+    private async Task SendToCloudflareWorker(Stream stream, string keyName, string filename, string contentType, CancellationToken token = default)
     {
         using var _ = Serilog.Context.LogContext.PushProperty("SourceContext", GetType().Name);
 
@@ -133,8 +133,8 @@ public class PublishService
             };
 
             using var client = CreateHttpClient();
-            var response = await client.SendAsync(request);
-            
+            var response = await client.SendAsync(request, token);
+
             Log.Information("Published {KeyName}", keyName);
         }
         catch (Exception e)
