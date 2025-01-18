@@ -2,8 +2,12 @@ body {
     background: #19191a !important;
 }
 
+#components-reconnect-modal {
+    color: black;
+}
+
 #blazor-error-ui {
-    background: lightyellow;
+    background: #b90d41;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     display: none;
@@ -12,7 +16,6 @@ body {
     position: fixed;
     width: 100%;
     z-index: 1000;
-    margin: 20px 0;
 }
 
     #blazor-error-ui .dismiss {
