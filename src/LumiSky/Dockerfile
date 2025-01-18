@@ -13,6 +13,7 @@ RUN apt-get update -y \
     netcat-traditional \
     iputils-ping \
     mtr \
+    dnsutils \
     python3 \
     python3-pip \
     python3-pil \
