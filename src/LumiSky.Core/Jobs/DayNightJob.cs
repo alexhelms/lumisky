@@ -10,7 +10,7 @@ namespace LumiSky.Core.Jobs;
 [PersistJobDataAfterExecution]
 public class DayNightJob : JobBase
 {
-    public static readonly JobKey Key = new(JobConstants.Jobs.DayNightJob, JobConstants.Groups.Maintenance);
+    public static readonly JobKey Key = new(JobConstants.Jobs.DayNight, JobConstants.Groups.Maintenance);
     public static readonly string SkyStateKey = "SkyState";
     public static readonly string TransitionKey = "Transition";
 
@@ -39,7 +39,7 @@ public class DayNightJob : JobBase
 
         SkyState prevState;
         DateTime prevTransition;
-        var currentState = _sunService.IsDaytime ? SkyState.Day : SkyState.Night;
+        var currentState = _sunService.IsDaytime() ? SkyState.Day : SkyState.Night;
         var utcNow = DateTime.UtcNow;
 
         if (data.TryGetInt(SkyStateKey, out var value))

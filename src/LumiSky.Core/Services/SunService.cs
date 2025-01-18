@@ -14,16 +14,14 @@ public class SunService
         _profile = profile;
     }
 
-    public bool IsDaytime
-    {
-        get
-        {
-            var (alt, _) = GetPosition(DateTime.UtcNow);
-            return alt >= _profile.Current.Location.TransitionSunAltitude;
-        }
-    }
+    public bool IsDaytime() => IsDaytime(DateTime.UtcNow);
 
-    public bool IsNighttime => !IsDaytime;
+    public bool IsDaytime(DateTime timestamp)
+    {
+        var utcTimestamp = timestamp.ToUniversalTime();
+        var (alt, _) = GetPosition(DateTime.UtcNow);
+        return alt >= _profile.Current.Location.TransitionSunAltitude;
+    }
 
     public (double Altitude, double Azimuth) GetPosition(DateTime date) =>
         GetPosition(date, _profile.Current.Location.Latitude, _profile.Current.Location.Longitude);

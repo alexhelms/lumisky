@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using LumiSky.Core.Services;
 using LumiSky.Core.IO;
+using LumiSky.Core.Utilities;
 
 namespace LumiSky.Controllers;
 
@@ -28,15 +29,7 @@ public class ImageController : Controller
 
         var filename = Path.GetFileName(fileInfo.FullName);
         var extension = fileInfo.Extension.ToLowerInvariant();
-        var contentType = extension switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            _ => "application/octet-stream",
-        };
-
-        // 1 hour
-        HttpContext.Response.Headers.Append("Cache-Control", "max-age=3600");
+        var contentType = Util.ExtensionToMimeType(extension);
 
         if (downloadFile)
         {

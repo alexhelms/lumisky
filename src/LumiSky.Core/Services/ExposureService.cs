@@ -54,9 +54,7 @@ public class ExposureService
             return;
         }
 
-        // TODO: detect day/night switch
-
-        bool isDay = _sunService.IsDaytime;
+        bool isDay = _sunService.IsDaytime();
         var maxExposureSeconds = Math.Min(_profile.Current.Capture.MaxExposureDuration.TotalSeconds,
             _profile.Current.Capture.CaptureInterval.TotalSeconds);
         var maxExposure = TimeSpan.FromSeconds(maxExposureSeconds);

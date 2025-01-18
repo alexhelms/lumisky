@@ -123,6 +123,14 @@ public class ProcessingJob : JobBase
                 [nameof(ExportJob.ImageFilename)] = imageFilename,
                 [nameof(ExportJob.PanoramaFilename)] = panoramaFilename!,
             });
+
+        await context.Scheduler.TriggerJob(
+            PublishJob.Key,
+            new JobDataMap
+            {
+                [nameof(PublishJob.ImageFilename)] = imageFilename,
+                [nameof(PublishJob.PanoramaFilename)] = panoramaFilename!,
+            });
     }
 
     private string SaveRawImage(string tempFilename, DateTime timestamp)

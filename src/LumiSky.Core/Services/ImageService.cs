@@ -300,9 +300,9 @@ public class ImageService
 
     private void WhiteBalance(AllSkyImage image)
     {
-        double biasR = _sunService.IsDaytime ? _profile.Current.Camera.DaytimeBiasR : _profile.Current.Camera.NighttimeBiasR;
-        double biasG = _sunService.IsDaytime ? _profile.Current.Camera.DaytimeBiasG : _profile.Current.Camera.NighttimeBiasG;
-        double biasB = _sunService.IsDaytime ? _profile.Current.Camera.DaytimeBiasB : _profile.Current.Camera.NighttimeBiasB;
+        double biasR = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasR : _profile.Current.Camera.NighttimeBiasR;
+        double biasG = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasG : _profile.Current.Camera.NighttimeBiasG;
+        double biasB = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasB : _profile.Current.Camera.NighttimeBiasB;
         double scaleR = Math.Clamp(_profile.Current.Processing.WbRedScale, 0, 1);
         double scaleG = Math.Clamp(_profile.Current.Processing.WbGreenScale, 0, 1);
         double scaleB = Math.Clamp(_profile.Current.Processing.WbBlueScale, 0, 1);

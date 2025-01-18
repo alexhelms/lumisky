@@ -19,6 +19,7 @@ public interface IProfile : INotifyPropertyChanged, INotifyPropertyChanging
     ILocationSettings Location { get; }
     IProcessingSettings Processing { get; }
     IGenerationSettings Generation { get; }
+    IPublishSettings Publish { get; }
 }
 
 public sealed partial class Profile : Settings, IProfile
@@ -44,6 +45,7 @@ public sealed partial class Profile : Settings, IProfile
                 new InterfaceConverter<ILocationSettings, LocationSettings>(),
                 new InterfaceConverter<IProcessingSettings, ProcessingSettings>(),
                 new InterfaceConverter<IGenerationSettings, GenerationSettings>(),
+                new InterfaceConverter<IPublishSettings, PublishSettings>(),
             },
         };
 
@@ -57,6 +59,7 @@ public sealed partial class Profile : Settings, IProfile
         Location.PropertyChanged += OnPropertyChanged;
         Processing.PropertyChanged += OnPropertyChanged;
         Generation.PropertyChanged += OnPropertyChanged;
+        Publish.PropertyChanged += OnPropertyChanged;
     }
 
     protected override void UnhookEvents()
@@ -69,6 +72,7 @@ public sealed partial class Profile : Settings, IProfile
         Location.PropertyChanged -= OnPropertyChanged;
         Processing.PropertyChanged -= OnPropertyChanged;
         Generation.PropertyChanged -= OnPropertyChanged;
+        Publish.PropertyChanged -= OnPropertyChanged;
     }
 
     protected override void Reset()
@@ -84,6 +88,7 @@ public sealed partial class Profile : Settings, IProfile
         Location = new LocationSettings();
         Processing = new ProcessingSettings();
         Generation = new GenerationSettings();
+        Publish = new PublishSettings();
     }
 
     [ObservableProperty]
@@ -118,4 +123,7 @@ public sealed partial class Profile : Settings, IProfile
 
     [ObservableProperty]
     public partial IGenerationSettings Generation { get; set; } = new GenerationSettings();
+
+    [ObservableProperty]
+    public partial IPublishSettings Publish { get; set; } = new PublishSettings();
 }

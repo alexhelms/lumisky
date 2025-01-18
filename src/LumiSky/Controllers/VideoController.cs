@@ -7,11 +7,11 @@ namespace LumiSky.Controllers;
 [Route("api/video")]
 public class VideoController : Controller
 {
-    private readonly AppDbContext _appDbContext;
+    private readonly AppDbContext _dbContext;
 
-    public VideoController(AppDbContext appDbContext)
+    public VideoController(AppDbContext dbContext)
     {
-        _appDbContext = appDbContext;
+        _dbContext = dbContext;
     }
 
     private IActionResult GetActionResultForImage(string path, bool downloadFile)
@@ -23,9 +23,6 @@ public class VideoController : Controller
         var filename = Path.GetFileName(fileInfo.FullName);
         var extension = fileInfo.Extension.ToLowerInvariant();
         var contentType = "video/mp4";
-
-        // 1 hour
-        HttpContext.Response.Headers.Append("Cache-Control", "max-age=3600");
 
         if (downloadFile)
         {
@@ -46,7 +43,7 @@ public class VideoController : Controller
 
         if (type == "timelapse")
         {
-            var timelapse = await _appDbContext.Timelapses
+            var timelapse = await _dbContext.Timelapses
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
             if (timelapse is null)
@@ -56,7 +53,7 @@ public class VideoController : Controller
         }
         else if (type == "panorama")
         {
-            var panorama = await _appDbContext.PanoramaTimelapses
+            var panorama = await _dbContext.PanoramaTimelapses
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
             if (panorama is null)
@@ -70,5 +67,78 @@ public class VideoController : Controller
         }
 
         return GetActionResultForImage(filename, downloadFile: true);
+    }
+
+    [HttpGet("latest/{type}/{timeOfDay}")]
+    public async Task<IActionResult> GetLatest(
+        [FromRoute] string type,
+        [FromRoute] string timeOfDay)
+    {
+        string? filename = null;
+
+        if (type == "timelapse")
+        {
+            var timelapse = await _dbContext.Timelapses
+                .AsNoTracking()
+                .OrderByDescending(x => x.RangeEnd)
+                .FirstOrDefaultAsync();
+            if (timelapse is null)
+                return NotFound();
+            
+            string dayMatch = "videotimelapseday"; // video/timelapse/day but without dir seperators
+            string filenameNoSeps = timelapse.Filename.Replace("/", "").Replace("\\", "");
+            bool isDay = filenameNoSeps.Contains(dayMatch);
+
+            if (timeOfDay == "day" && isDay)
+            {
+                filename = timelapse.Filename;
+            }
+            else if (timeOfDay == "night" && !isDay)
+            {
+                filename = timelapse.Filename;
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+        else if (type == "panorama")
+        {
+            var timelapse = await _dbContext.PanoramaTimelapses
+                .AsNoTracking()
+                .OrderByDescending(x => x.RangeEnd)
+                .FirstOrDefaultAsync();
+            if (timelapse is null)
+                return NotFound();
+
+            string dayMatch = "videotimelapseday"; // video/timelapse/day but without dir seperators
+            string filenameNoSeps = timelapse.Filename.Replace("/", "").Replace("\\", "");
+            bool isDay = filenameNoSeps.Contains(dayMatch);
+
+            if (timeOfDay == "day" && isDay)
+            {
+                filename = timelapse.Filename;
+            }
+            else if (timeOfDay == "night" && !isDay)
+            {
+                filename = timelapse.Filename;
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
+        if (filename is null)
+            return BadRequest();
+
+        var fileInfo = new FileInfo(filename);
+        if (!fileInfo.Exists)
+            return NotFound();
+
+        if (fileInfo.Extension != ".mp4")
+            return BadRequest();
+
+        return PhysicalFile(fileInfo.FullName, "video/mp4");
     }
 }

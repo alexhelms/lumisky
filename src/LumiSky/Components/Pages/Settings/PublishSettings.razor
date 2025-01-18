@@ -1,0 +1,223 @@
+﻿@using LumiSky.Core.Profile
+@using LumiSky.Core.Services
+@inject IProfileProvider Profile
+@inject PublishService PublishService
+@inject Radzen.NotificationService NotificationService
+
+<RadzenTemplateForm TItem="PublishSettingsModel" Data="@model" Submit="OnSubmit">
+    <RadzenStack>
+
+        <RadzenText TextStyle="TextStyle.Body1">
+            Publish the latest image, panorama, and timelapse to a secure webpage that is publicly accessible.
+        </RadzenText>
+
+        <RadzenText TextStyle="TextStyle.Body1">
+            Visit the <RadzenLink Path="/docs#/settings?id=publish" Text="docs" Target="_blank" /> to learn how to set up this feature.
+        </RadzenText>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>General</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="EnablePublish" @bind-Value="model.EnablePublish" />
+                        <RadzenLabel Text="Enable Publishing" Component="EnablePublish" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="PublishImage" @bind-Value="model.PublishImage" />
+                        <RadzenLabel Text="Publish Image" Component="PublishImage" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="PublishPanorama" @bind-Value="model.PublishPanorama" />
+                        <RadzenLabel Text="Publish Panorama" Component="PublishPanorama" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="PublishNightTimelapse" @bind-Value="model.PublishNightTimelapse" />
+                        <RadzenLabel Text="Publish Night Timelapse" Component="PublishNightTimelapse" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="PublishDayTimelapse" @bind-Value="model.PublishDayTimelapse" />
+                        <RadzenLabel Text="Publish Day Timelapse" Component="PublishDayTimelapse" />
+                    </RadzenStack>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Display</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenFormField Text="Title" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenTextBox @bind-Value="model.Title" />
+                    </RadzenFormField>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="ShowPublishedImage" @bind-Value="model.ShowPublishedImage" />
+                        <RadzenLabel Text="Show Image" Component="ShowPublishedImage" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="ShowPublishedPanorama" @bind-Value="model.ShowPublishedPanorama" />
+                        <RadzenLabel Text="Show Panorama" Component="ShowPublishedPanorama" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="ShowPublishedNightTimelapse" @bind-Value="model.ShowPublishedNightTimelapse" />
+                        <RadzenLabel Text="Show Night Timelapse" Component="ShowPublishedNightTimelapse" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="ShowPublishedDayTimelapse" @bind-Value="model.ShowPublishedDayTimelapse" />
+                        <RadzenLabel Text="Show Day Timelapse" Component="ShowPublishedDayTimelapse" />
+                    </RadzenStack>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenFieldset>
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Cloudflare Worker</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenFormField Text="Url" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenTextBox @bind-Value="model.CfWorkerUrl" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="API Key" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <RadzenPassword @bind-Value="model.CfWorkerApiKey" />
+                    </RadzenFormField>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start">
+                        <RadzenButton Text="Check Connection" Click="CheckCfWorkerConnection" IsBusy="@testingConnection" BusyText="Checking..." />
+                    </RadzenStack>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        <RadzenRow>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" IsBusy="@saving" BusyText="Saving..." />
+        </RadzenRow>
+
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    private PublishSettingsModel model = new();
+    bool testingConnection = false;
+    bool saving = false;
+
+    protected override void OnInitialized()
+    {
+        model.EnablePublish = Profile.Current.Publish.EnablePublish;
+        model.PublishImage = Profile.Current.Publish.PublishImage;
+        model.PublishPanorama = Profile.Current.Publish.PublishPanorama;
+        model.PublishNightTimelapse = Profile.Current.Publish.PublishNightTimelapse;
+        model.PublishDayTimelapse = Profile.Current.Publish.PublishDayTimelapse;
+        model.ShowPublishedImage = Profile.Current.Publish.ShowPublishedImage;
+        model.ShowPublishedPanorama = Profile.Current.Publish.ShowPublishedPanorama;
+        model.ShowPublishedNightTimelapse = Profile.Current.Publish.ShowPublishedNightTimelapse;
+        model.ShowPublishedDayTimelapse = Profile.Current.Publish.ShowPublishedDayTimelapse;
+        model.Title = Profile.Current.Publish.Title;
+        model.CfWorkerApiKey = Profile.Current.Publish.CfWorkerApiKey;
+        model.CfWorkerUrl = Profile.Current.Publish.CfWorkerUrl;
+    }
+
+    private async Task OnSubmit(PublishSettingsModel model)
+    {
+        Profile.Current.Publish.EnablePublish = model.EnablePublish;
+        Profile.Current.Publish.PublishImage = model.PublishImage;
+        Profile.Current.Publish.PublishPanorama = model.PublishPanorama;
+        Profile.Current.Publish.PublishNightTimelapse = model.PublishNightTimelapse;
+        Profile.Current.Publish.PublishDayTimelapse = model.PublishDayTimelapse;
+        Profile.Current.Publish.ShowPublishedImage = model.ShowPublishedImage;
+        Profile.Current.Publish.ShowPublishedPanorama = model.ShowPublishedPanorama;
+        Profile.Current.Publish.ShowPublishedNightTimelapse = model.ShowPublishedNightTimelapse;
+        Profile.Current.Publish.ShowPublishedDayTimelapse = model.ShowPublishedDayTimelapse;
+        Profile.Current.Publish.Title = model.Title;
+        Profile.Current.Publish.CfWorkerApiKey = model.CfWorkerApiKey;
+        Profile.Current.Publish.CfWorkerUrl = model.CfWorkerUrl;
+
+        if (model.EnablePublish)
+        {
+            try
+            {
+                saving = true;
+                await InvokeAsync(StateHasChanged);
+                await PublishService.SetMetadata();
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Error updating publish metadata. Check Url and API key and try again.");
+            }
+            finally
+            {
+                saving = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+
+        NotificationService.Notify(new Radzen.NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Duration = 2000,
+            Summary = "Saved!",
+        });
+    }
+
+    private async Task CheckCfWorkerConnection()
+    {
+        bool success;
+
+        try
+        {
+            testingConnection = true;
+            await InvokeAsync(StateHasChanged);
+
+            success = await PublishService.CheckConnection(model.CfWorkerUrl);
+        }
+        finally
+        {
+            testingConnection = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        NotificationService.Notify(new Radzen.NotificationMessage
+        {
+            Severity = success ? NotificationSeverity.Success : NotificationSeverity.Error,
+            Duration = 3000,
+            Summary = success ? "Connection is good!" : "Can't talk to worker!",
+            Detail = success ? string.Empty : "Check the Url and API key and try again.",
+        });
+    }
+
+    public record PublishSettingsModel
+    {
+        public bool EnablePublish { get; set; }
+        public bool PublishImage { get; set; }
+        public bool PublishPanorama { get; set; }
+        public bool PublishNightTimelapse { get; set; }
+        public bool PublishDayTimelapse { get; set; }
+        public bool ShowPublishedImage { get; set; }
+        public bool ShowPublishedPanorama { get; set; }
+        public bool ShowPublishedNightTimelapse { get; set; }
+        public bool ShowPublishedDayTimelapse { get; set; }
+        public string Title { get; set; } = null!;
+        public string CfWorkerApiKey { get; set; } = null!;
+        public string CfWorkerUrl { get; set; } = null!;
+    }
+}

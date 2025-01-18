@@ -62,7 +62,7 @@ public class CaptureJob : JobBase
 
     private async Task<AllSkyImage> ExposeImage(IndiCamera camera, CancellationToken token)
     {
-        bool isDay = _sunService.IsDaytime;
+        bool isDay = _sunService.IsDaytime();
         var exposureParameters = new ExposureParameters
         {
             Duration = _exposureTrackingService.GetNextExposure(),

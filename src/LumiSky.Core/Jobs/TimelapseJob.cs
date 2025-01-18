@@ -128,6 +128,32 @@ public class TimelapseJob : JobBase
                     {
                         [nameof(ExportJob.TimelapseFilename)] = outputFilename!,
                     });
+
+                // Filename: /a/b/c/video/timelapse/day/timelapse_blah.mp4
+                // Remove directory separators to determine if day or night.
+                bool isDay = outputFilename
+                    .Replace(Path.DirectorySeparatorChar.ToString(), string.Empty)
+                    .Contains("videotimelapseday");
+
+                if (isDay)
+                {
+                    await context.Scheduler.TriggerJob(
+                        PublishJob.Key,
+                        new JobDataMap
+                        {
+                            [nameof(PublishJob.DayTimelapseFilename)] = outputFilename!,
+                        });
+                }
+                else
+                {
+                    await context.Scheduler.TriggerJob(
+                        PublishJob.Key,
+                        new JobDataMap
+                        {
+                            [nameof(PublishJob.NightTimelapseFilename)] = outputFilename!,
+                        });
+                }
+                
             }
 
             Log.Information("Timelapse finished in {Elapsed:F3} seconds", ffmpeg.Elapsed.TotalSeconds);

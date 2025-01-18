@@ -41,6 +41,7 @@ public static class Bootstrap
         services.AddSingleton<GenerationService>();
         services.AddSingleton<NotificationService>();
         services.AddSingleton<FocusService>();
+        services.AddSingleton<PublishService>();
 
         services.AddSlimMessageBus(config => config
             .WithProviderMemory()
@@ -162,6 +163,11 @@ public static class Bootstrap
 
             q.AddJob<ExportJob>(c => c
                 .WithIdentity(ExportJob.Key)
+                .StoreDurably()
+                .Build());
+
+            q.AddJob<PublishJob>(c => c
+                .WithIdentity(PublishJob.Key)
                 .StoreDurably()
                 .Build());
 

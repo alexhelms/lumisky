@@ -12,8 +12,9 @@ public static class JobConstants
         public const string Export = "export-job";
         public const string Timelapse = "timelapse-job";
         public const string PanoramaTimelapse = "panorama-timelapse-job";
-        public const string DayNightJob = "day-night-job";
-        public const string CleanupJob = "cleanup-job";
+        public const string DayNight = "day-night-job";
+        public const string Cleanup = "cleanup-job";
+        public const string Publish = "publish-job";
     }
 
     public static class Triggers

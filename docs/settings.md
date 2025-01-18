@@ -325,45 +325,6 @@ Longitude of your allsky camera, in degrees, -180 to 180, where east is positive
 
 Elevation of your allsky camera, in meters.
 
-## Export
-
-When enabled, your data will be exported by all export methods that are enabled.
-
-LumiSky can export:
-- Raw images
-- Images
-- Panoramas
-- Timelapse videos
-- Panorama timelapse videos
-
-### FTP
-
-#### Host
-
-Hostname or IP address of the FTP server.
-
-#### Port
-
-Port of the FTP server.
-
-#### Username
-
-Username for the FTP server.
-
-#### Password
-
-Password for the FTP server.
-
-#### Remote Path
-
-Remote path on the FTP server to upload data.
-
-#### Validate Certificates
-
-When enabled, only valid certificates will be accepted.
-
-Default is false.
-
 ## Timelapse
 
 ### Ffmpeg
@@ -455,3 +416,46 @@ The pixel width of the output video.
 Height is automatically calculated to maintain aspect ratio.
 Reducing the pixel width can drastically reduce the size of the output video.
 Set to 0 to disable scaling.
+
+## Export
+
+When enabled, your data will be exported by all export methods that are enabled.
+
+LumiSky can export:
+- Raw images
+- Images
+- Panoramas
+- Timelapse videos
+- Panorama timelapse videos
+
+### FTP
+
+#### Host
+
+Hostname or IP address of the FTP server.
+
+#### Port
+
+Port of the FTP server.
+
+#### Username
+
+Username for the FTP server.
+
+#### Password
+
+Password for the FTP server.
+
+#### Remote Path
+
+Remote path on the FTP server to upload data.
+
+#### Validate Certificates
+
+When enabled, only valid certificates will be accepted.
+
+Default is false.
+
+## Publish
+
+Publish todo :)

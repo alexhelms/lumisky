@@ -11,4 +11,14 @@ public static class Util
         lhs = rhs;
         rhs = temp;
     }
+
+    public static string ExtensionToMimeType(string extension) =>
+        extension.ToLowerInvariant() switch
+        {
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".mp4" => "video/mp4",
+            _ => "application/octet-stream",
+        };
 }

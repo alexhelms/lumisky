@@ -26,7 +26,7 @@ public class FilenameGenerator
 
     public string CreateImageFilename(string imageType, DateTime timestamp, string extension)
     {
-        bool isDay = _sunService.IsDaytime;
+        bool isDay = _sunService.IsDaytime();
         var timestampMinus12 = timestamp.AddHours(-12);
         var filename = $"{imageType}_{timestamp:yyyyMMdd}_{timestamp:HHmmss}{extension}";
         var directory = Path.Combine(
@@ -47,7 +47,13 @@ public class FilenameGenerator
             _ => throw new NotImplementedException()
         };
 
-        var directory = Path.Combine(_profile.Current.App.ImageDataPath, "video", kind);
+        DateTime midpointUtc = (begin + (end - begin)).ToUniversalTime();
+        bool isDay = _sunService.IsDaytime(midpointUtc);
+        var directory = Path.Combine(
+            _profile.Current.App.ImageDataPath, 
+            "video",
+            kind,
+            isDay ? "day" : "night");
         var filename = $"{kind}_{timestamp:yyyyMMdd-HHmmss}_{begin:yyyyMMdd-HHmmss}_to_{end:yyyyMMdd-HHmmss}.mp4";
         var path = Path.Combine(directory, filename);
         return path;

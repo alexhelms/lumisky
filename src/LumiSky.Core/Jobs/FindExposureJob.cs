@@ -46,7 +46,7 @@ public class FindExposureJob : JobBase
             IndiCamera camera = await _deviceFactory.GetOrCreateConnectedCamera(context.CancellationToken);
             context.CancellationToken.ThrowIfCancellationRequested();
             
-            bool isDay = _sunService.IsDaytime;
+            bool isDay = _sunService.IsDaytime();
             var exposure = isDay
                 ? TimeSpan.FromSeconds(1)
                 : TimeSpan.FromSeconds(5);

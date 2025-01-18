@@ -10,7 +10,7 @@ namespace LumiSky.Core.Jobs;
 [DisallowConcurrentExecution]
 public class CleanupJob : JobBase
 {
-    public static readonly JobKey Key = new(JobConstants.Jobs.CleanupJob, JobConstants.Groups.Maintenance);
+    public static readonly JobKey Key = new(JobConstants.Jobs.Cleanup, JobConstants.Groups.Maintenance);
     
     private readonly IProfileProvider _profile;
     private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
