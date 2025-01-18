@@ -11,7 +11,8 @@ RUN apt-get update -y \
     curl \
     gdb \
     netcat-traditional \
-    net-tools \
+    iputils-ping \
+    mtr \
     python3 \
     python3-pip \
     python3-pil \
