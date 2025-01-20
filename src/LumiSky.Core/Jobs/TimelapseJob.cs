@@ -224,10 +224,10 @@ public class TimelapseJob : JobBase
         return argsBuilder.ToString();
     }
 
-    private string BuildOutputFilename(List<Image> images, string tempPath, DateTimeOffset begin, DateTimeOffset end)
+    private string BuildOutputFilename(List<Image> images, string tempPath, DateTimeOffset beginLocal, DateTimeOffset endLocal)
     {
         string imageListFilename = CreateFileList(images, tempPath);
-        string outputFilename = _filenameGenerator.CreateTimelapseFilename(Kind, DateTime.Now, begin.DateTime, end.DateTime);
+        string outputFilename = _filenameGenerator.CreateTimelapseFilename(Kind, DateTime.Now, beginLocal.DateTime, endLocal.DateTime);
         return outputFilename;
     }
 

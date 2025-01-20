@@ -19,7 +19,7 @@ public class SunService
     public bool IsDaytime(DateTime timestamp)
     {
         var utcTimestamp = timestamp.ToUniversalTime();
-        var (alt, _) = GetPosition(DateTime.UtcNow);
+        var (alt, _) = GetPosition(utcTimestamp);
         return alt >= _profile.Current.Location.TransitionSunAltitude;
     }
 

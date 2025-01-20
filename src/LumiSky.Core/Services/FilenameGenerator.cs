@@ -38,7 +38,7 @@ public class FilenameGenerator
         return path;
     }
 
-    public string CreateTimelapseFilename(GenerationKind generationKind, DateTime timestamp, DateTime begin, DateTime end)
+    public string CreateTimelapseFilename(GenerationKind generationKind, DateTime timestamp, DateTime beginLocal, DateTime endLocal)
     {
         var kind = generationKind switch
         {
@@ -47,14 +47,14 @@ public class FilenameGenerator
             _ => throw new NotImplementedException()
         };
 
-        DateTime midpointUtc = (begin + (end - begin)).ToUniversalTime();
-        bool isDay = _sunService.IsDaytime(midpointUtc);
+        DateTime midpointLocal = (beginLocal + (endLocal - beginLocal));
+        bool isDay = _sunService.IsDaytime(midpointLocal);
         var directory = Path.Combine(
             _profile.Current.App.ImageDataPath, 
             "video",
             kind,
             isDay ? "day" : "night");
-        var filename = $"{kind}_{timestamp:yyyyMMdd-HHmmss}_{begin:yyyyMMdd-HHmmss}_to_{end:yyyyMMdd-HHmmss}.mp4";
+        var filename = $"{kind}_{timestamp:yyyyMMdd-HHmmss}_{beginLocal:yyyyMMdd-HHmmss}_to_{endLocal:yyyyMMdd-HHmmss}.mp4";
         var path = Path.Combine(directory, filename);
         return path;
     }
