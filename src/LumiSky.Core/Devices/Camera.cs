@@ -287,6 +287,8 @@ public class IndiCamera : ICamera, IDisposable
         ArgumentNullException.ThrowIfNull(_device);
 
         var customPropertiesText = _profile.Current.Camera.CustomProperties;
+        if (string.IsNullOrWhiteSpace(customPropertiesText))
+            return;
 
         try
         {
