@@ -29,8 +29,8 @@
 
     <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
         <RadzenUpload Multiple="false" MaxFileCount="1" Accept=".lsp" Url="api/profile/import" ChooseText="Import" Complete="OnImportComplete" Error="OnImportError"
-                      InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" />
-        <RadzenButton Text="Export" Click="ExportSettings" />
+                      InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="ls-shadow" />
+        <RadzenButton Text="Export" Click="ExportSettings" class="ls-shadow" />
     </RadzenStack>
 
     <RadzenTabs TabPosition="TabPosition.Left">

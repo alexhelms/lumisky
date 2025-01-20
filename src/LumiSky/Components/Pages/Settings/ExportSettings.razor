@@ -5,7 +5,7 @@
 <RadzenTemplateForm TItem="ExportSettingsModel" Data="@model" Submit="OnSubmit">
     <RadzenStack>
 
-        <RadzenFieldset>
+        <RadzenFieldset class="ls-shadow">
             <HeaderTemplate>
                 <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>General</strong></RadzenText>
             </HeaderTemplate>
@@ -46,7 +46,7 @@
             </ChildContent>
         </RadzenFieldset>
 
-        <RadzenFieldset>
+        <RadzenFieldset class="ls-shadow">
             <HeaderTemplate>
                 <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>FTP</strong></RadzenText>
             </HeaderTemplate>
@@ -88,7 +88,7 @@
         </RadzenFieldset>
 
         <RadzenRow>
-            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" class="ls-shadow" />
         </RadzenRow>
 
     </RadzenStack>

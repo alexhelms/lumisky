@@ -6,13 +6,14 @@ using LumiSky.Core.DomainEvents;
 using LumiSky.Core.Imaging;
 using LumiSky.Core.Imaging.Processing;
 using LumiSky.Core.IO;
-using LumiSky.Core.Primitives;
+using LumiSky.Core.Profile;
 using SlimMessageBus;
 
 namespace LumiSky.Core.Services;
 
 public class FocusService : IDisposable
 {
+    private readonly IProfileProvider _profileProvider;
     private readonly IMessageBus _bus;
     private readonly DeviceFactory _deviceFactory;
     private readonly NotificationService _notificationService;
@@ -26,10 +27,12 @@ public class FocusService : IDisposable
     public int Gain { get; set; }
 
     public FocusService(
+        IProfileProvider profileProvider,
         IMessageBus bus,
         DeviceFactory deviceFactory,
         NotificationService notificationService)
     {
+        _profileProvider = profileProvider;
         _bus = bus;
         _deviceFactory = deviceFactory;
         _notificationService = notificationService;
@@ -82,7 +85,7 @@ public class FocusService : IDisposable
 
             var token = _cts.Token;
 
-            IndiCamera camera = await _deviceFactory.GetOrCreateConnectedCamera(token);
+            using IndiCamera camera = await _deviceFactory.GetCamera(token);
 
             while (!token.IsCancellationRequested)
             {
@@ -95,7 +98,8 @@ public class FocusService : IDisposable
                 {
                     Duration = Exposure,
                     Gain = Gain,
-                    Offset = 0,
+                    Offset = _profileProvider.Current.Camera.Offset,
+                    Binning = _profileProvider.Current.Camera.Binning,
                 };
 
                 using var image = await camera.TakeImageAsync(exposureParameters, token);

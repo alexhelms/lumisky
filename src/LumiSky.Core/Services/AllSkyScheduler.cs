@@ -1,5 +1,4 @@
-﻿using LumiSky.Core.Devices;
-using LumiSky.Core.Jobs;
+﻿using LumiSky.Core.Jobs;
 using Quartz;
 using Quartz.Impl.Matchers;
 
@@ -9,7 +8,6 @@ public class AllSkyScheduler
 {
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly NotificationService _notificationService;
-    private readonly DeviceFactory _deviceFactory;
 
     public event EventHandler? AllSkyStarted;
     public event EventHandler? AllSkyStopping;
@@ -20,12 +18,10 @@ public class AllSkyScheduler
 
     public AllSkyScheduler(
         ISchedulerFactory schedulerFactory,
-        NotificationService notificationService,
-        DeviceFactory deviceFactory)
+        NotificationService notificationService)
     {
         _schedulerFactory = schedulerFactory;
         _notificationService = notificationService;
-        _deviceFactory = deviceFactory;
     }
 
     public async Task Start()
@@ -38,7 +34,6 @@ public class AllSkyScheduler
 
         // Create the camera now.
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-        await _deviceFactory.GetOrCreateConnectedCamera(timeout.Token);
         
         var scheduler = await _schedulerFactory.GetScheduler();
 
@@ -118,8 +113,6 @@ public class AllSkyScheduler
             CaptureJob.Key,
             ProcessingJob.Key,
         ]);
-
-        _deviceFactory.DestroyCamera();
 
         Log.Information("AllSky service stopped");
         IsStopping = false;

@@ -27,7 +27,7 @@
         <RadzenColumn Size="8" SizeLG="6">
             <RadzenTemplateForm Data="@model" Submit="@((GenerateForm args) => OnSubmit(args))">
                 <RadzenStack Gap="1rem">
-                    <RadzenFieldset Text="Generate">
+                    <RadzenFieldset Text="Generate" class="ls-shadow">
                         <RadzenStack Gap="2rem">
 
                             <RadzenRow AlignItems="AlignItems.Center">
@@ -73,20 +73,20 @@
                                 </RadzenColumn>
                                 <RadzenColumn>
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Wrap="FlexWrap.Wrap">
-                                        <RadzenButton Text="Last Night" ButtonStyle="ButtonStyle.Secondary" Click="OnLastNightSelected"/>
-                                        <RadzenButton Text="1 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("1 hr"))" />
-                                        <RadzenButton Text="3 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("3 hr"))" />
-                                        <RadzenButton Text="6 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("6 hr"))" />
-                                        <RadzenButton Text="12 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("12 hr"))" />
-                                        <RadzenButton Text="24 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("24 hr"))" />
-                                        <RadzenButton Text="48 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("48 hr"))" />
+                                        <RadzenButton Text="Last Night" ButtonStyle="ButtonStyle.Secondary" Click="OnLastNightSelected" class="ls-shadow" />
+                                        <RadzenButton Text="1 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("1 hr"))" class="ls-shadow" />
+                                        <RadzenButton Text="3 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("3 hr"))" class="ls-shadow" />
+                                        <RadzenButton Text="6 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("6 hr"))" class="ls-shadow" />
+                                        <RadzenButton Text="12 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("12 hr"))" class="ls-shadow" />
+                                        <RadzenButton Text="24 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("24 hr"))" class="ls-shadow" />
+                                        <RadzenButton Text="48 hr" ButtonStyle="ButtonStyle.Secondary" Click="@(() => OnShortcutSelected("48 hr"))" class="ls-shadow" />
                                     </RadzenStack>
                                 </RadzenColumn>
                             </RadzenRow>
 
                         </RadzenStack>
                     </RadzenFieldset>
-                    <RadzenButton ButtonType="ButtonType.Submit" Size="ButtonSize.Medium" Icon="bolt" Text="Generate" />
+                    <RadzenButton ButtonType="ButtonType.Submit" Size="ButtonSize.Medium" Icon="bolt" Text="Generate" class="ls-shadow" />
                 </RadzenStack>
             </RadzenTemplateForm>
         </RadzenColumn>
@@ -95,8 +95,8 @@
     <RadzenRow JustifyContent="JustifyContent.Center" class="rz-mt-4">
         <RadzenColumn Size="12">
             <RadzenDataGrid @ref="dataGrid" IsLoading="@isLoading" Count="@count" Data="@jobs" LoadData="@LoadData" AllowFiltering="false" 
-            AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Simple" AllowSorting="false"
-            PageSize="25" AllowPaging="true" ShowPagingSummary="true" SelectionMode="DataGridSelectionMode.Single">
+                            AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Simple" AllowSorting="false"
+                            PageSize="25" AllowPaging="true" ShowPagingSummary="true" SelectionMode="DataGridSelectionMode.Single">
                 <EmptyTemplate>
                     <RadzenText TextAlign="TextAlign.Center" class="rz-mb-0">No jobs.</RadzenText>
                 </EmptyTemplate>

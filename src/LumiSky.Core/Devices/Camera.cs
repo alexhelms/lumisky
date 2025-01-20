@@ -1,17 +1,19 @@
 ﻿using LumiSky.Core.Imaging;
+using LumiSky.Core.Indi;
+using LumiSky.Core.Indi.Parameters;
 using LumiSky.Core.IO;
 using LumiSky.Core.Profile;
-using LumiSky.INDI.Primitives;
-using LumiSky.INDI.Protocol;
+using System.Text.Json;
 
 namespace LumiSky.Core.Devices;
 
 public class IndiCamera : ICamera, IDisposable
 {
     private readonly IProfileProvider _profile;
+    private readonly IndiClient _client = new();
 
-    private IndiClient? _client;
     private IndiDevice? _device;
+    private bool _isConnected;
 
     public IndiCamera(IProfileProvider profile)
     {
@@ -21,37 +23,36 @@ public class IndiCamera : ICamera, IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        _client?.Dispose();
+        _client.Dispose();
     }
 
     private void ThrowIfNotConnected()
     {
         if (!IsConnected)
         {
+            Disconnect();
+
             var name = _profile.Current.Camera.Name;
             if (string.IsNullOrWhiteSpace(name))
-                name = $"{_profile.Current.Camera.IndiHostname}:{_profile.Current.Camera.IndiPort}";
-            if (string.IsNullOrWhiteSpace(name))
-                name = "Indi Camera";
+                name = $"Camera {_profile.Current.Camera.IndiHostname}:{_profile.Current.Camera.IndiPort}";
             throw new NotConnectedException($"{name} not connected");
         }
     }
 
     public async Task<bool> ConnectAsync(CancellationToken token = default)
     {
-        var deviceName = _profile.Current.Camera.Name;
+        var cameraName = _profile.Current.Camera.Name;
         var hostname = _profile.Current.Camera.IndiHostname;
         var port = _profile.Current.Camera.IndiPort;
-        _client = new IndiClient(hostname, port);
 
         try
         {
-            await _client.Connect();
+            await _client.Connect(hostname, port, token);
+            _device = await _client.GetDevice(cameraName, token);
+            await _device.EnableBlobs();
+
             if (!_client.IsConnected)
                 return false;
-
-            if (_client.Connection is not null)
-                _client.Connection.Disconnected += Connection_Disconnected;
         }
         catch (Exception e)
         {
@@ -59,62 +60,30 @@ public class IndiCamera : ICamera, IDisposable
             return false;
         }
 
-        // The device can take a few moments to show up since we are waiting for INDI messages to arrive.
-        using (var deviceCts = CancellationTokenSource.CreateLinkedTokenSource(token))
-        {
-            deviceCts.CancelAfter(TimeSpan.FromSeconds(3));
-            do
-            {
-                _device = _client.Connection!.Devices.GetDeviceOrNull(deviceName);
-                if (_device is not null)
-                    break;
-            } while (!deviceCts.IsCancellationRequested);
-        }
-        
-        if (_device is null)
-        {
-            _client.Disconnect();
-            return false;
-        }
+        token.ThrowIfCancellationRequested();
 
         try
         {
-            await _device.Connect();
-            if (!_device.IsConnected)
-            {
-                _device = null;
-                return false;
-            }
+            await _device.Change("CONNECTION", [("CONNECT", true), ("DISCONNECT", false)], token: token);
         }
         catch (Exception e)
         {
-            Log.Error(e, "Error connecting to INDI camera {Name}", deviceName);
+            Log.Error(e, "Error connecting to INDI camera {Name}", cameraName);
             return false;
         }
 
-        IsConnected = true;
-        OnConnect();
+        _isConnected = true;
+        await OnConnect();
         return true;
     }
 
-    private void Connection_Disconnected()
-    {
-        IsConnected = false;
-        OnDisconnect();
-
-        if (_client?.Connection is not null)
-            _client.Connection.Disconnected -= Connection_Disconnected;
-    }
-
-    public async Task DisconnectAsync()
+    public void Disconnect()
     {
         if (!IsConnected) return;
-        ArgumentNullException.ThrowIfNull(_client);
-        ArgumentNullException.ThrowIfNull(_device);
 
-        await _device.Disconnect();
+        _device = null;
         _client.Disconnect();
-        IsConnected = false;
+        _isConnected = false;
         OnDisconnect();
     }
 
@@ -123,14 +92,12 @@ public class IndiCamera : ICamera, IDisposable
         ThrowIfNotConnected();
         ArgumentNullException.ThrowIfNull(_device);
 
-        int gain = Math.Clamp(parameters.Gain, GainMin, GainMax);
-        int offset = Math.Clamp(parameters.Offset, OffsetMin, OffsetMax);
         var exposure = Math.Clamp(parameters.Duration.TotalSeconds, ExposureMin.TotalSeconds, ExposureMax.TotalSeconds);
         var timeout = parameters.Duration + TimeSpan.FromSeconds(5);
 
         try
         {
-            token.Register(async () =>
+            using var tokenRegistration = token.Register(async () =>
             {
                 try
                 {
@@ -143,30 +110,29 @@ public class IndiCamera : ICamera, IDisposable
             });
 
             List<Task> tasks = [];
-            tasks.Add(_device.Set<IndiSwitch>("CCD_TRANSFER_FORMAT", ["FORMAT_FITS", "FORMAT_NATIVE"], [true, false]));
 
-            // TODO: support binning
-            tasks.Add(_device.Set<IndiNumber>("CCD_BINNING", ["HOR_BIN", "VER_BIN"], [1, 1]));
-
-            if (HasGain)
-                tasks.Add(_device.Set<IndiNumber>("CCD_CONTROLS", "Gain", gain));
-
-            if (HasOffset)
-                tasks.Add(_device.Set<IndiNumber>("CCD_CONTROLS", "Offset", offset));
+            // Transfer format and binning are common for all indi camera devices.
+            tasks.Add(_device.Change("CCD_TRANSFER_FORMAT", [("FORMAT_FITS", true), ("FORMAT_NATIVE", false)]));
+            tasks.Add(SetBinning(parameters.Binning, token));
+            tasks.Add(SetGain(parameters.Gain, token));
+            tasks.Add(SetOffset(parameters.Offset, token));
+            tasks.Add(SetCustomProperties(token));
 
             await Task.WhenAll(tasks);
 
             var exposureStart = DateTime.UtcNow;
 
-            // This blocks for the duration of the exposure + downloading the image
-            await _device.Set<IndiNumber>("CCD_EXPOSURE", "CCD_EXPOSURE_VALUE", exposure, timeout, token);
-
             token.ThrowIfCancellationRequested();
 
-            if (_device.Properties.TryGet("CCD1", out var vec) &&
-                vec is IndiVector<IndiBlob> indiBlobs)
+            await _device.Change("CCD_EXPOSURE", [("CCD_EXPOSURE_VALUE", exposure)]);
+            await _device.WaitForChange("CCD1", timeout, token);
+
+            var ccd1 = await _device.GetParameter("CCD1");
+            var blobs = ccd1.GetItems<IndiBlob>();
+
+            if (blobs is { Count: > 0 })
             {
-                var fitsData = indiBlobs[0].Value ?? [];
+                var fitsData = blobs.Values.First().Value;
                 if (fitsData.Length == 0)
                 {
                     Log.Error("INDI camera return empty image data");
@@ -182,7 +148,6 @@ public class IndiCamera : ICamera, IDisposable
                 image.Metadata.Gain = image.Metadata.Gain.HasValue ? image.Metadata.Gain : parameters.Gain;
                 image.Metadata.Offset = image.Metadata.Offset.HasValue ? image.Metadata.Offset : parameters.Offset;
                 image.Metadata.Binning = image.Metadata.Binning.HasValue ? image.Metadata.Binning : 1;
-                image.Metadata.PixelSize = image.Metadata.PixelSize.HasValue ? image.Metadata.PixelSize : PixelSize;
                 image.Metadata.FocalLength = _profile.Current.Camera.FocalLength;
                 image.Metadata.Location = _profile.Current.Location.Location;
                 image.Metadata.Latitude = _profile.Current.Location.Latitude;
@@ -215,10 +180,7 @@ public class IndiCamera : ICamera, IDisposable
 
         try
         {
-            if (_device.TryGet<IndiSwitch>("CCD_ABORT_EXPOSURE", "ABORT", out _))
-            {
-                await _device.Set<IndiSwitch>("CCD_ABORT_EXPOSURE", "ABORT", true);
-            }
+            await _device.Change("CCD_ABORT_EXPOSURE", [("ABORT", true)]);
         }
         catch (TimeoutException te)
         {
@@ -230,85 +192,135 @@ public class IndiCamera : ICamera, IDisposable
         }
     }
 
-    private void OnConnect()
+    private async Task OnConnect()
     {
         ArgumentNullException.ThrowIfNull(_device);
 
-        var indiExposure = _device.Get<IndiNumber>("CCD_EXPOSURE", "CCD_EXPOSURE_VALUE");
+        var indiExposureParameter = await _device.GetParameter("CCD_EXPOSURE");
+        var indiExposureItems = indiExposureParameter.GetItems<IndiNumber>();
+        var indiExposure = indiExposureItems["CCD_EXPOSURE_VALUE"];
+
         ExposureMin = TimeSpan.FromSeconds(indiExposure.Min);
         ExposureMax = TimeSpan.FromSeconds(indiExposure.Max);
 
-        if (_device.TryGet<IndiNumber>("CCD_CONTROLS", "Gain", out var indiGain))
+        try
         {
-            HasGain = true;
-            Gain = (int)indiGain!.Value;
-            GainMin = (int)indiGain.Min;
-            GainMax = (int)indiGain.Max;
-        }
-        else
-        {
-            Log.Warning("INDI property CCD_CONTROLS:Gain not found");
-            HasGain = false;
-            Gain = 0;
-            GainMin = 0;
-            GainMax = 0;
-        }
+            var ccdCfa = await _device.GetParameter("CCD_CFA", timeout: TimeSpan.FromMilliseconds(100));
+            var ccdCfaItems = ccdCfa.GetItems<IndiText>();
+            if (ccdCfaItems.TryGetValue("CFA_TYPE", out var indiCfa))
+            {
+                Enum.TryParse<BayerPattern>(indiCfa!.Value, true, out var bayerPattern);
+                BayerPattern = bayerPattern;
+            }
+            else
+            {
+                Log.Warning("INDI property CCD_CFA:CFA_TYPE not found, reverting to RGBB");
 
-        if (_device.TryGet<IndiNumber>("CCD_CONTROLS", "Offset", out var indiOffset))
-        {
-            HasOffset = true;
-            Offset = (int)indiOffset!.Value;
-            OffsetMin = (int)indiOffset.Min;
-            OffsetMax = (int)indiOffset.Max;
+                // This ends up assuming a bayer matrix of RGGB.
+                BayerPattern = BayerPattern.None;
+            }
         }
-        else
+        catch (TimeoutException)
         {
-            Log.Warning("INDI property CCD_CONTROLS:Offset not found");
-            HasOffset = false;
-            Offset = 0;
-            OffsetMin = 0;
-            OffsetMax = 0;
-        }
-
-        var indiPixelSize = _device.Get<IndiNumber>("CCD_INFO", "CCD_PIXEL_SIZE");
-        PixelSize = indiPixelSize.Value;
-
-        if (_device.TryGet<IndiText>("CCD_CFA", "CFA_TYPE", out var indiCfa))
-        {
-            Enum.TryParse<BayerPattern>(indiCfa!.Value, true, out var bayerPattern);
-            BayerPattern = bayerPattern;
-        }
-        else
-        {
-            Log.Warning("Monochrome cameras are not supported. The image will be debayered as RGGB.");
+            // This ends up assuming a bayer matrix of RGGB.
             BayerPattern = BayerPattern.None;
+        }
+    }
+
+    private async Task SetValueFromMapping(string mapping, double value, CancellationToken token)
+    {
+        ThrowIfNotConnected();
+        ArgumentNullException.ThrowIfNull(_device);
+
+        try
+        {
+            var items = mapping.Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (items.Length == 2)
+            {
+                var parameterName = items[0];
+                var fieldName = items[1];
+                var parameter = await _device.GetParameter(parameterName, TimeSpan.FromMilliseconds(10));
+                var fields = parameter.GetItems<IndiNumber>();
+                if (fields.TryGetValue(fieldName, out var field))
+                {
+                    var clampedValue = Math.Clamp(value, field.Min, field.Max);
+                    await _device.Change(parameterName, [(fieldName, clampedValue)], token: token);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not set mapping {Mapping} to {Value}", mapping, value);
+        }
+    }
+    
+    private async Task SetGain(int gain, CancellationToken token)
+    {
+        // Setting gain is vendor specific. Use the mapping from the settings.
+        var mapping = _profile.Current.Camera.GainMapping;
+        await SetValueFromMapping(mapping, gain, token);
+    }
+
+    private async Task SetOffset(int offset, CancellationToken token)
+    {
+        // Setting offset is vendor specific. Use the mapping from the settings.
+        var mapping = _profile.Current.Camera.OffsetMapping;
+        await SetValueFromMapping(mapping, offset, token);
+    }
+
+    private async Task SetBinning(int binning, CancellationToken token)
+    {
+        ThrowIfNotConnected();
+        ArgumentNullException.ThrowIfNull(_device);
+
+        var parameter = await _device.GetParameter("CCD_BINNING", TimeSpan.FromMilliseconds(50));
+        var fields = parameter.GetItems<IndiNumber>();
+        var min = fields["HOR_BIN"].Min;
+        var max = fields["HOR_BIN"].Max;
+        var value = Math.Clamp(binning, min, max);
+        await _device.Change("CCD_BINNING", [("HOR_BIN", value), ("VER_BIN", value)], token: token);
+    }
+
+    private async Task SetCustomProperties(CancellationToken token)
+    {
+        ThrowIfNotConnected();
+        ArgumentNullException.ThrowIfNull(_device);
+
+        var customPropertiesText = _profile.Current.Camera.CustomProperties;
+
+        try
+        {
+            List<IndiCustomProperty> customProperties = JsonSerializer.Deserialize<List<IndiCustomProperty>>(customPropertiesText, IndiMappings.JsonOptions)
+                ?? throw new ArgumentException(nameof(_profile.Current.Camera.CustomProperties));
+
+            List<Task> tasks = [];
+            foreach (var group in customProperties.GroupBy(x => x.Property))
+            {
+                var valuesToSend = group
+                    .Select(x => (x.Field, x.Value))
+                    .ToList();
+
+                tasks.Add(_device.Change(group.Key, valuesToSend, timeout: TimeSpan.FromSeconds(1), token: token));
+            }
+
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not set INDI custom properties, check if device properties are correct:\n{CustomProperties}", customPropertiesText);
         }
     }
 
     private void OnDisconnect()
     {
-        Gain = 0;
-        GainMin = 0;
-        GainMax = 0;
-        Offset = 0;
-        OffsetMin = 0;
-        OffsetMax = 0;
-        PixelSize = 0;
+        ExposureMin = TimeSpan.Zero;
+        ExposureMax = TimeSpan.Zero;
         BayerPattern = BayerPattern.None;
     }
 
     public string Name => _profile.Current.Camera.Name;
-    public bool IsConnected { get; private set; }
-    public bool HasGain { get; private set; }
-    public bool HasOffset { get; private set; }
+    public bool IsConnected => _isConnected && _client.IsConnected;
     public TimeSpan ExposureMin { get; private set; }
     public TimeSpan ExposureMax { get; private set; }
-    public int Gain { get; private set; }
-    public int GainMin { get; private set; }
-    public int GainMax { get; private set; }
-    public int Offset { get; private set; }
-    public int OffsetMin { get; private set; }
-    public int OffsetMax { get; private set; }
-    public double PixelSize { get; private set; }
     public BayerPattern BayerPattern { get; private set; }
 }

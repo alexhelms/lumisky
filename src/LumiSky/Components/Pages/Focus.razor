@@ -104,8 +104,8 @@
 
                                 <RadzenStack Orientation="Orientation.Horizontal">
 
-                                    <RadzenButton ButtonType="ButtonType.Button" Text="Start" Click="StartCamera" Disabled="@(isAllSkyRunning || FocusService.IsRunning)" />
-                                    <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Text="Stop" Click="StopCamera" Disabled="@(isAllSkyRunning || !FocusService.IsRunning)" />
+                                    <RadzenButton ButtonType="ButtonType.Button" Text="Start" Click="StartCamera" Disabled="@(isAllSkyRunning || FocusService.IsRunning)" class="ls-shadow" />
+                                    <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Text="Stop" Click="StopCamera" Disabled="@(isAllSkyRunning || !FocusService.IsRunning)" class="ls-shadow" />
                                     @if (FocusService.IsRunning)
                                     {
                                         <RadzenProgressBarCircular Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Small" ShowValue="false" />

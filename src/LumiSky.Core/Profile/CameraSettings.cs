@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using LumiSky.Core.Collections;
+using LumiSky.Core.Indi;
 using System.Collections.Specialized;
 
 namespace LumiSky.Core.Profile;
@@ -9,6 +10,16 @@ public interface ICameraSettings : IDeviceSettings
     string IndiHostname { get; set; }
 
     int IndiPort { get; set; }
+
+    string CameraVendor { get; set; }
+
+    string GainMapping { get; set; }
+
+    string OffsetMapping { get; set; }
+
+    string CustomProperties { get; set; }
+
+    int Binning { get; set; }
 
     double FocalLength { get; set; }
 
@@ -58,7 +69,12 @@ public sealed partial class CameraSettings : Settings, ICameraSettings
         Name = string.Empty;
         IndiHostname = "localhost";
         IndiPort = 7624;
+        CameraVendor = IndiMappings.Vendor.ZWO;
+        GainMapping = IndiMappings.GainMappings.First().Mapping;
+        OffsetMapping = IndiMappings.OffsetMappings.First().Mapping;
+        CustomProperties = string.Empty;
         Extra = new();
+        Binning = 1;
         FocalLength = 10;
         Offset = 0;
         DaytimeGain = 0;
@@ -84,10 +100,22 @@ public sealed partial class CameraSettings : Settings, ICameraSettings
     public partial int IndiPort { get; set; } = 7624;
 
     [ObservableProperty]
+    public partial string CameraVendor { get; set; } = IndiMappings.Vendor.ZWO;
+
+    [ObservableProperty]
+    public partial string GainMapping { get; set; } = IndiMappings.GainMappings.First().Mapping;
+
+    [ObservableProperty]
+    public partial string OffsetMapping { get; set; } = IndiMappings.OffsetMappings.First().Mapping;
+
+    [ObservableProperty]
+    public partial string CustomProperties { get; set; } = string.Empty;
+
+    [ObservableProperty]
     public partial ObservableDictionary<string, string> Extra { get; set; } = new();
 
     [ObservableProperty]
-    public partial double PixelSize { get; set; }
+    public partial int Binning { get; set; }
 
     [ObservableProperty]
     public partial double FocalLength { get; set; }

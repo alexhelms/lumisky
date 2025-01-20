@@ -56,7 +56,7 @@ Max camera exposure time, in seconds.
 
 ### INDI
 
-LumiSky tries to connect to INDI with the given [hostname](/settings?id=hostname) and
+LumiSky connects to INDI at [hostname](/settings?id=hostname) and
 [port](/settings?id=port). If LumiSky can connect to INDI it will show a list of devices.
 
 If LumiSky can connect to INDI and your camera is in the list, press the `Use` button to
@@ -74,7 +74,34 @@ INDI port, default is 7624.
 
 INDI camera name. This must be the exact device name, e.g. `ZWO CCD ASI224MC`.
 
+#### Camera Manufacturer
+
+You camera's manufacturer.
+
+LumiSky tries to set this value automatically based on the [camera name](/settings?id=camera-name).
+
+INDI devices use vendor specific property names for gain, offset, etc.
+Knowing the camera manufacturer helps LumiSky determine the correct property names.
+
+If needed, you can [customize](/indi-configs?id=indi-configs) the property mappings.
+
+#### Custom
+
+Set a custom camera manufacturer to enable custom gain and offset mapping.
+
+The mapping should be `PROPERTY_NAME:FIELD_NAME` and is case sensitive.
+
+Unfortuntely, these mappings are not documented but are available in the indi device driver's [source code](https://github.com/indilib/indi-3rdparty).
+
+See the [INDI Configs](/indi-configs?id=indi-configs) page for examples and additional information.
+
 ### Exposure
+
+#### Binning
+
+Camera binning from 1 to 4.
+
+Default value is 1.
 
 #### Offset
 

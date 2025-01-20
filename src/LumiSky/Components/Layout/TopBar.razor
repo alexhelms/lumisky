@@ -14,11 +14,11 @@
 </RadzenStack>
 @if (!isAllSkyRunning)
 {
-    <RadzenButton Icon="play_arrow" ButtonStyle="ButtonStyle.Success" Click="StartAllSky" />
+    <RadzenButton Icon="play_arrow" ButtonStyle="ButtonStyle.Success" Click="StartAllSky" class="ls-shadow" />
 }
 else
 {
-    <RadzenButton Icon="stop" ButtonStyle="ButtonStyle.Danger" Click="StopAllSky" Disabled="@(isStopping)"/>
+    <RadzenButton Icon="stop" ButtonStyle="ButtonStyle.Danger" Click="StopAllSky" Disabled="@(isStopping)" class="ls-shadow" />
 }
 
 @code {

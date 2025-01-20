@@ -32,7 +32,7 @@ public class CaptureJob : JobBase
 
     protected override async Task OnExecute(IJobExecutionContext context)
     {
-        IndiCamera camera = await _deviceFactory.GetOrCreateConnectedCamera(context.CancellationToken);
+        using IndiCamera camera = await _deviceFactory.GetCamera(context.CancellationToken);
         context.CancellationToken.ThrowIfCancellationRequested();
 
         using var image = await ExposeImage(camera, context.CancellationToken);
@@ -68,12 +68,14 @@ public class CaptureJob : JobBase
             Duration = _exposureTrackingService.GetNextExposure(),
             Gain = isDay ? _profile.Current.Camera.DaytimeGain : _profile.Current.Camera.NighttimeGain,
             Offset = _profile.Current.Camera.Offset,
+            Binning = _profile.Current.Camera.Binning,
         };
 
-        Log.Information("Capturing image {Exposure:F6} sec, {Gain} gain, {Offset} offset",
+        Log.Information("Capturing image {Exposure:F6} sec, {Gain} gain, {Offset} offset, {Binning} binning",
             exposureParameters.Duration.TotalSeconds,
             exposureParameters.Gain,
-            exposureParameters.Offset);
+            exposureParameters.Offset,
+            exposureParameters.Binning);
 
         var image = await camera.TakeImageAsync(exposureParameters, token);
         token.ThrowIfCancellationRequested();

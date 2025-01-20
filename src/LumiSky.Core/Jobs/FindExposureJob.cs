@@ -43,7 +43,7 @@ public class FindExposureJob : JobBase
         }
         else
         {
-            IndiCamera camera = await _deviceFactory.GetOrCreateConnectedCamera(context.CancellationToken);
+            using IndiCamera camera = await _deviceFactory.GetCamera(context.CancellationToken);
             context.CancellationToken.ThrowIfCancellationRequested();
             
             bool isDay = _sunService.IsDaytime();
@@ -60,6 +60,7 @@ public class FindExposureJob : JobBase
                 Duration = exposure,
                 Gain = gain,
                 Offset = _profile.Current.Camera.Offset,
+                Binning = _profile.Current.Camera.Binning,
             };
 
             Log.Information("Finding initial exposure");
