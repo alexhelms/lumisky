@@ -58,7 +58,6 @@ Copy the following into `docker-compose.yml` and change the following as needed:
     * ZWO - `indi_asi_ccd`
     * QHY - `indi_qhy_ccd`
     * Player One - `indi_playerone_ccd`
-    * Raspberry Pi Camera - `indi_rpicam`
     * Touptek - `indi_toupcam_ccd`
 
 ?> If you already have a web server listening on 8080, you must change the LumiSky port.

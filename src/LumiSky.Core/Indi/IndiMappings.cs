@@ -22,7 +22,6 @@ public static class IndiMappings
         public const string ToupTek = "ToupTek";
         public const string PlayerOne = "PlayerOne";
         public const string Svbony = "Svbony";
-        public const string RaspiCamera = "Raspi Camera";
         public const string Custom = "Custom";
     }
     
@@ -34,7 +33,6 @@ public static class IndiMappings
         Vendor.ToupTek,
         Vendor.PlayerOne,
         Vendor.Svbony,
-        Vendor.RaspiCamera,
         Vendor.Custom,
     ];
 
@@ -44,7 +42,6 @@ public static class IndiMappings
         new(Vendor.ToupTek, "CCD_CONTROLS:Gain"),
         new(Vendor.PlayerOne, "CCD_CONTROLS:Gain"),
         new(Vendor.Svbony, "CCD_CONTROLS:Gain"),
-        new(Vendor.RaspiCamera, "CCD_GAIN:Gain"),
         new(Vendor.Custom, string.Empty),
     ];
 
@@ -54,7 +51,6 @@ public static class IndiMappings
         new(Vendor.ToupTek, "CCD_OFFSET:Offset"),
         new(Vendor.PlayerOne, "CCD_CONTROLS:Offset"),
         new(Vendor.Svbony, "CCD_CONTROLS:Offset"),
-        new(Vendor.RaspiCamera, None),
         new(Vendor.Custom, string.Empty),
     ];
 }

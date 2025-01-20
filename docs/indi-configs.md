@@ -14,7 +14,6 @@ LumiSky knows the mappings for popular manufacturers like ZWO, QHY, etc. but for
 | ToupTek      | `CCD_CONTROLS:Gain`  | `CCD_OFFSET:Offset`   |
 | PlayerOne    | `CCD_CONTROLS:Gain`  | `CCD_CONTROLS:Offset` |
 | Svbony       | `CCD_CONTROLS:Gain`  | `CCD_CONTROLS:Offset` |
-| Raspi Camera | `CCD_GAIN:Gain`      | (Not Supported)       |
 
 # Custom Properties
 
@@ -93,30 +92,6 @@ Turn on 16-bit images.
     "Property": "CCD_VIDEO_FORMAT",
     "Field": "SVB_IMG_RAW16",
     "Value": true
-  }
-]
-```
-
-## Raspi Camera
-
-Turn off auto white balance.
-
-```json
-[
-  {
-    "Property": "AwbMode",
-    "Field": "Awb Mode",
-    "Value": "custom"
-  },
-  {
-    "Property": "Adjustments",
-    "Field": "AwbRed",
-    "Value": 1
-  },
-  {
-    "Property": "Adjustments",
-    "Field": "AwbBlue",
-    "Value": 1
   }
 ]
 ```

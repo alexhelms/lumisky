@@ -46,6 +46,8 @@ Set the INDI hostname, port, and camera name in `Settings > Camera`.
 
 LumiSky will try to connect to the INDI server and get the list of devices for you to select.
 
+Select your device and camera manufacturer.
+
 #### Exposure
 
 Set the following settings to the same values used when your collected image statistics.
