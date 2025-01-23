@@ -18,9 +18,13 @@
 
                     <RadzenFormField Text="Camera Url" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <ChildContent>
-                            <RadzenTextBox @bind-Value="model.RaspiCameraUrl" @bind-Value:after="OnRaspiCameraUrl" />
+                            <RadzenTextBox @bind-Value="model.RaspiCameraUrl" @bind-Value:after="CheckRaspiConnection" />
                         </ChildContent>
                     </RadzenFormField>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start">
+                        <RadzenButton Text="Test Connection" Click="@(async () => await CheckRaspiConnection())" class="ls-shadow" />
+                    </RadzenStack>
 
                 </RadzenStack>
             </ChildContent>
@@ -44,12 +48,10 @@
                         @if (nativeRaspiCameraOk)
                         {
                             <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                Detected Cameras
+                                If your camera is not detected below, check the flat flex cable between the camera and pi.
                             </RadzenText>
 
-                            <RadzenTextArea ReadOnly="true" Rows="6">
-                                @detectedCameras
-                            </RadzenTextArea>
+                            <RadzenTextArea ReadOnly="true" Rows="10" @bind-Value=@detectedCameras />
                         }
                         else 
                         {
@@ -102,6 +104,8 @@
                     detectedCameras = result.Stdout;
                 }
             }
+
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -123,7 +127,7 @@
         });
     }
 
-    private async Task OnRaspiCameraUrl()
+    private async Task CheckRaspiConnection()
     {
         if (string.IsNullOrWhiteSpace(model.RaspiCameraUrl))
             return;
@@ -131,31 +135,36 @@
         _raspiWebCts?.Dispose();
         _raspiWebCts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
 
+        bool success = false;
+
         try
         {
             using var client = new HttpClient();
             client.BaseAddress = new Uri(model.RaspiCameraUrl);
             using var response = await client.GetAsync("/ping", _raspiWebCts.Token);
-            if (response.IsSuccessStatusCode)
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Duration = 2000,
-                    Summary = "Connected to Raspi Camera!",
-                });
-            }
-            else
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Warning,
-                    Duration = 2000,
-                    Summary = "Could not connect to Raspi Camera!",
-                });
-            }
+            response.EnsureSuccessStatusCode();
+            success = true;
         }
         catch (OperationCanceledException) { }
+
+        if (success)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Duration = 2000,
+                Summary = "Connected to Raspi Camera!",
+            });
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Duration = 2000,
+                Summary = "Could not connect to Raspi Camera!",
+            });
+        }
     }
 
     public record RaspiSettingsModel
