@@ -10,6 +10,14 @@ RUN echo "deb http://archive.raspberrypi.org/debian/ bookworm main" > /etc/apt/s
 RUN DEBIAN_FRONTEND=noninteractive apt update && apt -y upgrade
 
 RUN DEBIAN_FRONTEND=noninteractive apt update && apt install -y --no-install-recommends \
+    nano \
+    htop \
+    wget \
+    curl \
+    netcat-traditional \
+    iputils-ping \
+    mtr \
+    dnsutils \
     rpicam-apps-lite \
     libraw-bin \
   && apt-get clean \

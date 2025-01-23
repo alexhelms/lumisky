@@ -30,7 +30,7 @@
             </ChildContent>
         </RadzenFieldset>
 
-        @if(arm64)
+        @if (arm64 && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "false")
         {
             <RadzenFieldset class="ls-shadow">
                 <HeaderTemplate>
@@ -145,7 +145,7 @@
             response.EnsureSuccessStatusCode();
             success = true;
         }
-        catch (OperationCanceledException) { }
+        catch (Exception) { }
 
         if (success)
         {
