@@ -5,13 +5,9 @@ services:
     restart: unless-stopped
     user: 1654:1654
     volumes:
-      - lumisky-data:/lumisky
-    network_mode: host
+      - ~/lumisky:/lumisky
     ports:
       - 8080:8080
     environment:
       TZ: "America/Phoenix"
       LUMISKY_PATH: "/lumisky"
-
-volumes:
-  lumisky-data:

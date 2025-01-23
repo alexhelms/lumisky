@@ -6,7 +6,6 @@ services:
     user: 1654:1654
     volumes:
       - ~/lumisky/data:/lumisky
-    network_mode: host
     ports:
       - 8080:8080
     environment:
@@ -19,7 +18,7 @@ services:
     restart: unless-stopped
     privileged: true
     volumes:
-      - indi_server-config:/root/.indi
+      - ~/.indi:/root/.indi
     network_mode: host
     ports:
       - 7624:7624
@@ -31,6 +30,3 @@ services:
       "-d", "1024",
       "indi_asi_ccd"
     ]
-
-volumes:
-  indi_server-config:

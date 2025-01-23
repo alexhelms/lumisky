@@ -6,7 +6,6 @@ services:
     user: 1654:1654
     volumes:
       - ~/lumisky/data:/lumisky
-    network_mode: host
     ports:
       - 8080:8080
     environment:
@@ -29,6 +28,3 @@ services:
       - /dev/dma_heap:/dev/dma_heap
     environment:
       TZ: "America/Phoenix"
-
-volumes:
-  indi_server-config:
