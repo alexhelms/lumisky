@@ -1,6 +1,6 @@
 - **Getting Started**
   - [Introduction](/introduction)
-  - [Installlation](/installation)
+  - [Installation](/installation)
   - [Initial Setup](/initial-setup)
   - [Settings](/settings)
   - [Publish](/publish)
