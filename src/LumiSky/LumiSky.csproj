@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LumiSky.Core\LumiSky.Core.csproj" />
+    <ProjectReference Include="..\LumiSky.Rpicam\LumiSky.Rpicam.csproj" />
   </ItemGroup>
 
   <ItemGroup>

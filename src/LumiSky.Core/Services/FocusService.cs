@@ -85,7 +85,7 @@ public class FocusService : IDisposable
 
             var token = _cts.Token;
 
-            using IndiCamera camera = await _deviceFactory.GetCamera(token);
+            using var camera = await _deviceFactory.GetCamera(token);
 
             while (!token.IsCancellationRequested)
             {
@@ -129,7 +129,7 @@ public class FocusService : IDisposable
         }
         catch (Exception e)
         {
-            Log.Error(e, "Error while focusing");
+            Log.Error(e, "Error while focusing: {Message}", e.Message);
             await _notificationService.SendNotification(new NotificationMessage
             {
                 Summary = "Error While Focusing",

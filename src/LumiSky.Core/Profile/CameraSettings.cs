@@ -1,15 +1,20 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using LumiSky.Core.Collections;
 using LumiSky.Core.Indi;
-using System.Collections.Specialized;
 
 namespace LumiSky.Core.Profile;
 
-public interface ICameraSettings : IDeviceSettings
+public interface ICameraSettings : ISettings
 {
+    string CameraType { get; set; }
+
+    string IndiDeviceName { get; set; }
+
     string IndiHostname { get; set; }
 
     int IndiPort { get; set; }
+
+    string RaspiCameraUrl { get; set; }
 
     string CameraVendor { get; set; }
 
@@ -50,30 +55,17 @@ public interface ICameraSettings : IDeviceSettings
 
 public sealed partial class CameraSettings : Settings, ICameraSettings
 {
-    protected override void HookEvents()
-    {
-        foreach (var (key, value) in Extra) HookPropertyEvents(value);
-
-        ((INotifyCollectionChanged)Extra).CollectionChanged += OnCollectionChanged;
-    }
-
-    protected override void UnhookEvents()
-    {
-        foreach (var (key, value) in Extra) UnhookPropertyEvents(value);
-
-        ((INotifyCollectionChanged)Extra).CollectionChanged -= OnCollectionChanged;
-    }
-
     protected override void Reset()
     {
-        Name = string.Empty;
+        CameraType = "INDI";
+        IndiDeviceName = string.Empty;
         IndiHostname = "localhost";
         IndiPort = 7624;
+        RaspiCameraUrl = string.Empty;
         CameraVendor = IndiMappings.Vendor.ZWO;
         GainMapping = IndiMappings.GainMappings.First().Mapping;
         OffsetMapping = IndiMappings.OffsetMappings.First().Mapping;
         CustomProperties = string.Empty;
-        Extra = new();
         Binning = 1;
         FocalLength = 10;
         Offset = 0;
@@ -91,13 +83,19 @@ public sealed partial class CameraSettings : Settings, ICameraSettings
     }
 
     [ObservableProperty]
-    public partial string Name { get; set; } = string.Empty;
+    public partial string CameraType { get; set; } = "INDI";
+
+    [ObservableProperty]
+    public partial string IndiDeviceName { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string IndiHostname { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial int IndiPort { get; set; } = 7624;
+
+    [ObservableProperty]
+    public partial string RaspiCameraUrl { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string CameraVendor { get; set; } = IndiMappings.Vendor.ZWO;

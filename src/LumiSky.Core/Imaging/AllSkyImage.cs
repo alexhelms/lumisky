@@ -3,6 +3,7 @@ using LumiSky.Core.Memory;
 using LumiSky.Core.Primitives;
 using LumiSky.Core.Utilities;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
 
 namespace LumiSky.Core.Imaging;
 

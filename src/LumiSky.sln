@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumiSky.Tests", "LumiSky.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumiSky.Rpicam", "LumiSky.Rpicam\LumiSky.Rpicam.csproj", "{642E82A0-EC6C-4EDD-B2A1-4C14EC9A2CE9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LumiSky.Rpicam.Common", "LumiSky.Rpicam.Common\LumiSky.Rpicam.Common.csproj", "{2DCD948D-6E21-4028-8BAE-1D781D7FBE46}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{642E82A0-EC6C-4EDD-B2A1-4C14EC9A2CE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{642E82A0-EC6C-4EDD-B2A1-4C14EC9A2CE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{642E82A0-EC6C-4EDD-B2A1-4C14EC9A2CE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DCD948D-6E21-4028-8BAE-1D781D7FBE46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DCD948D-6E21-4028-8BAE-1D781D7FBE46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DCD948D-6E21-4028-8BAE-1D781D7FBE46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DCD948D-6E21-4028-8BAE-1D781D7FBE46}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

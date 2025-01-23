@@ -32,12 +32,17 @@
     <PackageReference Include="Quartz.Extensions.DependencyInjection" />
     <PackageReference Include="Quartz.Extensions.Hosting" />
     <PackageReference Include="Serilog" />
+    <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="SlimMessageBus" />
     <PackageReference Include="SlimMessageBus.Host.Memory" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Data\Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LumiSky.Rpicam.Common\LumiSky.Rpicam.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,5 @@
-﻿@using LumiSky.Core.Indi;
+﻿@using LumiSky.Core.Devices
 @using LumiSky.Core.Profile
-@using System.Text.Json
-@implements IDisposable
 @inject IProfileProvider Profile
 @inject NotificationService NotificationService
 
@@ -10,101 +8,18 @@
 
         <RadzenFieldset class="ls-shadow">
             <HeaderTemplate>
-                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>INDI</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>General</strong></RadzenText>
             </HeaderTemplate>
             <ChildContent>
                 <RadzenStack>
 
-                    <RadzenRow>
-                        <RadzenColumn SizeSM="6">
-                            <RadzenFormField Text="Hostname" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
-                                <RadzenTextBox @bind-Value="model.IndiHostname" @bind-Value:after="OnIndiHostnameChanged" />
-                            </RadzenFormField>
-                        </RadzenColumn>
-                        <RadzenColumn SizeSM="6">
-                            <RadzenFormField Text="Port" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
-                                <RadzenNumeric @bind-Value="model.IndiPort" @bind-Value:after="OnIndiPortChanged" Min="1" Max="65535" />
-                            </RadzenFormField>
-                        </RadzenColumn>
-                    </RadzenRow>
-
-                    <RadzenFormField Text="Camera Name" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenTextBox @bind-Value="model.Name" @bind-Value:after="OnCameraNameChanged" />
-                    </RadzenFormField>
-
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start">
-                        <RadzenButton Text="Test Connection" Click="@(async () => await ConnectToIndi())" class="ls-shadow" />
-                    </RadzenStack>
-
-                    @if (indiClient is null)
-                    {
-                        <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" Shade="Shade.Lighter" AllowClose="false" class="rz-m-0">
-                            Cannot connect to INDI server, check hostname and port.
-                        </RadzenAlert>
-                    }
-
-                    @if (indiClient is { IsConnected: false })
-                    {
-                        <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-                    }
-
-                    @if (indiClient is { IsConnected: true })
-                    {
-                        var discoveredDevicesLabel = $"Discovered Devices ({deviceNames.Count})";
-                        <RadzenFormField Text="@discoveredDevicesLabel" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                            <RadzenListBox TValue="string" Data=@deviceNames ReadOnly="true" Style="height: 180px;">
-                                <Template Context="data">
-                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                                        <RadzenButton Text="Use" Click="@(() => OnDeviceSelected(data))" />
-                                        <RadzenText Text="@data" class="rz-m-0" />
-                                    </RadzenStack>
-                                </Template>
-                            </RadzenListBox>
-                        </RadzenFormField>
-                    }
-
-                    <RadzenRow>
-
-                        <RadzenColumn SizeSM="4">
-                            <RadzenFormField Text="Camera Manufacturer" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
-                                <ChildContent>
-                                    <RadzenDropDown Data=@IndiMappings.Vendors @bind-Value=model.CameraVendor />
-                                </ChildContent>
-                                <Helper>
-                                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                        Select your camera manufacturer so LumiSky can set gain and offset.
-                                    </RadzenText>
-                                </Helper>
-                            </RadzenFormField>
-                        </RadzenColumn>
-
-                        @if (model.CameraVendor == IndiMappings.Vendor.Custom)
-                        {
-                            <RadzenColumn SizeSM="4">
-                                <RadzenFormField Text="Gain Mapping" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
-                                    <RadzenTextBox @bind-Value=model.GainMapping Disabled=@(model.CameraVendor != IndiMappings.Vendor.Custom) />
-                                </RadzenFormField>
-                            </RadzenColumn>
-                        }
-
-                        @if (model.CameraVendor == IndiMappings.Vendor.Custom)
-                        {
-                            <RadzenColumn SizeSM="4">
-                                <RadzenFormField Text="Offset Mapping" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
-                                    <RadzenTextBox @bind-Value=model.OffsetMapping />
-                                </RadzenFormField>
-                            </RadzenColumn>
-                        }
-
-                    </RadzenRow>
-
-                    <RadzenFormField Text="Custom INDI Config" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width: 100%;">
+                    <RadzenFormField Text="Camera Type" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <ChildContent>
-                            <RadzenTextArea @bind-Value=model.CustomProperties @bind-Value:after=OnCustomPropertiesChanged Rows="8" Style="font-family: monospace;" />
+                            <RadzenDropDown Data="@DeviceTypes.All" @bind-Value=@model.CameraType />
                         </ChildContent>
                         <Helper>
                             <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
-                                Additional configuration may be required for your setup. See the <RadzenLink Path="/docs/indi-configs">docs</RadzenLink> for more information.
+                                Select the type of camera you are using.
                             </RadzenText>
                         </Helper>
                     </RadzenFormField>
@@ -273,18 +188,10 @@
 
 @code {
     private CameraSettingsModel model = new();
-    private IndiClient? indiClient;
-    private HashSet<string> deviceNames = [];
 
     protected override void OnInitialized()
     {
-        model.IndiHostname = Profile.Current.Camera.IndiHostname;
-        model.IndiPort = Profile.Current.Camera.IndiPort;
-        model.Name = Profile.Current.Camera.Name;
-        model.CameraVendor = Profile.Current.Camera.CameraVendor;
-        model.GainMapping = Profile.Current.Camera.GainMapping;
-        model.OffsetMapping = Profile.Current.Camera.OffsetMapping;
-        model.CustomProperties = Profile.Current.Camera.CustomProperties;
+        model.CameraType = Profile.Current.Camera.CameraType;
         model.Binning = Profile.Current.Camera.Binning;
         model.Offset = Profile.Current.Camera.Offset;
         model.DaytimeGain = Profile.Current.Camera.DaytimeGain;
@@ -298,30 +205,11 @@
         model.NighttimeBiasG = Profile.Current.Camera.NighttimeBiasG * ushort.MaxValue;
         model.NighttimeBiasB = Profile.Current.Camera.NighttimeBiasB * ushort.MaxValue;
         model.FocalLength = Profile.Current.Camera.FocalLength;
-
-        _ = ConnectToIndi(showNotification: false);
-    }
-
-    public void Dispose()
-    {
-        if (indiClient != null)
-        {
-            indiClient.DeviceAdded -= OnDeviceAdded;
-            indiClient.DeviceRemoved -= OnDeviceRemoved;
-            indiClient.Dispose();
-            indiClient = null;
-        }
     }
 
     private void OnSubmit(CameraSettingsModel model)
     {
-        Profile.Current.Camera.IndiHostname = model.IndiHostname ?? string.Empty;
-        Profile.Current.Camera.IndiPort = model.IndiPort;
-        Profile.Current.Camera.Name = model.Name ?? string.Empty;
-        Profile.Current.Camera.CameraVendor = model.CameraVendor;
-        Profile.Current.Camera.GainMapping = model.GainMapping;
-        Profile.Current.Camera.OffsetMapping = model.OffsetMapping;
-        Profile.Current.Camera.CustomProperties = model.CustomProperties;
+        Profile.Current.Camera.CameraType = model.CameraType;
         Profile.Current.Camera.Binning = model.Binning;
         Profile.Current.Camera.Offset = model.Offset;
         Profile.Current.Camera.DaytimeGain = model.DaytimeGain;
@@ -344,135 +232,9 @@
         });
     }
 
-    private Task OnIndiHostnameChanged() => ConnectToIndi();
-
-    private Task OnIndiPortChanged() => ConnectToIndi();
-
-    private async Task ConnectToIndi(bool showNotification = true)
-    {
-        if (model.IndiHostname is { Length: >0 } &&
-            model.IndiPort > 0)
-        {
-            if (indiClient != null)
-            {
-                indiClient.DeviceAdded -= OnDeviceAdded;
-                indiClient.DeviceRemoved -= OnDeviceRemoved;
-                indiClient.Dispose();
-                indiClient = null;
-            }
-
-            deviceNames.Clear();
-            await InvokeAsync(StateHasChanged);
-
-            indiClient = new IndiClient();
-            indiClient.DeviceAdded += OnDeviceAdded;
-            indiClient.DeviceRemoved += OnDeviceRemoved;
-
-            try
-            {
-                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-                await indiClient.Connect(model.IndiHostname, model.IndiPort, timeout.Token);
-
-                if (showNotification)
-                {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Success,
-                        Duration = 2000,
-                        Summary = "Connected to INDI!",
-                    });
-                }
-            }
-            catch (Exception)
-            {
-                if (indiClient != null)
-                {
-                    indiClient.DeviceAdded -= OnDeviceAdded;
-                    indiClient.DeviceRemoved -= OnDeviceRemoved;
-                    indiClient.Dispose();
-                    indiClient = null;
-                    await InvokeAsync(StateHasChanged);
-                }
-
-                if (showNotification)
-                {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Warning,
-                        Duration = 2000,
-                        Summary = "Could not connect to INDI!",
-                    });
-                }
-            }
-        }
-    }
-
-    private void OnDeviceAdded(object? sender, string deviceName)
-    {
-        deviceNames.Add(deviceName);
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void OnDeviceRemoved(object? sender, string deviceName)
-    {
-        deviceNames.Remove(deviceName);
-        InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnDeviceSelected(string deviceName)
-    {
-        model.Name = deviceName;
-        await OnCameraNameChanged();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnCameraNameChanged()
-    {
-        if (model.Name is { Length: > 0 })
-        {
-            // Try to match the camera name to a known vendor.
-            var vendor = IndiMappings.Vendors
-                .Where(vendor => model.Name.Contains(vendor, StringComparison.OrdinalIgnoreCase))
-                .FirstOrDefault();
-
-            if (vendor is not null)
-            {
-                model.CameraVendor = vendor;
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-    }
-
-    private void OnCustomPropertiesChanged()
-    {
-        if (string.IsNullOrWhiteSpace(model.CustomProperties))
-            return; 
-
-        try
-        {
-            _ = JsonSerializer.Deserialize<List<IndiCustomProperty>>(model.CustomProperties, IndiMappings.JsonOptions);
-        }
-        catch (Exception)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Warning,
-                Duration = 2000,
-                Summary = "INDI Custom Settings",
-                Detail = "Your INDI custom settings cannot be parsed and may have a syntax error.",
-            });
-        }
-    }
-
     public record CameraSettingsModel
     {
-        public string IndiHostname { get; set; } = string.Empty;
-        public int IndiPort { get; set; }
-        public string CameraVendor { get; set; } = IndiMappings.Vendor.ZWO;
-        public string GainMapping { get; set; } = IndiMappings.GainMappings.First().Mapping;
-        public string OffsetMapping { get; set; } = IndiMappings.OffsetMappings.First().Mapping;
-        public string CustomProperties { get; set; } = string.Empty;
-        public string? Name { get; set; }
+        public string CameraType { get; set; } = DeviceTypes.INDI;
         public int Binning { get; set; }
         public int Offset { get; set; }
         public int DaytimeGain { get; set; }

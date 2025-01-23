@@ -43,7 +43,7 @@ public class FindExposureJob : JobBase
         }
         else
         {
-            using IndiCamera camera = await _deviceFactory.GetCamera(context.CancellationToken);
+            using var camera = await _deviceFactory.GetCamera(context.CancellationToken);
             context.CancellationToken.ThrowIfCancellationRequested();
             
             bool isDay = _sunService.IsDaytime();
@@ -110,7 +110,7 @@ public class FindExposureJob : JobBase
     }
 
     private async Task<double> ExposeAndMeasureMedian(
-        IndiCamera camera,
+        ICamera camera,
         ExposureParameters exposureParameters,
         CancellationToken token)
     {

@@ -1,6 +1,5 @@
-using CliWrap;
+using LumiSky.Rpicam.Common;
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
 using System.Text.Json;
 
 namespace LumiSky.Rpicam;
@@ -17,6 +16,11 @@ public class Program
         builder.Services.AddSingleton<RpicamService>();
 
         var app = builder.Build();
+        
+        app.MapGet("/ping", () =>
+        {
+            return Results.Ok();
+        });
 
         app.MapPost("/execute", async ([FromQuery] string args, [FromServices] RpicamService rpicam, CancellationToken token) =>
         {
@@ -24,6 +28,11 @@ public class Program
                 return Results.Conflict();
 
             var result = await rpicam.Execute(args, token);
+            if (result.ExitCode == 0)
+            {
+                await rpicam.ConvertDngToTiff(token);
+            }
+
             return Results.Json(result);
         });
 
@@ -32,7 +41,7 @@ public class Program
             var fileInfo = new FileInfo(Path.Combine(rpicam.WorkingDir, filename));
             if (fileInfo.Exists)
             {
-                return Results.File(fileInfo.FullName, "application/octet-stream");
+                return Results.File(fileInfo.FullName, "application/octet-stream", filename);
             }
 
             return Results.NotFound();
@@ -41,50 +50,3 @@ public class Program
         app.Run();
     }
 }
-
-public class RpicamService
-{
-    private readonly string _rpicamStillPath;
-
-    public string WorkingDir => "/tmp/rpicam";
-
-    public bool IsRunning { get; private set; }
-
-    public RpicamService(IConfiguration config)
-    {
-        _rpicamStillPath = config["rpicam-still"] ?? throw new ArgumentException("rpicam-still");
-        if (!File.Exists(_rpicamStillPath))
-        {
-            throw new FileNotFoundException("rpicam-still not found");
-        }
-
-        Directory.CreateDirectory(WorkingDir);
-    }
-
-    public async Task<RpicamResult> Execute(string args, CancellationToken token)
-    {
-        try
-        {
-            IsRunning = true;
-
-            var stdout = new StringBuilder(1024);
-            var stderr = new StringBuilder(1024);
-
-            CommandResult result = await Cli.Wrap(_rpicamStillPath)
-            .WithArguments(args)
-            .WithWorkingDirectory(WorkingDir)
-            .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdout))
-            .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stderr))
-            .WithValidation(CommandResultValidation.None)
-            .ExecuteAsync(token);
-
-            return new RpicamResult(result.ExitCode, result.RunTime, stdout.ToString(), stderr.ToString());
-        }
-        finally
-        {
-            IsRunning = false;
-        }
-    }
-}
-
-public record RpicamResult(int ExitCode, TimeSpan Elapsed, string Stdout, string Stderr);

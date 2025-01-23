@@ -2,7 +2,7 @@
 
 namespace LumiSky.Core.Devices;
 
-public interface ICamera
+public interface ICamera : IDisposable
 {
     Task<bool> ConnectAsync(CancellationToken token = default);
     void Disconnect();
@@ -10,6 +10,7 @@ public interface ICamera
     Task<AllSkyImage?> TakeImageAsync(ExposureParameters parameters, CancellationToken token = default);
     Task AbortImageAsync();
 
+    public string DeviceType { get; }
     public string Name { get; }
     public bool IsConnected { get; }
 }
