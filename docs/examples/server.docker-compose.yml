@@ -1,7 +1,7 @@
 services:
   lumisky:
     container_name: "lumisky"
-    image: ghcr.io/alexhelms/lumisky:latest
+    image: ghcr.io/alexhelms/lumisky:main
     restart: unless-stopped
     user: 1654:1654
     volumes:
