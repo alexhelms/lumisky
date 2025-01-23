@@ -131,7 +131,7 @@ jobs:
 
   create-manifests:
     runs-on: ubuntu-22.04
-    needs: [lumisky-amd64]
+    needs: [lumisky-amd64, lumisky-arm64]
     permissions:
       contents: read
       packages: write
