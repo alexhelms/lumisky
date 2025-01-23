@@ -38,9 +38,6 @@ jobs:
           flavor: |
             latest=true
             suffix=-amd64
-          tags: |
-            type=semver,pattern={{raw}}
-            type=sha,prefix=,format=long,
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -81,6 +78,7 @@ jobs:
   #           latest=true
   #           suffix=-arm64
   #         tags: |
+  #           type=ref,event=branch  
   #           type=semver,pattern={{raw}}
   #           type=sha,prefix=,format=long,
 
@@ -145,13 +143,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
        
-      - name: Create SHA manifest and push
-        run: |
-          docker manifest create \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-amd64
-          docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
       - name: Create latest manifest and push
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: |
@@ -160,8 +151,7 @@ jobs:
             --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64
           docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-      - name: Create tag manifest and push
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+      - name: Create ref manifest and push
         run: |
           docker manifest create \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} \
