@@ -32,7 +32,7 @@ public class CaptureJob : JobBase
 
     protected override async Task OnExecute(IJobExecutionContext context)
     {
-        using IndiCamera camera = await _deviceFactory.GetCamera(context.CancellationToken);
+        using var camera = await _deviceFactory.GetCamera(context.CancellationToken);
         context.CancellationToken.ThrowIfCancellationRequested();
 
         using var image = await ExposeImage(camera, context.CancellationToken);
@@ -60,7 +60,7 @@ public class CaptureJob : JobBase
     }
 
 
-    private async Task<AllSkyImage> ExposeImage(IndiCamera camera, CancellationToken token)
+    private async Task<AllSkyImage> ExposeImage(ICamera camera, CancellationToken token)
     {
         bool isDay = _sunService.IsDaytime();
         var exposureParameters = new ExposureParameters

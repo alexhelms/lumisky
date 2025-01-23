@@ -1,0 +1,174 @@
+﻿@using LumiSky.Core.Profile
+@using System.Runtime.InteropServices
+@using LumiSky.Rpicam.Common
+@implements IDisposable
+@inject IProfileProvider Profile
+@inject NotificationService NotificationService
+@inject RpicamService RpicamService
+
+<RadzenTemplateForm TItem="RaspiSettingsModel" Data="@model" Submit="OnSubmit">
+    <RadzenStack>
+
+        <RadzenFieldset class="ls-shadow">
+            <HeaderTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Web</strong></RadzenText>
+            </HeaderTemplate>
+            <ChildContent>
+                <RadzenStack>
+
+                    <RadzenFormField Text="Camera Url" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <ChildContent>
+                            <RadzenTextBox @bind-Value="model.RaspiCameraUrl" @bind-Value:after="CheckRaspiConnection" />
+                        </ChildContent>
+                    </RadzenFormField>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Start">
+                        <RadzenButton Text="Test Connection" Click="@(async () => await CheckRaspiConnection())" class="ls-shadow" />
+                    </RadzenStack>
+
+                </RadzenStack>
+            </ChildContent>
+        </RadzenFieldset>
+
+        @if(arm64)
+        {
+            <RadzenFieldset class="ls-shadow">
+                <HeaderTemplate>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Native</strong></RadzenText>
+                </HeaderTemplate>
+                <ChildContent>
+                    <RadzenStack>
+
+                        <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                            Native raspberry pi camera support is only available when LumiSky is running
+                            as a native application on a raspberry pi and LumiSky can directly control
+                            the camera hardware.
+                        </RadzenText>
+
+                        @if (nativeRaspiCameraOk)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                If your camera is not detected below, check the flat flex cable between the camera and pi.
+                            </RadzenText>
+
+                            <RadzenTextArea ReadOnly="true" Rows="10" @bind-Value=@detectedCameras />
+                        }
+                        else 
+                        {
+                            <RadzenAlert AllowClose="false" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Darker">
+                                Raspberry Pi camera executables could not be found!
+                                Ensure @RpicamService.RpicamStill and @RpicamService.UnprocessedRaw are present.
+                            </RadzenAlert>
+                        }
+
+                    </RadzenStack>
+                </ChildContent>
+            </RadzenFieldset>
+        }
+
+        <RadzenRow>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Save" class="ls-shadow" />
+        </RadzenRow>
+
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    private RaspiSettingsModel model = new();
+    private CancellationTokenSource? _raspiWebCts;
+    private bool arm64 = RuntimeInformation.OSArchitecture == Architecture.Arm64;
+    private bool nativeRaspiCameraOk;
+    private string? detectedCameras;
+
+    protected override async Task OnInitializedAsync()
+    {
+        model.RaspiCameraUrl = Profile.Current.Camera.RaspiCameraUrl;
+
+        if (arm64)
+        {
+            try
+            {
+                RpicamService.CheckExecutablesOrThrow();
+                nativeRaspiCameraOk = true;
+            }
+            catch (Exception)
+            {
+                nativeRaspiCameraOk = false;
+            }
+
+            if (nativeRaspiCameraOk)
+            {
+                var result = await RpicamService.Execute("--list-cameras");
+                if (result.ExitCode == 0)
+                {
+                    detectedCameras = result.Stdout;
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        _raspiWebCts?.Cancel();
+        _raspiWebCts?.Dispose();
+    }
+
+    private void OnSubmit(RaspiSettingsModel model)
+    {
+        Profile.Current.Camera.RaspiCameraUrl = model.RaspiCameraUrl;
+
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Duration = 2000,
+            Summary = "Saved!",
+        });
+    }
+
+    private async Task CheckRaspiConnection()
+    {
+        if (string.IsNullOrWhiteSpace(model.RaspiCameraUrl))
+            return;
+
+        _raspiWebCts?.Dispose();
+        _raspiWebCts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+
+        bool success = false;
+
+        try
+        {
+            using var client = new HttpClient();
+            client.BaseAddress = new Uri(model.RaspiCameraUrl);
+            using var response = await client.GetAsync("/ping", _raspiWebCts.Token);
+            response.EnsureSuccessStatusCode();
+            success = true;
+        }
+        catch (OperationCanceledException) { }
+
+        if (success)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Duration = 2000,
+                Summary = "Connected to Raspi Camera!",
+            });
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Duration = 2000,
+                Summary = "Could not connect to Raspi Camera!",
+            });
+        }
+    }
+
+    public record RaspiSettingsModel
+    {
+        public string RaspiCameraUrl { get; set; } = string.Empty;
+    }
+}

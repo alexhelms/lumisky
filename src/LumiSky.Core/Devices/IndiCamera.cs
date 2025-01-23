@@ -32,8 +32,8 @@ public class IndiCamera : ICamera, IDisposable
         {
             Disconnect();
 
-            var name = _profile.Current.Camera.Name;
-            if (string.IsNullOrWhiteSpace(name))
+            var name = Name;
+            if (string.IsNullOrWhiteSpace(Name))
                 name = $"Camera {_profile.Current.Camera.IndiHostname}:{_profile.Current.Camera.IndiPort}";
             throw new NotConnectedException($"{name} not connected");
         }
@@ -41,7 +41,7 @@ public class IndiCamera : ICamera, IDisposable
 
     public async Task<bool> ConnectAsync(CancellationToken token = default)
     {
-        var cameraName = _profile.Current.Camera.Name;
+        var cameraName = Name;
         var hostname = _profile.Current.Camera.IndiHostname;
         var port = _profile.Current.Camera.IndiPort;
 
@@ -167,7 +167,7 @@ public class IndiCamera : ICamera, IDisposable
         catch (OperationCanceledException) { }
         catch (Exception e)
         {
-            Log.Error(e, "Error taking image with INDI camera {Name}", _profile.Current.Camera.Name);
+            Log.Error(e, "Error taking image with INDI camera {Name}", Name);
         }
 
         return null;
@@ -320,7 +320,8 @@ public class IndiCamera : ICamera, IDisposable
         BayerPattern = BayerPattern.None;
     }
 
-    public string Name => _profile.Current.Camera.Name;
+    public string DeviceType => DeviceTypes.INDI;
+    public string Name => _profile.Current.Camera.IndiDeviceName;
     public bool IsConnected => _isConnected && _client.IsConnected;
     public TimeSpan ExposureMin { get; private set; }
     public TimeSpan ExposureMax { get; private set; }
