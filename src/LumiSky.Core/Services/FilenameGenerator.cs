@@ -47,7 +47,8 @@ public class FilenameGenerator
             _ => throw new NotImplementedException()
         };
 
-        DateTime midpointLocal = (beginLocal + (endLocal - beginLocal));
+        var elapsedSeconds = (endLocal - beginLocal).TotalSeconds;
+        DateTime midpointLocal = beginLocal + TimeSpan.FromSeconds(elapsedSeconds / 2);
         bool isDay = _sunService.IsDaytime(midpointLocal);
         var directory = Path.Combine(
             _profile.Current.App.ImageDataPath, 
