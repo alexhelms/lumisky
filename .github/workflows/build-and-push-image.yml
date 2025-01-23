@@ -134,6 +134,9 @@ jobs:
   create-manifests:
     runs-on: ubuntu-22.04
     needs: [lumisky-amd64]
+    permissions:
+      contents: read
+      packages: write
     
     steps:
       - name: Checkout repository
