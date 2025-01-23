@@ -6,11 +6,14 @@ LumiSky has been deployed at [SDSO](https://sdso.space/) since August 2024.
 
 ## Features
 
-- Supports [INDI](https://www.indilib.org/) cameras
+- Supported cameras
+  - [INDI](https://www.indilib.org/) cameras
+  - [Raspberry Pi](https://www.raspberrypi.com/documentation/accessories/camera.html) cameras 
 - Dusk/dawn transition auto exposure
 - Automatic timelapse generation
 - Panorama images and timelapse video
 - 3D panorama image and video player
+- Host a publicly accessible web site via cloudflare workers
 - Midtone autostretch
 - Auto contrast enhance (S Curve)
 - Accurate white balance

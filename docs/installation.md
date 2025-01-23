@@ -39,7 +39,7 @@ sudo systemctl enable containerd.service
 4. Setup Lumisky.
 
 ```bash
-mkdir -p ~/lumisky/data
+mkdir -p ~/lumisky
 cd ~/lumisky
 sudo groupadd -g 1654 lumisky && sudo useradd -u 1654 -g lumisky lumisky
 sudo chown lumisky:lumisky data
@@ -65,7 +65,7 @@ Copy the following into `docker-compose.yml` and change the following as needed:
    change `8080:8080` to `8081:8080`. See [docker docs](https://docs.docker.com/engine/network/#published-ports)
    for more information.
 
-[docker-compose.yml](examples/raspi.docker-compose.yml ':include :type=code') 
+[docker-compose.yml](/examples/raspi.docker-compose.yml ':include :type=code') 
 
 5. Start LumiSky.
 
@@ -85,7 +85,6 @@ It is assumed your server is already running docker and you can add a new `docke
 
 Change the following as needed:
 * Environment variable `TZ` to your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
-* INDI camera driver. The example uses `indi_asi_ccd`.
 
 [docker-compose.yml](examples/server.docker-compose.yml ':include :type=code')
 

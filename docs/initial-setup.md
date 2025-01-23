@@ -42,11 +42,20 @@ The overhead is different on each setup but is typically 1-3 seconds.
 
 ### Camera
 
-Set the INDI hostname, port, and camera name in `Settings > Camera`.
+Select the typ of camera you are using:
+
+- INDI
+- Raspi Web
+- Raspi Native
+  - Only available if running LumiSky natively on a raspberry pi without docker.
+
+This guide assumes you are using INDI.
+
+Set the INDI hostname, port, and camera name in `Settings > INDI`.
 
 LumiSky will try to connect to the INDI server and get the list of devices for you to select.
 
-Select your device and camera manufacturer.
+Next, select your device and camera manufacturer.
 
 #### Exposure
 

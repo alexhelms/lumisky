@@ -54,47 +54,6 @@ Max camera exposure time, in seconds.
 
 ## Camera
 
-### INDI
-
-LumiSky connects to INDI at [hostname](/settings?id=hostname) and
-[port](/settings?id=port). If LumiSky can connect to INDI it will show a list of devices.
-
-If LumiSky can connect to INDI and your camera is in the list, press the `Use` button to
-use that camera.
-
-#### Hostname
-
-INDI hostname or IP address.
-
-#### Port
-
-INDI port, default is 7624.
-
-#### Camera Name
-
-INDI camera name. This must be the exact device name, e.g. `ZWO CCD ASI224MC`.
-
-#### Camera Manufacturer
-
-You camera's manufacturer.
-
-LumiSky tries to set this value automatically based on the [camera name](/settings?id=camera-name).
-
-INDI devices use vendor specific property names for gain, offset, etc.
-Knowing the camera manufacturer helps LumiSky determine the correct property names.
-
-If needed, you can [customize](/indi-configs?id=indi-configs) the property mappings.
-
-#### Custom
-
-Set a custom camera manufacturer to enable custom gain and offset mapping.
-
-The mapping should be `PROPERTY_NAME:FIELD_NAME` and is case sensitive.
-
-Unfortuntely, these mappings are not documented but are available in the indi device driver's [source code](https://github.com/indilib/indi-3rdparty).
-
-See the [INDI Configs](/indi-configs?id=indi-configs) page for examples and additional information.
-
 ### Exposure
 
 #### Binning
@@ -139,6 +98,69 @@ Per channel bias is required for accurate white balance.
 Focal length, in millimeters.
 
 The focal length is only used for image metadata.
+
+## INDI
+
+LumiSky connects to INDI at [hostname](/settings?id=hostname) and
+[port](/settings?id=port). If LumiSky can connect to INDI it will show a list of devices.
+
+If LumiSky can connect to INDI and your camera is in the list, press the `Use` button to
+use that camera.
+
+### Hostname
+
+INDI hostname or IP address.
+
+### Port
+
+INDI port, default is 7624.
+
+### Camera Name
+
+INDI camera name. This must be the exact device name, e.g. `ZWO CCD ASI224MC`.
+
+### Camera Manufacturer
+
+You camera's manufacturer.
+
+LumiSky tries to set this value automatically based on the [camera name](/settings?id=camera-name).
+
+INDI devices use vendor specific property names for gain, offset, etc.
+Knowing the camera manufacturer helps LumiSky determine the correct property names.
+
+If needed, you can [customize](/indi-configs?id=indi-configs) the property mappings.
+
+### Custom Config
+
+Set a custom camera manufacturer to enable custom gain and offset mapping.
+
+The mapping should be `PROPERTY_NAME:FIELD_NAME` and is case sensitive.
+
+Unfortuntely, these mappings are not documented but are available in the indi device driver's [source code](https://github.com/indilib/indi-3rdparty).
+
+See the [INDI Configs](/indi-configs?id=indi-configs) page for examples and additional information.
+
+## Raspi
+
+Configure a raspberry pi camera.
+
+### Web
+
+LumiSky can control a raspberry pi camera over a web API. This is a custom feature of LumiSky.
+
+`Camera Url` should point to the base address of the LumiSky Rpicam server, e.g. `http://rpicam:8080`.
+
+See the [raspberry pi camera](/raspi-camera) page for more information.
+
+### Native
+
+?> This section is only available if LumiSky is running as a native application on a raspberry pi without docker.
+
+LumiSky will display any detected cameras along with its properties.
+
+If your camera is not detected, check the flat flex cable for the camera.
+
+If you are still having issues, check out [raspberry pi's documentation](https://www.raspberrypi.com/documentation/accessories/camera.html).
 
 ## Image
 
@@ -485,4 +507,56 @@ Default is false.
 
 ## Publish
 
-Publish todo :)
+### General
+
+#### Enable Publishing
+
+Toggle publishing without changing the specific publish settings.
+
+#### Publish Image
+
+Enable to publish the latest image.
+
+#### Publish Panorama
+
+Enable to publish the latest panorama.
+
+#### Publish Night Timelapse
+
+Enable to publish the most recent night timelapse when automatically created.
+
+#### Publish Day Timelapse
+
+Enable to publish the most recent day timelapse when automatically created.
+
+### Display
+
+#### Title
+
+The title displaed on your published website.
+
+#### Show Image
+
+Enable to show the latest image.
+
+#### Show Panorama
+
+Enable to show the latest panorama and 3d viewer.
+
+#### Show Night Timelapse
+
+Enable to show the latest night timelapse video player.
+
+#### Show Day Timelapse
+
+Enable to show the latest day timelapse video player.
+
+### Cloudflare Worker
+
+#### Url
+
+Your cloudflare worker public url.
+
+#### API Key
+
+Your worker's API key to allow LumiSky to publish data to your cloudflare worker.
