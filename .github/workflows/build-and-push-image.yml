@@ -127,6 +127,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/arm64
+          provenance: false
+          sbom: false
 
   create-manifests:
     runs-on: ubuntu-22.04
