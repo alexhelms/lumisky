@@ -36,7 +36,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
-            latest=true
             suffix=-amd64
 
       - name: Build and push Docker image
@@ -48,6 +47,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
+          provenance: false
+          sbom: false
 
   # lumisky-arm64:
   #   runs-on: [self-hosted, Linux, ARM64]
