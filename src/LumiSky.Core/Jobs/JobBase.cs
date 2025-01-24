@@ -24,7 +24,7 @@ public abstract class JobBase : IJob
             {
                 Log.Error("Job Error: {Message}", e.Message);
 
-                OnException(context);
+                OnException(context, e);
                 
                 if (e is JobExecutionException)
                     throw;
@@ -40,7 +40,7 @@ public abstract class JobBase : IJob
 
     protected abstract Task OnExecute(IJobExecutionContext context);
 
-    protected virtual void OnException(IJobExecutionContext context)
+    protected virtual void OnException(IJobExecutionContext context, Exception exception)
     {
         // empty
     }

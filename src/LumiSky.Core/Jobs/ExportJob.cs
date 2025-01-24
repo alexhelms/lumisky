@@ -1,7 +1,6 @@
-﻿using FluentFTP;
-using LumiSky.Core.Profile;
+﻿using LumiSky.Core.Profile;
+using LumiSky.Core.Services;
 using Quartz;
-using System.Diagnostics;
 
 namespace LumiSky.Core.Jobs;
 
@@ -10,10 +9,17 @@ public class ExportJob : JobBase
     public static readonly JobKey Key = new(JobConstants.Jobs.Export, JobConstants.Groups.Allsky);
     
     private readonly IProfileProvider _profile;
+    private readonly FtpService _ftpService;
+    private readonly NotificationService _notificationService;
 
-    public ExportJob(IProfileProvider profile)
+    public ExportJob(
+        IProfileProvider profile,
+        FtpService ftpService,
+        NotificationService notificationService)
     {
         _profile = profile;
+        _ftpService = ftpService;
+        _notificationService = notificationService;
     }
 
     public string? RawFilename { get; set; }
@@ -65,81 +71,25 @@ public class ExportJob : JobBase
 
         if (localFilenames.Count > 0)
         {
-            var start = Stopwatch.GetTimestamp();
+            try
+            {
+                await _ftpService.UploadFiles(localFilenames, context.CancellationToken);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception e)
+            {
+                // Don't notify of errors if the error was caused by a cancellation.
+                if (context.CancellationToken.IsCancellationRequested)
+                    return;
 
-            using var ftp = new AsyncFtpClient(
-                host: _profile.Current.Export.FtpHostname,
-                user: _profile.Current.Export.FtpUsername,
-                pass: _profile.Current.Export.FtpPassword,
-                port: _profile.Current.Export.FtpPort,
-                config: new FtpConfig
+                Log.Warning(e, "Error exporting via FTP: {Message}", e.Message);
+                await _notificationService.SendNotification(new NotificationMessage
                 {
-                    ValidateAnyCertificate = !_profile.Current.Export.EnableCertificateValidation,
+                    Type = NotificationType.Warning,
+                    Summary = "Error Exporting via FTP",
+                    Detail = e.Message,
                 });
-
-            await ftp.AutoConnect();
-
-            if (!string.IsNullOrWhiteSpace(_profile.Current.Export.FtpRemotePath))
-            {
-                var remotePath = GetRemotePath();
-                await ftp.SetWorkingDirectory(remotePath, context.CancellationToken);
             }
-
-            foreach (var localFilename in localFilenames)
-            {
-                await UploadFile(ftp, localFilename, context.CancellationToken);
-            }
-
-            await ftp.Disconnect();
-
-            var elapsed = Stopwatch.GetElapsedTime(start);
-            Log.Information("FTP upload completed in {Elapsed:F3} seconds", elapsed.TotalSeconds);
         }
-    }
-
-    private async Task UploadFile(AsyncFtpClient ftp, string localFilename, CancellationToken token)
-    {
-        var remoteFilename = localFilename.Replace(_profile.Current.App.ImageDataPath, string.Empty);
-        var start = Stopwatch.GetTimestamp();
-
-        // Make path relative
-        remoteFilename = remoteFilename.TrimStart('/').TrimStart('\\');
-
-        await ftp.UploadFile(localFilename, remoteFilename,
-            existsMode: FtpRemoteExists.Overwrite,
-            createRemoteDir: true,
-            token: token);
-
-        var elapsed = Stopwatch.GetElapsedTime(start);
-
-        // Fixup the remote filename for logging
-        if (!string.IsNullOrWhiteSpace(_profile.Current.Export.FtpRemotePath))
-        {
-            remoteFilename = Path.Join(GetRemotePath(), remoteFilename);
-        }
-        else
-        {
-            remoteFilename = Path.DirectorySeparatorChar + remoteFilename;
-        }
-
-        Log.Information("Uploaded raw {LocalFilename} to {RemoteFilename} in {Elapsed:F3} sec",
-            localFilename, remoteFilename, elapsed.TotalSeconds);
-    }
-
-    private string GetRemotePath()
-    {
-        if (!string.IsNullOrWhiteSpace(_profile.Current.Export.FtpRemotePath))
-        {
-            var remotePath = _profile.Current.Export.FtpRemotePath
-                .Replace('/', Path.DirectorySeparatorChar)
-                .Replace('\\', Path.DirectorySeparatorChar);
-
-            if (!remotePath.EndsWith(Path.DirectorySeparatorChar))
-                remotePath += Path.DirectorySeparatorChar;
-
-            return remotePath;
-        }
-
-        return Path.DirectorySeparatorChar.ToString();
     }
 }

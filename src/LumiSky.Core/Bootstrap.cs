@@ -42,6 +42,7 @@ public static class Bootstrap
         services.AddSingleton<GenerationService>();
         services.AddSingleton<NotificationService>();
         services.AddSingleton<FocusService>();
+        services.AddTransient<FtpService>();
         services.AddSingleton<PublishService>();
         services.AddSingleton<RpicamService>();
         services.AddTransient<IndiCamera>();
