@@ -2,7 +2,7 @@
 @inject IProfileProvider Profile
 @inject NotificationService NotificationService
 
-<RadzenTemplateForm TItem="CaptureSettingsModel" Data="@model" Submit="OnSubmit">
+<RadzenTemplateForm TItem="CaptureSettingsModel" Data="@model" Submit="OnSubmit" InvalidSubmit="OnInvalidSubmit">
     <RadzenStack>
 
         <RadzenFieldset class="ls-shadow">
@@ -17,9 +17,13 @@
                         <RadzenLabel Text="Auto Start" Component="AutoStart" />
                     </RadzenStack>
 
-                    <RadzenFormField Text="Interval [sec]" Variant="Variant.Outlined" AllowFloatingLabel="false">
-                        <RadzenNumeric TValue="int" @bind-Value="model.CaptureIntervalSeconds" Min="5" Max="3600" />
-                    </RadzenFormField>
+                    <RadzenStack Gap="0">
+                        <RadzenFormField Text="Interval [sec]" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                            <RadzenNumeric Name="CaptureInterval" TValue="int" @bind-Value="model.CaptureIntervalSeconds" Min="5" Max="3600" />
+                        </RadzenFormField>
+                        <RadzenCustomValidator Component="CaptureInterval" Validator="@(() => ValidateCaptureInterval(model.CaptureIntervalSeconds))" Popup="true"
+                                               Text="Capture interval must be greater than or equal to max exposure." />
+                    </RadzenStack>
 
                     <RadzenFormField Text="Max Exposure [sec]" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <ChildContent>
@@ -63,6 +67,22 @@
             Duration = 2000,
             Summary = "Saved!",
         });
+    }
+
+    private void OnInvalidSubmit(FormInvalidSubmitEventArgs args)
+    {
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Duration = 2000,
+            Summary = "Invalid Settings!",
+            Detail = string.Join(Environment.NewLine, args.Errors),
+        });
+    }
+
+    private bool ValidateCaptureInterval(int captureIntervalSeconds)
+    {
+        return captureIntervalSeconds >= model.MaxExposureSeconds;
     }
 
     public record CaptureSettingsModel

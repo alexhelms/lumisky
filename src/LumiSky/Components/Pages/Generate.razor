@@ -14,14 +14,6 @@
 
 <PageTitle>Generate</PageTitle>
 
-<HeadContent>
-    <style>
-        .rz-message-popup {
-        z-index: 99;
-        }
-    </style>
-</HeadContent>
-
 <RadzenStack>
     <RadzenRow JustifyContent="JustifyContent.Center">
         <RadzenColumn Size="8" SizeLG="6">
@@ -45,11 +37,11 @@
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenDatePicker @bind-Value=model.StartDate TValue="DateOnly" Style="display: block; width: 100%;" Name="StartDate" />
-                                    <RadzenCustomValidator Component="StartDate" Validator="@(() => ValidateStartDateBeforeEndDate(model.StartDate))" Text="Start date must be before end date." Popup="false" Style="position: absolute;" />
+                                    <RadzenCustomValidator Component="StartDate" Validator="@(() => ValidateStartDateBeforeEndDate(model.StartDate))" Text="Start date must be before end date." Popup="true" />
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenDatePicker @bind-Value=model.StartTime ShowTime="true" ShowSeconds="true" TimeOnly="true" DateFormat="HH:mm:ss" Style="display: block; width: 100%;" Name="StartTime" />
-                                    <RadzenCustomValidator Component="StartTime" Validator="@(() => ValidateStartTimeBeforeEndTime(model.StartTime))" Text="Start time must be before end time." Popup="false" Style="position: absolute;" />
+                                    <RadzenCustomValidator Component="StartTime" Validator="@(() => ValidateStartTimeBeforeEndTime(model.StartTime))" Text="Start time must be before end time." Popup="true" />
                                 </RadzenColumn>
                             </RadzenRow>
 
@@ -59,11 +51,11 @@
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenDatePicker @bind-Value=model.EndDate TValue="DateOnly" Style="display: block; width: 100%;" Name="EndDate" />
-                                    <RadzenCustomValidator Component="EndDate" Validator="@(() => ValidateEndDateAfterStartDate(model.EndDate))" Text="End date must be after start date." Popup="false" Style="position: absolute;" />
+                                    <RadzenCustomValidator Component="EndDate" Validator="@(() => ValidateEndDateAfterStartDate(model.EndDate))" Text="End date must be after start date." Popup="true" />
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenDatePicker @bind-Value=model.EndTime ShowTime="true" ShowSeconds="true" TimeOnly="true" DateFormat="HH:mm:ss" Style="display: block; width: 100%;" Name="EndTime" />
-                                    <RadzenCustomValidator Component="EndTime" Validator="@(() => ValidateEndTimeAfterStartTime(model.EndTime))" Text="End time must be after start time." Popup="false" Style="position: absolute;" />
+                                    <RadzenCustomValidator Component="EndTime" Validator="@(() => ValidateEndTimeAfterStartTime(model.EndTime))" Text="End time must be after start time." Popup="true" />
                                 </RadzenColumn>
                             </RadzenRow>
 

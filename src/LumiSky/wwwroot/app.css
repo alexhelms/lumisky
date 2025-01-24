@@ -10,6 +10,14 @@ body {
     color: black;
 }
 
+.rz-message-popup {
+    z-index: 99;
+}
+
+.rz-form .rz-messages-error {
+    position: static !important;
+}
+
 #blazor-error-ui {
     background: #b90d41;
     bottom: 0;
