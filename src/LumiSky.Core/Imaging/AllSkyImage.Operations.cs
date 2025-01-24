@@ -1,4 +1,5 @@
 ﻿using LumiSky.Core.Mathematics;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -676,6 +677,7 @@ public partial class AllSkyImage
 
     private class AutoSCurveOperation : BaseRowIntervalOperation
     {
+        private float[] lut;
         private double median;
         private double contrast;
         private double inflection;
@@ -687,6 +689,35 @@ public partial class AllSkyImage
             this.median = Math.Clamp(median, 1e-6, 1);
             this.contrast = Math.Clamp(contrast, 1e-6, double.MaxValue);
             inflection = -1 * Math.Log(2) / Math.Log(this.median);
+            lut = CreateLut(this.median, this.contrast, this.inflection);
+        }
+
+        private static float[] CreateLut(double median, double inflection, double contrast)
+        {
+            const int LutSize = ushort.MaxValue + 1;
+            var lut = ArrayPool<float>.Shared.Rent(LutSize);
+            for (int i = 0; i < LutSize; i++)
+            {
+                double value = (double) i / ushort.MaxValue;
+                if (i < median)
+                {
+                    // PixInsight Pixel Math
+                    // (0.5 * (($T^B)/0.5)^a)^(1/B)
+                    lut[i] = (float)(Math.Pow(0.5 * Math.Pow(2 * Math.Pow(value, inflection), contrast), 1 / inflection));
+                }
+                else
+                {
+                    // PixInsight Pixel Math
+                    // (1 - 0.5 * ((1 - ($T^B))/0.5)^a)^(1/B)
+                    lut[i] = (float)(Math.Pow(1 - 0.5 * Math.Pow(2 * (1 - Math.Pow(value, inflection)), contrast), 1 / inflection));
+                }
+            }
+            return lut;
+        }
+
+        public override void Complete()
+        {
+            ArrayPool<float>.Shared.Return(lut);
         }
 
         public override void Invoke(in RowInterval rows)
@@ -697,20 +728,8 @@ public partial class AllSkyImage
 
                 for (int x = rows.Left; x < rows.Right; x++)
                 {
-                    double value = rowSpan[x];
-                    if (value < median)
-                    {
-                        // PixInsight Pixel Math
-                        // (0.5 * (($T^B)/0.5)^a)^(1/B)
-                        value = Math.Pow(0.5 * Math.Pow(2 * Math.Pow(value, inflection), contrast), 1 / inflection);
-                    }
-                    else
-                    {
-                        // PixInsight Pixel Math
-                        // (1 - 0.5 * ((1 - ($T^B))/0.5)^a)^(1/B)
-                        value = Math.Pow(1 - 0.5 * Math.Pow(2 * (1 - Math.Pow(value, inflection)), contrast), 1 / inflection);
-                    }
-                    rowSpan[x] = (float)value;
+                    ushort value = (ushort)(rowSpan[x] * ushort.MaxValue);
+                    rowSpan[x] = lut[value];
                 }
             }
         }
