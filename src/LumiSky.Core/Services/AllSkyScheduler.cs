@@ -1,4 +1,5 @@
 ﻿using LumiSky.Core.Jobs;
+using LumiSky.Core.Profile;
 using Quartz;
 using Quartz.Impl.Matchers;
 
@@ -7,7 +8,7 @@ namespace LumiSky.Core.Services;
 public class AllSkyScheduler
 {
     private readonly ISchedulerFactory _schedulerFactory;
-    private readonly NotificationService _notificationService;
+    private readonly IProfileProvider _profileProvider;
 
     public event EventHandler? AllSkyStarted;
     public event EventHandler? AllSkyStopping;
@@ -18,10 +19,10 @@ public class AllSkyScheduler
 
     public AllSkyScheduler(
         ISchedulerFactory schedulerFactory,
-        NotificationService notificationService)
+        IProfileProvider profileProvider)
     {
         _schedulerFactory = schedulerFactory;
-        _notificationService = notificationService;
+        _profileProvider = profileProvider;
     }
 
     public async Task Start()
@@ -31,6 +32,8 @@ public class AllSkyScheduler
         using var _ = Serilog.Context.LogContext.PushProperty("SourceContext", GetType().Name);
         
         Log.Information("AllSky service starting");
+        Log.Information("Capture Interval: {Interval:F1}s", _profileProvider.Current.Capture.CaptureInterval.TotalSeconds);
+        Log.Information("Max Exposure: {MaxExposure:F1}s", _profileProvider.Current.Capture.MaxExposureDuration.TotalSeconds);
 
         // Create the camera now.
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
