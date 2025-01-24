@@ -316,7 +316,7 @@ public class ImageService
     {
         using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Median", t)));
         // Green median is used for exposure prediction
-        var greenMedian = image.Median(channel: 1);
+        var greenMedian = image.SubsampledMedian(channel: 1);
         return greenMedian;
     }
 
@@ -343,8 +343,6 @@ public class ImageService
 
     private void WhiteBalance(AllSkyImage image)
     {
-        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("White Balance", t)));
-
         double biasR = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasR : _profile.Current.Camera.NighttimeBiasR;
         double biasG = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasG : _profile.Current.Camera.NighttimeBiasG;
         double biasB = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasB : _profile.Current.Camera.NighttimeBiasB;
@@ -357,6 +355,7 @@ public class ImageService
 
         if (scaleR == 1 && scaleG == 1 && scaleB == 1 && biasR == 0 && biasG == 0 && biasB == 0) return;
 
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("White Balance", t)));
         image.WhiteBalance(scaleR, scaleG, scaleB, biasR, biasG, biasB);
     }
 

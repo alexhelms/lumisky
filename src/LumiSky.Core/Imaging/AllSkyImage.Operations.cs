@@ -163,7 +163,7 @@ public partial class AllSkyImage
             variance = (variance - ep * ep / count);
             if (count > 1)
                 variance /= (count - 1);
-            stdDev = MathF.Sqrt(variance);
+            stdDev = float.Sqrt(variance);
 
             return new StatisticsResults
             {
@@ -386,7 +386,7 @@ public partial class AllSkyImage
 
                 for (int x = rows.Left; x < rows.Right; x++)
                 {
-                    float value = MathF.Abs(rowSpan[x] - center);
+                    float value = float.Abs(rowSpan[x] - center);
                     if (value < min)
                         min = value;
                     if (value > max)
@@ -512,7 +512,7 @@ public partial class AllSkyImage
 
                 for (int x = rows.Left; x < rows.Right; x++)
                 {
-                    float value = MathF.Abs(rowSpan[x] - center);
+                    float value = float.Abs(rowSpan[x] - center);
                     if (value >= low && value <= high)
                     {
                         int i = (int)((value - low) / bucketSize);
@@ -574,7 +574,7 @@ public partial class AllSkyImage
                 }
                 else
                 {
-                    float clamped = Math.Clamp(min, lower, upper);
+                    float clamped = float.Clamp(min, lower, upper);
                     rowSpan.Fill(clamped);
                 }
             }
@@ -585,18 +585,37 @@ public partial class AllSkyImage
     {
         private readonly STF stf;
 
+        private float[] mtfLut;
+
         public StretchOperation(AllSkyImage image, int channel, STF stf)
             : base(image, channel)
         {
             AcquireWriteLock = true;
             this.stf = stf;
+            this.mtfLut = CreateLut(stf);
+        }
+
+        private static float[] CreateLut(STF stf)
+        {
+            const int LutSize = ushort.MaxValue + 1;
+            var lut = ArrayPool<float>.Shared.Rent(LutSize);
+            for (int i = 0; i < LutSize; i++)
+            {
+                double value = (double) i / ushort.MaxValue;
+                lut[i] = (float)STF.MTF(stf.M, value);
+            }
+            return lut;
+        }
+
+        public override void Complete()
+        {
+            ArrayPool<float>.Shared.Return(mtfLut);
         }
 
         public override void Invoke(in RowInterval rows)
         {
             float d = 1.0f;
             bool hasClipping = stf.C0 != 0 || stf.C1 != 1.0;
-            bool hasMTF = stf.M != 0.5;
             bool hasDelta = false;
             if (hasClipping)
             {
@@ -611,6 +630,7 @@ public partial class AllSkyImage
                 for (int x = rows.Left; x < rows.Right; x++)
                 {
                     float value = rowSpan[x];
+                    int index = (int)(value * ushort.MaxValue);
 
                     if (hasClipping)
                     {
@@ -635,11 +655,7 @@ public partial class AllSkyImage
                         }
                     }
 
-                    if (hasMTF)
-                    {
-                        value = (float)STF.MTF(stf.M, value);
-                    }
-
+                    value = mtfLut[index];
                     rowSpan[x] = value;
                 }
             }
@@ -669,7 +685,7 @@ public partial class AllSkyImage
 
                 for (int x = rows.Left; x < rows.Right; x++)
                 {
-                    rowSpan[x] = (float)Math.Clamp((rowSpan[x] - bias) * scale + rgbAvgBias, 0.0, 1.0);
+                    rowSpan[x] = float.Clamp((float)((rowSpan[x] - bias) * scale + rgbAvgBias), 0.0f, 1.0f);
                 }
             }
         }
@@ -686,30 +702,31 @@ public partial class AllSkyImage
             : base(image, channel)
         {
             AcquireWriteLock = true;
-            this.median = Math.Clamp(median, 1e-6, 1);
-            this.contrast = Math.Clamp(contrast, 1e-6, double.MaxValue);
-            inflection = -1 * Math.Log(2) / Math.Log(this.median);
-            lut = CreateLut(this.median, this.contrast, this.inflection);
+            this.median = double.Clamp(median, 1e-6, 1);
+            this.contrast = double.Clamp(contrast, 1e-6, double.MaxValue);
+            this.inflection = -1 * double.Log(2) / double.Log(this.median);
+            this.lut = CreateLut(this.median, this.contrast, this.inflection);
         }
 
-        private static float[] CreateLut(double median, double inflection, double contrast)
+        private static float[] CreateLut(double median, double contrast, double inflection)
         {
             const int LutSize = ushort.MaxValue + 1;
             var lut = ArrayPool<float>.Shared.Rent(LutSize);
+            ushort denormalizedMedian = (ushort)(median * ushort.MaxValue);
             for (int i = 0; i < LutSize; i++)
             {
                 double value = (double) i / ushort.MaxValue;
-                if (i < median)
+                if (i < denormalizedMedian)
                 {
                     // PixInsight Pixel Math
                     // (0.5 * (($T^B)/0.5)^a)^(1/B)
-                    lut[i] = (float)(Math.Pow(0.5 * Math.Pow(2 * Math.Pow(value, inflection), contrast), 1 / inflection));
+                    lut[i] = (float)double.Pow(0.5 * double.Pow(2 * double.Pow(value, inflection), contrast), 1 / inflection);
                 }
                 else
                 {
                     // PixInsight Pixel Math
                     // (1 - 0.5 * ((1 - ($T^B))/0.5)^a)^(1/B)
-                    lut[i] = (float)(Math.Pow(1 - 0.5 * Math.Pow(2 * (1 - Math.Pow(value, inflection)), contrast), 1 / inflection));
+                    lut[i] = (float)double.Pow(1 - 0.5 * double.Pow(2 * (1 - double.Pow(value, inflection)), contrast), 1 / inflection);
                 }
             }
             return lut;
@@ -728,8 +745,8 @@ public partial class AllSkyImage
 
                 for (int x = rows.Left; x < rows.Right; x++)
                 {
-                    ushort value = (ushort)(rowSpan[x] * ushort.MaxValue);
-                    rowSpan[x] = lut[value];
+                    int index = (int)(rowSpan[x] * ushort.MaxValue);
+                    rowSpan[x] = lut[index];
                 }
             }
         }
@@ -757,8 +774,8 @@ public partial class AllSkyImage
                 var thisRowSpan = image.Data.GetRowSpan(y, channel);
                 var nextRowSpan = image.Data.GetRowSpan(y + 2, channel);
 
-                int left = Math.Max(2, rows.Left);
-                int right = Math.Min(image.Width - 2, rows.Right);
+                int left = int.Max(2, rows.Left);
+                int right = int.Min(image.Width - 2, rows.Right);
                 for (int x = left; x < right; x++)
                 {
                     // Get NSEW pixel of the same color

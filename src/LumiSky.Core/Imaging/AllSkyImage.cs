@@ -3,7 +3,6 @@ using LumiSky.Core.Memory;
 using LumiSky.Core.Primitives;
 using LumiSky.Core.Utilities;
 using System.Numerics;
-using System.Reflection.Metadata.Ecma335;
 
 namespace LumiSky.Core.Imaging;
 
@@ -295,6 +294,18 @@ public partial class AllSkyImage : IDisposable
         return op.Results.Median;
     }
 
+    public double SubsampledMedian(int channel)
+    {
+        AssertChannel(channel);
+
+        if (PropCache.TryGetValue("median", channel, out var value))
+            return (double)value!;
+
+        double median = DoSubsampledMedian(channel);
+        PropCache.Put("median", channel, median);
+        return median;
+    }
+
     public double MAD(int channel = 0)
     {
         AssertChannel(channel);
@@ -382,15 +393,7 @@ public partial class AllSkyImage : IDisposable
 
     public void StretchUnlinked(bool boost = false)
     {
-        var medians = new double[Channels];
-        var mads = new double[Channels];
-
-        for (int c = 0; c < Channels; c++)
-        {
-            medians[c] = Median(c);
-            mads[c] = MAD(c);
-        }
-
+        (double[] medians, double[] mads) = DoSubsampledMedianAndMAD();
         for (int c = 0; c < Channels; c++)
         {
             var stf = STF.Estimate(boost, medians[c], mads[c]);
@@ -400,15 +403,7 @@ public partial class AllSkyImage : IDisposable
 
     public void StretchLinked(bool boost = false)
     {
-        var medians = new double[Channels];
-        var mads = new double[Channels];
-
-        for (int c = 0; c < Channels; c++)
-        {
-            medians[c] = Median(c);
-            mads[c] = MAD(c);
-        }
-
+        (double[] medians, double[] mads) = DoSubsampledMedianAndMAD();
         var stf = STF.EstimateLinked(boost, medians, mads);
 
         for (int c = 0; c < Channels; c++)
@@ -442,23 +437,13 @@ public partial class AllSkyImage : IDisposable
     {
         if (Channels != 3) return;
 
-        var medians = new double[Channels];
-        for (int c = 0; c < Channels; c++)
-        {
-            medians[c] = Median(c);
-        }
-
+        var medians = DoSubsampledMedian();
         WhiteBalance(redScale, greenScale, blueScale, medians[0], medians[1], medians[2]);
     }
 
     public void AutoSCurve(double contrast = 2.2)
     {
-        var medians = new double[Channels];
-        for (int c = 0; c < Channels; c++)
-        {
-            medians[c] = Median(c);
-        }
-
+        var medians = DoSubsampledMedian();
         var minMedian = medians.Min();
         for (int c = 0; c < Channels; c++)
         {
@@ -523,5 +508,101 @@ public partial class AllSkyImage : IDisposable
             if (channel < 0 || channel >= _channels) throw new ArgumentOutOfRangeException(nameof(channel));
             return _cache.ContainsKey((key, channel));
         }
+    }
+
+    /// <summary>
+    /// Get the median of each channel where every 16th element of the full data is sampled.
+    /// </summary>
+    private double[] DoSubsampledMedian()
+    {
+        var medians = new double[Channels];
+        var tasks = new Task[Channels];
+        for (int c = 0; c < Channels; c++)
+        {
+            int channel = c;
+            tasks[channel] = Task.Run(() =>
+            {
+                medians[channel] = SubsampledMedian(channel);
+            });
+        }
+
+        Task.WaitAll(tasks);
+
+        return medians;
+    }
+
+    /// <summary>
+    /// Get the median and mad of each channel where every 16th element of the full data is sampled.
+    /// </summary>
+    private (double[], double[]) DoSubsampledMedianAndMAD()
+    {
+        var medians = new double[Channels];
+        var mads = new double[Channels];
+
+        var tasks = new Task[Channels];
+        for (int c = 0; c < Channels; c++)
+        {
+            int channel = c;
+            tasks[channel] = Task.Run(() =>
+            {
+                (double median, double mad) = DoSubsampledMedianAndMAD(channel);
+                medians[channel] = median;
+                mads[channel] = mad;
+            });
+        }
+
+        Task.WaitAll(tasks);
+
+        return (medians, mads);
+    }
+
+    /// <summary>
+    /// Get the median of each channel where every 16th element of the full data is sampled.
+    /// </summary>
+    private double DoSubsampledMedian(int channel = 0, int skip = 16)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(skip, 1);
+        AssertChannel(channel);
+
+        using var mem = NativeMemoryAllocator<float>.Allocate(Width * Height / skip);
+        var src = Data.GetReadOnlySpan(channel);
+        var dst = mem.Memory.Span;
+        for (int i = 0; i < src.Length; i += skip)
+        {
+            dst[i / skip] = src[i];
+        }
+
+        dst.Sort();
+        return dst[dst.Length / 2];
+    }
+
+    /// <summary>
+    /// Get the median and mad where every 16th element of the full data is sampled.
+    /// </summary>
+    private (double, double) DoSubsampledMedianAndMAD(int channel = 0, int skip = 16)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(skip, 1);
+        AssertChannel(channel);
+
+        using var mem = NativeMemoryAllocator<float>.Allocate(Width * Height / skip);
+        var src = Data.GetReadOnlySpan(channel);
+        var dst = mem.Memory.Span;
+        for (int i = 0; i < src.Length; i += skip)
+        {
+            dst[i / skip] = src[i];
+        }
+
+        dst.Sort();
+        var median = dst[dst.Length / 2];
+
+        foreach (ref float item in dst)
+        {
+            item = float.Abs(item - median);
+        }
+
+        dst.Sort();
+        var mad = dst[dst.Length / 2];
+
+        return (median, mad);
     }
 }
