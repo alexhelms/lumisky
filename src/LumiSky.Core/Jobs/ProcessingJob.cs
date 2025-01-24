@@ -113,6 +113,19 @@ public class ProcessingJob : JobBase
 
         Log.Information("Processing completed in {Elapsed:F3} seconds", processTimeElapsed.TotalSeconds);
 
+        if (processTimeElapsed > _profile.Current.Capture.CaptureInterval)
+        {
+            Log.Warning("Processing duration ({Elapsed:F3}s) exceeds capture interval ({Interval:F1}s).",
+                processTimeElapsed.TotalSeconds, _profile.Current.Capture.CaptureInterval.TotalSeconds);
+            await _bus.Publish(new NotificationMessage
+            {
+                Type = NotificationType.Warning,
+                Summary = "Processing duratioon exceeded capture interval.",
+                Detail = "Procesing is taking too much time. You should increase the capture interval " +
+                         "until it is longer than the time it takes to process the previous image.",
+            });
+        }
+
         context.CancellationToken.ThrowIfCancellationRequested();
 
         await context.Scheduler.TriggerJob(
