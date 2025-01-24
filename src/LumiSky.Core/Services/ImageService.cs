@@ -5,8 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using LumiSky.Core.Data;
 using LumiSky.Core.Imaging;
 using LumiSky.Core.Imaging.Processing;
-using LumiSky.Core.Primitives;
 using LumiSky.Core.Profile;
+using LumiSky.Core.Utilities;
 
 namespace LumiSky.Core.Services;
 
@@ -28,6 +28,20 @@ public record FitsProcessingResults : IDisposable
         GC.SuppressFinalize(this);
         Image?.Dispose();
         Panorama?.Dispose();
+    }
+}
+
+public record FitsProcessTimingItem(string Name, TimeSpan Elapsed);
+
+public static class FitsProcessTimingTracker
+{
+    public static List<FitsProcessTimingItem> Items { get; } = [];
+
+    public static event EventHandler? Complete;
+
+    public static void FireComplete()
+    {
+        Complete?.Invoke(null, EventArgs.Empty);
     }
 }
 
@@ -215,13 +229,14 @@ public class ImageService
         if (!fileInfo.Exists)
             throw new FileNotFoundException(filename);
 
-        using var rawImage = AllSkyImage.FromFits(filename);
+        FitsProcessTimingTracker.Items.Clear();
+
+        using var rawImage = LoadRawImage(filename);
         RemoveHotPixels(rawImage);
 
         using var debayeredImage = DebayerImage(rawImage);
 
-        // Green median is used for exposure prediction
-        var greenMedian = debayeredImage.Median(channel: 1);
+        var median = Median(debayeredImage);
 
         // Linear Operations
         WhiteBalance(debayeredImage);
@@ -230,7 +245,8 @@ public class ImageService
 
         // Nonlinear Operations
         AutoSCurve(debayeredImage);
-        var image = debayeredImage.To8bitMat();
+
+        var image = To8BitMat(debayeredImage);
         Rotate(image);
         FlipHorizontal(image);
         FlipVertical(image);
@@ -242,10 +258,12 @@ public class ImageService
             panorama = CreatePanorama(image);
         }
 
+        FitsProcessTimingTracker.FireComplete();
+
         return new FitsProcessingResults
         {
             Metadata = rawImage.Metadata,
-            Median = greenMedian,
+            Median = median,
             Image = image,
             Panorama = panorama,
         };
@@ -272,21 +290,39 @@ public class ImageService
         return panorama;
     }
 
+    private AllSkyImage LoadRawImage(string filename)
+    {
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Load Raw Image", t)));
+        var rawImage = AllSkyImage.FromFits(filename);
+        return rawImage;
+    }
+
     private void RemoveHotPixels(AllSkyImage image)
     {
         if (_profile.Current.Processing.HotPixelCorrection)
         {
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Remove Hot Pixels", t)));
             image.BayerHotPixelCorrection(_profile.Current.Processing.HotPixelThresholdPercent);
         }
     }
 
     private AllSkyImage DebayerImage(AllSkyImage image)
     {
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Debayer", t)));
         return Debayer.FromImage(image);
+    }
+
+    private double Median(AllSkyImage image)
+    {
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Median", t)));
+        // Green median is used for exposure prediction
+        var greenMedian = image.Median(channel: 1);
+        return greenMedian;
     }
 
     private void Stretch(AllSkyImage image)
     {
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Linked Stretch", t)));
         image.StretchLinked();
     }
 
@@ -294,12 +330,21 @@ public class ImageService
     {
         if (_profile.Current.Processing.AutoSCurve)
         {
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Auto S Curve", t)));
             image.AutoSCurve(_profile.Current.Processing.AutoSCurveContrast);
         }
     }
 
+    private Mat To8BitMat(AllSkyImage image)
+    {
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("To 8-Bit Mat", t)));
+        return image.To8BitMat();
+    }
+
     private void WhiteBalance(AllSkyImage image)
     {
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("White Balance", t)));
+
         double biasR = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasR : _profile.Current.Camera.NighttimeBiasR;
         double biasG = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasG : _profile.Current.Camera.NighttimeBiasG;
         double biasB = _sunService.IsDaytime() ? _profile.Current.Camera.DaytimeBiasB : _profile.Current.Camera.NighttimeBiasB;
@@ -319,6 +364,7 @@ public class ImageService
     {
         if (_profile.Current.Image.Rotation != 0)
         {
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Rotate", t)));
             Transform.Rotate(mat, _profile.Current.Image.Rotation);
         }
     }
@@ -327,6 +373,7 @@ public class ImageService
     {
         if (_profile.Current.Image.FlipHorizontal)
         {
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Flip Horizontal", t)));
             Transform.FlipHorizontal(mat);
         }
     }
@@ -335,6 +382,7 @@ public class ImageService
     {
         if (_profile.Current.Image.FlipVertical)
         {
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Flip Vertical", t)));
             Transform.FlipVertical(mat);
         }
     }
@@ -343,6 +391,7 @@ public class ImageService
     {
         if (_profile.Current.Processing.CircleMaskDiameter > 0)
         {
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Circle Mask", t)));
             int centerX = mat.Cols / 2;
             int centerY = mat.Rows / 2;
             Mask.Circle(mat,

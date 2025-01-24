@@ -151,7 +151,7 @@ public class FocusService : IDisposable
         using AllSkyImage debayeredImage = Debayer.FromImage(rawImage);
         debayeredImage.StretchLinked();
 
-        using Mat uint8Mat = debayeredImage.To8bitMat();
+        using Mat uint8Mat = debayeredImage.To8BitMat();
         using var image = new Image<Rgb, byte>(uint8Mat);
 
         var encoderParameters = new List<KeyValuePair<ImwriteFlags, int>>();

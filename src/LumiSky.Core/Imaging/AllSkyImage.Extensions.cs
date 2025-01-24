@@ -25,7 +25,7 @@ public static class AllSkyImageExtensions
         return image.Data.ToMat();
     }
 
-    public static Mat To8bitMat(this AllSkyImage image)
+    public static Mat To8BitMat(this AllSkyImage image)
     {
         if (image.Channels == 1)
         {

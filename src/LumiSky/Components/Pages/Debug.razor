@@ -4,44 +4,77 @@
 @inject ExposureService ExposureService
 <PageTitle>Debug</PageTitle>
 
-<RadzenCard Style="width: 100%;">
-    <RadzenText TextStyle="TextStyle.H6"><strong>Auto Exposure Prediction</strong></RadzenText>
-    <RadzenChart>
-        <RadzenLineSeries TItem="ChartItem" Data="@exposurePredictions" CategoryProperty="X" ValueProperty="Y" Title="e-/sec"
-                          Stroke="#fa3b3b" StrokeWidth="3">
-            <RadzenMarkers MarkerType="MarkerType.Circle" Size="6" />
-        </RadzenLineSeries>
-        <RadzenLineSeries TItem="ChartItem" Data="@exposurePredictionsCurveFit" CategoryProperty="X" ValueProperty="Y" Title="Prediction"
-                          Stroke="#fbfb50">
-        </RadzenLineSeries>
-        <RadzenValueAxis FormatString="{0:0.0}">
-            <RadzenGridLines Visible="true" />
-            <RadzenAxisTitle Text="e-/sec" />
-        </RadzenValueAxis>
-        <RadzenCategoryAxis>
-            <RadzenGridLines Visible="true" />
-        </RadzenCategoryAxis>
-    </RadzenChart>
-</RadzenCard>
+<RadzenStack>
+
+    <RadzenCard Style="width: 100%;">
+        <RadzenText TextStyle="TextStyle.H6"><strong>Auto Exposure Prediction</strong></RadzenText>
+        <RadzenChart>
+            <RadzenLineSeries TItem="ChartItem" Data="@exposurePredictions" CategoryProperty="X" ValueProperty="Y" Title="e-/sec"
+            Stroke="#fa3b3b" StrokeWidth="3">
+                <RadzenMarkers MarkerType="MarkerType.Circle" Size="6" />
+            </RadzenLineSeries>
+            <RadzenLineSeries TItem="ChartItem" Data="@exposurePredictionsCurveFit" CategoryProperty="X" ValueProperty="Y" Title="Prediction"
+            Stroke="#fbfb50">
+            </RadzenLineSeries>
+            <RadzenValueAxis FormatString="{0:0.0}">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="e-/sec" />
+            </RadzenValueAxis>
+            <RadzenCategoryAxis>
+                <RadzenGridLines Visible="true" />
+            </RadzenCategoryAxis>
+        </RadzenChart>
+    </RadzenCard>
+
+    <RadzenCard Style="width: 100%;">
+        <RadzenText TextStyle="TextStyle.H6"><strong>Image Processing Times</strong></RadzenText>
+        <RadzenDataGrid Data="@fitsProcessTimings" AllowFiltering="false" AllowColumnReorder="false" AllowPaging="false" ShowPagingSummary="false" ColumnWidth="300px" ShowEmptyMessage="true">
+            <EmptyTemplate>
+                <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center" class="rz-m-4">No Timing Data</RadzenText>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn Property="@nameof(FitsProcessTimingItem.Name)" Title="Name" Width="300px"/>
+                <RadzenDataGridColumn Title="Elapsed (ms)" TextAlign="TextAlign.Center">
+                    <Template Context="item">
+                        @(item.Elapsed.TotalMilliseconds.ToString("F3"))
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        <RadzenText TextStyle="TextStyle.H6" class="rz-my-4"><strong>Total (sec): </strong> @(fitsProcessTimings?.Sum(x => x.Elapsed.TotalSeconds).ToString("F3") ?? "0")</RadzenText>
+    </RadzenCard>
+
+</RadzenStack>
 
 @code {
     List<ChartItem> exposurePredictions = [];
     List<ChartItem> exposurePredictionsCurveFit = [];
+    IQueryable<FitsProcessTimingItem>? fitsProcessTimings;
 
     protected override void OnInitialized()
     {
         PopulateChartData();
         ExposureService.DataChanged += OnDataChanged;
+        FitsProcessTimingTracker.Complete += OnNewFitsProcessTimingData;
+
+        OnNewFitsProcessTimingData(null, EventArgs.Empty);
     }
 
     public void Dispose()
     {
         ExposureService.DataChanged -= OnDataChanged;
+        FitsProcessTimingTracker.Complete -= OnNewFitsProcessTimingData;
     }
 
     private void OnDataChanged(object? sender, EventArgs e)
     {
         InvokeAsync(PopulateChartData);
+    }
+
+    private void OnNewFitsProcessTimingData(object? sender, EventArgs e)
+    {
+        fitsProcessTimings = FitsProcessTimingTracker.Items.Select(x => x with { }).ToList().AsQueryable();
+        InvokeAsync(StateHasChanged);
     }
 
     private void PopulateChartData()
