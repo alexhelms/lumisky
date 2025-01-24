@@ -630,7 +630,6 @@ public partial class AllSkyImage
                 for (int x = rows.Left; x < rows.Right; x++)
                 {
                     float value = rowSpan[x];
-                    int index = (int)(value * ushort.MaxValue);
 
                     if (hasClipping)
                     {
@@ -655,6 +654,7 @@ public partial class AllSkyImage
                         }
                     }
 
+                    int index = (int)(value * ushort.MaxValue);
                     value = mtfLut[index];
                     rowSpan[x] = value;
                 }
