@@ -21,6 +21,37 @@ Can be overridden with the `LUMISKY_PATH` environment variable
 
 Absolute path to image/video data. The default value is `LUMISKY_PATH/data`.
 
+#### Images
+
+All images are stored in the following folder structure:
+
+- `type`
+  - `YYYYMMDD` local timestamp minus 12 hours
+    - `day`
+      - `type_YYYYMMDD_HHMMSS.jpg`
+    - `night`
+      - `type_YYYYMMDD_HHMMSS.jpg`
+
+Where `type` is `image` or `panorama` or `raw`.
+
+For example, `image/20250123/night/image_20250123_121251.jpg`.
+
+#### Videos
+
+All timelapse videos are stored in the following folder structure:
+
+- `video`
+  - `panorama` or `timelapse`
+    - `type_YYYYMMDD-HHMMSS_YYYYMMDD-HHMMSS_to_YYYYMMDD-HHMMSS.jpg`
+
+Where `type` is `timelapse` or `panorama`, and the three local timestamps are:
+  1. file creation
+  2. video start
+  3. video end
+
+For example, `video/timelapse/timelapse_20250117-180550_20250117-065252_to_20250117-180550.mp4`.
+
+
 ### Cleanup
 
 A background cleanup job runs daily at 10am local time. You can manually run the job by pressing the `Run Now` button.

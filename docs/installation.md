@@ -4,14 +4,17 @@ It is recommended to run LumiSky as a docker container, but it also run as a nat
 
 ## Raspi
 
+?> If you are using a raspberry pi camera, see [this guide](/raspi-camera).
+
 LumiSky and INDI server both run as containers on a raspi.
 
 Create a clean raspi image following [the official instructions](https://www.raspberrypi.com/software/).
 Install Raspberry Pi OS 64-bit, full or lite. Use the full version if you are going to use a mouse, keyboard,
 and monitor on the raspi. Use the lite version if you are going to use SSH.
 
-?> If you are on Windows and unfamiliar with Linux, use [PuTTY](https://www.putty.org/) for an SSH client
-   and [WinSCP](https://winscp.net) for an SCP client so you can copy files to and from the raspi.
+?> If you are on Windows and unfamiliar with Linux, ssh is built into Windows (since 2018). You should install
+   and use Windows Terminal from the Microsoft Store (or [github](https://github.com/microsoft/terminal/releases)).
+   If you'd like to use an SCP GUI for editing files, [WinSCP](https://winscp.net) is a great option.
 
 SSH into your raspi, or if you are using a mouse and keyboard, run the following commands in a terminal.
 
@@ -39,16 +42,17 @@ sudo systemctl enable containerd.service
 4. Setup Lumisky.
 
 ```bash
-mkdir -p ~/lumisky
-cd ~/lumisky
 sudo groupadd -g 1654 lumisky && sudo useradd -u 1654 -g lumisky lumisky
-sudo chown lumisky:lumisky data
+mkdir -p ~/lumisky/container
+cd ~/lumisky
+sudo chown lumisky:lumisky container
 touch docker-compose.yml
 ```
 
 ?> You can run `nano docker-compose.yml` to edit the docker compose file.
-   When you are ready to save and exit, press `ctrl+x`, press `y`, then `enter`.
-   Or, you can use an SCP client to download, edit, and upload the file.
+   Use `shift+insert` to paste. When you are ready to save and exit, press
+   `ctrl+x`, press `y`, then `enter`. Or, you can use an SCP client to
+   download, edit, and upload the file.
 
 Copy the following into `docker-compose.yml` and change the following as needed:
 * Environment variable `TZ` to your local [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
