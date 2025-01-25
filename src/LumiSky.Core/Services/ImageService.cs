@@ -295,6 +295,8 @@ public class ImageService
 
     public Mat CreatePanorama(Mat mat)
     {
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Create Panorama", t)));
+
         ArgumentOutOfRangeException.ThrowIfNotEqual(mat.NumberOfChannels, 3);
         if (mat.Depth != DepthType.Cv8U)
             throw new ArgumentOutOfRangeException(nameof(mat.Depth));
