@@ -20,7 +20,8 @@ RUN apt-get update -y \
     ffmpeg \
     libgeotiff5 \
     libgtk-3-0 \
-    vtk9
+    vtk9 \
+    libraw-bin
 
 # app data
 RUN mkdir /lumisky \
