@@ -359,12 +359,6 @@ public partial class FitsFile : IDisposable
             throw new ObjectDisposedException("FITS image already disposed");
 
         Native.ErrorCode status;
-
-        Native.GetHduType(_handle, out var hduType, out status);
-        Native.ThrowIfNotOk(status);
-        if (hduType != Native.HduType.IMAGE_HDU)
-            throw new FitsException($"{hduType} is not supported");
-
         var naxes = new long[2];
         Native.ReadImageHeader(_handle, naxes.Length, out var simple, out var imageType, out _,
             naxes, out _, out _, out var extended, out status);
@@ -405,11 +399,6 @@ public partial class FitsFile : IDisposable
             throw new ObjectDisposedException("FITS image already disposed");
 
         Native.ErrorCode status;
-
-        Native.GetHduType(_handle, out var hduType, out status);
-        Native.ThrowIfNotOk(status);
-        if (hduType != Native.HduType.IMAGE_HDU)
-            throw new FitsException($"{hduType} is not supported");
 
         var naxes = new long[3];
         Native.ReadImageHeader(_handle, naxes.Length, out var simple, out var imageType, out _,
