@@ -65,6 +65,8 @@ public class ProcessingJob : JobBase
 
         var startTime = Stopwatch.GetTimestamp();
 
+        ProcessTimingTracker.Clear();
+
         using var processResult = _imageService.ProcessFits(rawImageFileInfo.FullName);
         var exposureUtc = processResult.Metadata.ExposureUtc ?? DateTime.UtcNow;
 
@@ -119,7 +121,9 @@ public class ProcessingJob : JobBase
             gain: processResult.Metadata.Gain.GetValueOrDefault());
 
         var processTimeElapsed = Stopwatch.GetElapsedTime(startTime);
-        
+
+        ProcessTimingTracker.FireComplete();
+
         await _bus.Publish(new NewImageEvent
         {
             Filename = imageFilename,
@@ -251,7 +255,7 @@ public class ProcessingJob : JobBase
 
     private async Task DrawImageOverlays(Mat image, ImageMetadata metadata)
     {
-        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Draw Overlays", t)));
+        using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Draw Overlays", t)));
         var renderer = new OverlayRenderer(_profile);
         await renderer.DrawImageOverlays(image, metadata);
     }
@@ -262,7 +266,7 @@ public class ProcessingJob : JobBase
 
         if (_profile.Current.Processing.DrawCardinalOverlay)
         {
-            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Draw Panorama Overlays", t)));
+            using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Draw Panorama Overlays", t)));
             var renderer = new OverlayRenderer(_profile);
             await renderer.DrawPanoramaOverlays(panorama);
         }

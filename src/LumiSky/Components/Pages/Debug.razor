@@ -55,7 +55,7 @@
     {
         PopulateChartData();
         ExposureService.DataChanged += OnDataChanged;
-        FitsProcessTimingTracker.Complete += OnNewFitsProcessTimingData;
+        ProcessTimingTracker.Complete += OnNewFitsProcessTimingData;
 
         OnNewFitsProcessTimingData(null, EventArgs.Empty);
     }
@@ -63,7 +63,7 @@
     public void Dispose()
     {
         ExposureService.DataChanged -= OnDataChanged;
-        FitsProcessTimingTracker.Complete -= OnNewFitsProcessTimingData;
+        ProcessTimingTracker.Complete -= OnNewFitsProcessTimingData;
     }
 
     private void OnDataChanged(object? sender, EventArgs e)
@@ -73,7 +73,7 @@
 
     private void OnNewFitsProcessTimingData(object? sender, EventArgs e)
     {
-        fitsProcessTimings = FitsProcessTimingTracker.Items.Select(x => x with { }).ToList().AsQueryable();
+        fitsProcessTimings = ProcessTimingTracker.Items.Select(x => x with { }).ToList().AsQueryable();
         InvokeAsync(StateHasChanged);
     }
 
