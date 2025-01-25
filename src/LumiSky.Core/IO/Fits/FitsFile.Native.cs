@@ -158,6 +158,9 @@ public partial class FitsFile
         [LibraryImport("cfitsio", EntryPoint = "ffppr")]
         internal static partial ErrorCode WriteImage(nint handle, DataType datatype, long firstelem, long nelem, void* array, out ErrorCode status);
 
+        [LibraryImport("cfitsio", EntryPoint = "ffgidt")]
+        internal static partial ErrorCode GetImageType(nint handle, out ImageType bitpix, out ErrorCode status);
+
         internal enum DataType : int
         {
             TBIT = 1,
