@@ -103,12 +103,13 @@ public static class Simd
                 Vector128<uint> u32 = AdvSimd.ConvertToUInt32RoundToZero(f32);
                 Vector64<ushort> u16 = AdvSimd.ExtractNarrowingSaturateLower(u32);
                 Vector64<byte> u8 = AdvSimd.ExtractNarrowingSaturateLower(Vector128.Create(u16, u16));
+                AdvSimd.StoreSelectedScalar(pDst + 0, u8, 0);
+                AdvSimd.StoreSelectedScalar(pDst + 1, u8, 1);
+                AdvSimd.StoreSelectedScalar(pDst + 2, u8, 2);
+                AdvSimd.StoreSelectedScalar(pDst + 3, u8, 3);
 
-                byte* final = (byte*)Unsafe.AsPointer(ref u8);
-                *pDst++ = *final++;
-                *pDst++ = *final++;
-                *pDst++ = *final++;
-                *pDst++ = *final++;
+                pSrc += ElementsPerBatch;
+                pDst += ElementsPerBatch;
             }
 
             while (pSrc < pEnd)
@@ -188,6 +189,9 @@ public static class Simd
                 Vector128<uint> u32 = AdvSimd.ConvertToUInt32RoundToZero(f32);
                 Vector64<ushort> u16 = AdvSimd.ExtractNarrowingSaturateLower(u32);
                 AdvSimd.Store(pDst, u16);
+
+                pSrc += ElementsPerBatch;
+                pDst += ElementsPerBatch;
             }
 
             while (pSrc < pEnd)

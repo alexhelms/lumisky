@@ -216,7 +216,7 @@ public static class ImagingUtil
 
             var partition = Partitioner.Create(0, src.Length);
 
-            if (intrinsics && Avx2.IsSupported)
+            if (intrinsics)
             {
                 if (Avx2.IsSupported)
                 {
