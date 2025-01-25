@@ -36,7 +36,7 @@
                 <RadzenDataGridColumn Property="@nameof(FitsProcessTimingItem.Name)" Title="Name" Width="300px"/>
                 <RadzenDataGridColumn Title="Elapsed (ms)" TextAlign="TextAlign.Center">
                     <Template Context="item">
-                        @(item.Elapsed.TotalMilliseconds.ToString("F3"))
+                        <RadzenText @key=item.Elapsed.Ticks>@(item.Elapsed.TotalMilliseconds.ToString("F3"))</RadzenText>
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>

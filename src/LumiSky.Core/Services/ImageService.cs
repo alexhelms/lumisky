@@ -45,7 +45,16 @@ public static class FitsProcessTimingTracker
     public static void Add(FitsProcessTimingItem item)
     {
         lock (_lock)
-            _items.Add(item);
+        {
+            if (_items.FindIndex(x => x.Name == item.Name) is int index && index != -1)
+            {
+                _items[index] = item;
+            }
+            else
+            {
+                _items.Add(item);
+            }
+        }
     }
 
     public static void Clear()
