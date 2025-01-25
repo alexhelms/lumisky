@@ -35,9 +35,24 @@ public record FitsProcessTimingItem(string Name, TimeSpan Elapsed);
 
 public static class FitsProcessTimingTracker
 {
-    public static List<FitsProcessTimingItem> Items { get; } = [];
+    private static Lock _lock = new();
+    private static List<FitsProcessTimingItem> _items = [];
+
+    public static IReadOnlyList<FitsProcessTimingItem> Items => _items;
 
     public static event EventHandler? Complete;
+
+    public static void Add(FitsProcessTimingItem item)
+    {
+        lock (_lock)
+            _items.Add(item);
+    }
+
+    public static void Clear()
+    {
+        lock (_lock)
+            _items.Clear();
+    }
 
     public static void FireComplete()
     {
@@ -229,7 +244,7 @@ public class ImageService
         if (!fileInfo.Exists)
             throw new FileNotFoundException(filename);
 
-        FitsProcessTimingTracker.Items.Clear();
+        FitsProcessTimingTracker.Clear();
 
         using var rawImage = LoadRawImage(filename);
         RemoveHotPixels(rawImage);
@@ -292,7 +307,7 @@ public class ImageService
 
     private AllSkyImage LoadRawImage(string filename)
     {
-        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Load Raw Image", t)));
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Load Raw Image", t)));
         var rawImage = AllSkyImage.FromFits(filename);
         return rawImage;
     }
@@ -301,20 +316,20 @@ public class ImageService
     {
         if (_profile.Current.Processing.HotPixelCorrection)
         {
-            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Remove Hot Pixels", t)));
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Remove Hot Pixels", t)));
             image.BayerHotPixelCorrection(_profile.Current.Processing.HotPixelThresholdPercent);
         }
     }
 
     private AllSkyImage DebayerImage(AllSkyImage image)
     {
-        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Debayer", t)));
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Debayer", t)));
         return Debayer.FromImage(image);
     }
 
     private double Median(AllSkyImage image)
     {
-        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Median", t)));
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Median", t)));
         // Green median is used for exposure prediction
         var greenMedian = image.SubsampledMedian(channel: 1);
         return greenMedian;
@@ -322,7 +337,7 @@ public class ImageService
 
     private void Stretch(AllSkyImage image)
     {
-        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Linked Stretch", t)));
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Linked Stretch", t)));
         image.StretchLinked();
     }
 
@@ -330,14 +345,14 @@ public class ImageService
     {
         if (_profile.Current.Processing.AutoSCurve)
         {
-            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Auto S Curve", t)));
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Auto S Curve", t)));
             image.AutoSCurve(_profile.Current.Processing.AutoSCurveContrast);
         }
     }
 
     private Mat To8BitMat(AllSkyImage image)
     {
-        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("To 8-Bit Mat", t)));
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("To 8-Bit Mat", t)));
         return image.To8BitMat();
     }
 
@@ -355,7 +370,7 @@ public class ImageService
 
         if (scaleR == 1 && scaleG == 1 && scaleB == 1 && biasR == 0 && biasG == 0 && biasB == 0) return;
 
-        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("White Balance", t)));
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("White Balance", t)));
         image.WhiteBalance(scaleR, scaleG, scaleB, biasR, biasG, biasB);
     }
 
@@ -363,7 +378,7 @@ public class ImageService
     {
         if (_profile.Current.Image.Rotation != 0)
         {
-            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Rotate", t)));
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Rotate", t)));
             Transform.Rotate(mat, _profile.Current.Image.Rotation);
         }
     }
@@ -372,7 +387,7 @@ public class ImageService
     {
         if (_profile.Current.Image.FlipHorizontal)
         {
-            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Flip Horizontal", t)));
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Flip Horizontal", t)));
             Transform.FlipHorizontal(mat);
         }
     }
@@ -381,7 +396,7 @@ public class ImageService
     {
         if (_profile.Current.Image.FlipVertical)
         {
-            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Flip Vertical", t)));
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Flip Vertical", t)));
             Transform.FlipVertical(mat);
         }
     }
@@ -390,7 +405,7 @@ public class ImageService
     {
         if (_profile.Current.Processing.CircleMaskDiameter > 0)
         {
-            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Circle Mask", t)));
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Add(new("Circle Mask", t)));
             int centerX = mat.Cols / 2;
             int centerY = mat.Rows / 2;
             Mask.Circle(mat,
