@@ -81,7 +81,7 @@ public static class MemoryExtensions
         }
     }
 
-    public static unsafe void ToBlob(this Mat mat, string filename)
+    public static void ToBlob(this Mat mat, string filename)
     {
         Span<byte> span = mat.GetSpan<byte>();
         using (var fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
@@ -90,7 +90,7 @@ public static class MemoryExtensions
         }
     }
 
-    public static unsafe void FromBlob(this Mat mat, string filename)
+    public static void FromBlob(this Mat mat, string filename)
     {
         Span<byte> span = mat.GetSpan<byte>();
         using (var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
