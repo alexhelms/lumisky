@@ -12,6 +12,7 @@ using LumiSky.Core.Services;
 using Quartz;
 using SlimMessageBus;
 using System.Diagnostics;
+using LumiSky.Core.Utilities;
 
 namespace LumiSky.Core.Jobs;
 
@@ -67,30 +68,49 @@ public class ProcessingJob : JobBase
         using var processResult = _imageService.ProcessFits(rawImageFileInfo.FullName);
         var exposureUtc = processResult.Metadata.ExposureUtc ?? DateTime.UtcNow;
 
-        // Process, Save, and Persis the Image
-        await DrawImageOverlays(processResult.Image, processResult.Metadata);
-        var imageFilename = SaveImage(processResult.Image, "image", exposureUtc);
-        await PersistImage(imageFilename, exposureUtc);
-
-        // Process, Save, and Persis the Panorama
+        string? imageFilename = null;
         string? panoramaFilename = null;
-        if (processResult.Panorama is not null)
-        {
-            await DrawPanoramaOverlays(processResult.Panorama);
-            panoramaFilename = SaveImage(processResult.Panorama, "panorama", exposureUtc);
-            await PersistPanorama(panoramaFilename, exposureUtc);
-        }
-
-        // Process, Save, and Persis the Raw Image
         string? rawImageFilename = null;
-        if (_profile.Current.Image.KeepRawImages)
+
+        var imageTask = Task.Run(async () =>
         {
-            rawImageFilename = SaveRawImage(rawImageFileInfo.FullName, exposureUtc);
-            await PersistRawImage(rawImageFilename, exposureUtc);
-        }
-        else
+            // Process, Save, and Persis the Image
+            await DrawImageOverlays(processResult.Image, processResult.Metadata);
+            imageFilename = SaveImage(processResult.Image, "image", exposureUtc);
+            await PersistImage(imageFilename, exposureUtc);
+        });
+
+        var panoramaTask = Task.Run(async () =>
         {
-            rawImageFileInfo.Delete();
+            // Process, Save, and Persis the Panorama
+            if (processResult.Panorama is not null)
+            {
+                await DrawPanoramaOverlays(processResult.Panorama);
+                panoramaFilename = SaveImage(processResult.Panorama, "panorama", exposureUtc);
+                await PersistPanorama(panoramaFilename, exposureUtc);
+            }
+        });
+
+        var rawTask = Task.Run(async () =>
+        {
+            // Process, Save, and Persis the Raw Image
+            if (_profile.Current.Image.KeepRawImages)
+            {
+                rawImageFilename = SaveRawImage(rawImageFileInfo.FullName, exposureUtc);
+                await PersistRawImage(rawImageFilename, exposureUtc);
+            }
+            else
+            {
+                rawImageFileInfo.Delete();
+            }
+        });
+
+        await Task.WhenAll(imageTask, panoramaTask, rawTask);
+
+        if (imageFilename is null)
+        {
+            // This shouldn't happen.
+            throw new JobExecutionException("Error saving image file");
         }
 
         _exposureTrackingService.AddMostRecentStatistics(
@@ -186,7 +206,7 @@ public class ProcessingJob : JobBase
 
     private async Task PersistRawImage(string filename, DateTime exposureUtc)
     {
-        var rawImage = new Data.RawImage
+        var rawImage = new RawImage
         {
             Filename = filename,
             ExposedOn = new DateTimeOffset(exposureUtc).ToUnixTimeSeconds(),
@@ -201,7 +221,7 @@ public class ProcessingJob : JobBase
 
     private async Task PersistImage(string filename, DateTime exposureUtc)
     {
-        var newImage = new Data.Image
+        var newImage = new Image
         {
             Filename = filename,
             ExposedOn = new DateTimeOffset(exposureUtc).ToUnixTimeSeconds(),
@@ -216,7 +236,7 @@ public class ProcessingJob : JobBase
 
     private async Task PersistPanorama(string filename, DateTime exposureUtc)
     {
-        var newImage = new Data.Panorama
+        var newImage = new Panorama
         {
             Filename = filename,
             ExposedOn = new DateTimeOffset(exposureUtc).ToUnixTimeSeconds(),
@@ -231,14 +251,18 @@ public class ProcessingJob : JobBase
 
     private async Task DrawImageOverlays(Mat image, ImageMetadata metadata)
     {
+        using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Draw Overlays", t)));
         var renderer = new OverlayRenderer(_profile);
         await renderer.DrawImageOverlays(image, metadata);
     }
 
     private async Task DrawPanoramaOverlays(Mat panorama)
     {
+        // The cardinal overlay is the only overlay on a panorama.
+
         if (_profile.Current.Processing.DrawCardinalOverlay)
         {
+            using var _ = Benchmark.Start(t => FitsProcessTimingTracker.Items.Add(new("Draw Panorama Overlays", t)));
             var renderer = new OverlayRenderer(_profile);
             await renderer.DrawPanoramaOverlays(panorama);
         }
