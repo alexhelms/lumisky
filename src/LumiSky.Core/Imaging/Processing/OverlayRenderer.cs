@@ -10,10 +10,14 @@ namespace LumiSky.Core.Imaging.Processing;
 
 public class OverlayRenderer
 {
-    private static string FontPath;
-    private static string PythonOverlayRendererPath;
+    private static readonly string FontPath;
+    private static readonly string PythonOverlayRendererPath;
 
     private readonly IProfileProvider _profile;
+    private readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    };
 
     static OverlayRenderer()
     {
@@ -28,7 +32,7 @@ public class OverlayRenderer
         _profile = profile;
     }
 
-    private string TextAnchorToPillow(TextAnchor anchor) => anchor switch
+    private static string TextAnchorToPillow(TextAnchor anchor) => anchor switch
     {
         // https://pillow.readthedocs.io/en/stable/handbook/text-anchors.html
         TextAnchor.TopLeft => "lt",
@@ -174,10 +178,7 @@ public class OverlayRenderer
             });
         }
 
-        var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        });
+        var json = JsonSerializer.Serialize(dto, _serializerOptions);
         
         mat.ToBlob(rawData.Path);
 
@@ -278,10 +279,7 @@ public class OverlayRenderer
             TextFill = textFill,
         });
 
-        var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        });
+        var json = JsonSerializer.Serialize(dto, _serializerOptions);
 
         mat.ToBlob(rawData.Path);
 
