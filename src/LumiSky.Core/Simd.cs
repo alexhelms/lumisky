@@ -33,10 +33,11 @@ public static class Simd
 
     public static unsafe void FloatToUInt8Avx2(ReadOnlySpan<float> input, Span<byte> output)
     {
-        if (input.Length != output.Length) throw new ArgumentException("input and output length must be equal");
-        if (!Avx.IsSupported || !Avx2.IsSupported) throw new NotSupportedException();
+        ArgumentOutOfRangeException.ThrowIfNotEqual(input.Length, output.Length);
+        if (!Avx2.IsSupported) throw new NotSupportedException();
         if (input.Length == 0) return;
 
+        // 256-bit registers
         const int ElementsPerVector = 8;
         const int ElementsPerBatch = 4 * ElementsPerVector;
 
@@ -77,10 +78,52 @@ public static class Simd
         }
     }
 
+    public static unsafe void FloatToUInt8Arm(ReadOnlySpan<float> input, Span<byte> output)
+    {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(input.Length, output.Length);
+        if (!AdvSimd.IsSupported) throw new NotSupportedException();
+        if (input.Length == 0) return;
+
+        // 128-bit registers
+        const int ElementsPerVector = 4;
+        const int ElementsPerBatch = 1 * ElementsPerVector;
+
+        fixed (float* pInput = input)
+        fixed (byte* pOutput = output)
+        {
+            float* pSrc = pInput;
+            float* pEnd = pSrc + input.Length;
+            byte* pDst = pOutput;
+
+            Vector128<float> scale = Vector128.Create((float)byte.MaxValue);
+
+            while (pSrc < pEnd - ElementsPerBatch)
+            {
+                Vector128<float> f32 = AdvSimd.LoadVector128(pSrc) * scale;
+                Vector128<uint> u32 = AdvSimd.ConvertToUInt32RoundToZero(f32);
+                Vector64<ushort> u16 = AdvSimd.ExtractNarrowingSaturateLower(u32);
+                Vector64<byte> u8 = AdvSimd.ExtractNarrowingSaturateLower(Vector128.Create(u16, u16));
+
+                byte* final = (byte*)Unsafe.AsPointer(ref u8);
+                *pDst++ = *final++;
+                *pDst++ = *final++;
+                *pDst++ = *final++;
+                *pDst++ = *final++;
+            }
+
+            while (pSrc < pEnd)
+            {
+                *pDst = (byte)(*pSrc * byte.MaxValue);
+                pSrc++;
+                pDst++;
+            }
+        }
+    }
+
     public static unsafe void FloatToUInt16Avx2(ReadOnlySpan<float> input, Span<ushort> output)
     {
-        if (input.Length != output.Length) throw new ArgumentException("input and output length must be equal");
-        if (!Avx.IsSupported || !Avx2.IsSupported) throw new NotSupportedException();
+        ArgumentOutOfRangeException.ThrowIfNotEqual(input.Length, output.Length);
+        if (!Avx2.IsSupported) throw new NotSupportedException();
         if (input.Length == 0) return;
 
         // 256-bit registers
@@ -122,7 +165,7 @@ public static class Simd
 
     public static unsafe void FloatToUInt16Arm(ReadOnlySpan<float> input, Span<ushort> output)
     {
-        if (input.Length != output.Length) throw new ArgumentException("input and output length must be equal");
+        ArgumentOutOfRangeException.ThrowIfNotEqual(input.Length, output.Length);
         if (!AdvSimd.IsSupported) throw new NotSupportedException();
         if (input.Length == 0) return;
 
@@ -145,6 +188,13 @@ public static class Simd
                 Vector128<uint> u32 = AdvSimd.ConvertToUInt32RoundToZero(f32);
                 Vector64<ushort> u16 = AdvSimd.ExtractNarrowingSaturateLower(u32);
                 AdvSimd.Store(pDst, u16);
+            }
+
+            while (pSrc < pEnd)
+            {
+                *pDst = (ushort)(*pSrc * ushort.MaxValue);
+                pSrc++;
+                pDst++;
             }
         }
     }
@@ -205,8 +255,8 @@ public static class Simd
 
     public static unsafe void UInt16ToFloatAvx2(ReadOnlySpan<ushort> input, Span<float> output)
     {
-        if (input.Length != output.Length) throw new ArgumentException("input and output length must be equal");
-        if (!Avx.IsSupported || !Avx2.IsSupported) throw new NotSupportedException();
+        ArgumentOutOfRangeException.ThrowIfNotEqual(input.Length, output.Length);
+        if (!Avx2.IsSupported) throw new NotSupportedException();
         if (input.Length == 0) return;
 
         // 256-bit registers
@@ -243,7 +293,7 @@ public static class Simd
 
     public static unsafe void UInt16ToFloatArm(ReadOnlySpan<ushort> input, Span<float> output)
     {
-        if (input.Length != output.Length) throw new ArgumentException("input and output length must be equal");
+        ArgumentOutOfRangeException.ThrowIfNotEqual(input.Length, output.Length);
         if (!AdvSimd.IsSupported) throw new NotSupportedException();
         if (input.Length == 0) return;
 

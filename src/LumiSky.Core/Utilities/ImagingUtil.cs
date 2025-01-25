@@ -94,7 +94,7 @@ public static class ImagingUtil
                         Simd.UInt16ToFloatAvx2(src, dst);
                     }
                 }
-                if (AdvSimd.IsSupported)
+                else if (AdvSimd.IsSupported)
                 {
                     if (src.Length > 1_000_000)
                     {
@@ -132,7 +132,7 @@ public static class ImagingUtil
         }
     }
 
-    public static unsafe void NormalizedFloatToUInt8(ReadOnlySpan<float> src, Span<byte> dst, bool avx = true)
+    public static unsafe void NormalizedFloatToUInt8(ReadOnlySpan<float> src, Span<byte> dst, bool intrinsics = true)
     {
         if (src.Length != dst.Length) throw new ArgumentException("src and dst must be equal length");
         if (src.Length == 0) return;
@@ -146,22 +146,43 @@ public static class ImagingUtil
 
             var partition = Partitioner.Create(0, src.Length);
 
-            if (avx && Avx.IsSupported && Avx2.IsSupported)
+            if (intrinsics)
             {
-                if (src.Length > 1_000_000)
+                if (Avx2.IsSupported)
                 {
-                    Parallel.ForEach(
-                        partition,
-                        x =>
-                        {
-                            var source = new Span<float>(pSrc + x.Item1, x.Item2 - x.Item1);
-                            var target = new Span<byte>(pDst + x.Item1, x.Item2 - x.Item1);
-                            Simd.FloatToUInt8Avx2(source, target);
-                        });
+                    if (src.Length > 1_000_000)
+                    {
+                        Parallel.ForEach(
+                            partition,
+                            x =>
+                            {
+                                var source = new Span<float>(pSrc + x.Item1, x.Item2 - x.Item1);
+                                var target = new Span<byte>(pDst + x.Item1, x.Item2 - x.Item1);
+                                Simd.FloatToUInt8Avx2(source, target);
+                            });
+                    }
+                    else
+                    {
+                        Simd.FloatToUInt8Avx2(src, dst);
+                    }
                 }
-                else
+                else if (AdvSimd.IsSupported)
                 {
-                    Simd.FloatToUInt8Avx2(src, dst);
+                    if (src.Length > 1_000_000)
+                    {
+                        Parallel.ForEach(
+                            partition,
+                            x =>
+                            {
+                                var source = new Span<float>(pSrc + x.Item1, x.Item2 - x.Item1);
+                                var target = new Span<byte>(pDst + x.Item1, x.Item2 - x.Item1);
+                                Simd.FloatToUInt8Arm(source, target);
+                            });
+                    }
+                    else
+                    {
+                        Simd.FloatToUInt8Arm(src, dst);
+                    }
                 }
             }
             else
