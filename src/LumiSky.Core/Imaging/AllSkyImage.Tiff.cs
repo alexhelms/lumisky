@@ -28,7 +28,7 @@ public partial class AllSkyImage
         if (tiff.PixelType.BitsPerPixel != 16)
             throw new ArgumentException("Only 16-bit tiff images are supported");
 
-        var data = new Memory2D<ushort>(tiff.Width, tiff.Height);
+        using var data = new Memory2D<ushort>(tiff.Width, tiff.Height);
         Span<byte> dataAsBytes = MemoryMarshal.Cast<ushort, byte>(data.GetSpan());
         tiff.CopyPixelDataTo(dataAsBytes);
 

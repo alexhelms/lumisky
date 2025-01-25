@@ -144,6 +144,11 @@ public class ProcessingJob : JobBase
                 [nameof(PublishJob.ImageFilename)] = imageFilename,
                 [nameof(PublishJob.PanoramaFilename)] = panoramaFilename!,
             });
+
+        // LumiSky often runs on limited resource systems, like a raspi.
+        // Forcing a GC collection after all the the heavy image processing
+        // is probably for the best.
+        GC.Collect(2, GCCollectionMode.Aggressive, true, true);
     }
 
     private string SaveRawImage(string tempFilename, DateTime timestamp)

@@ -9,6 +9,7 @@ public class RaspiWebCamera : ICamera
 {
     private readonly IProfileProvider _profile;
 
+    private HttpClient _client;
     private CancellationTokenSource? _exposeCts;
 
     public string DeviceType => DeviceTypes.RaspiWeb;
@@ -20,25 +21,29 @@ public class RaspiWebCamera : ICamera
     public RaspiWebCamera(IProfileProvider profile)
     {
         _profile = profile;
+
+        _client = CreateHttpClient();
     }
 
     public void Dispose()
     {
         GC.SuppressFinalize(this);
         _exposeCts?.Dispose();
+        _client.Dispose();
     }
 
-    private HttpClient CreateHttpClient()
+    private HttpClient CreateHttpClient(TimeSpan? timeout = null)
     {
         var client = new HttpClient();
         client.BaseAddress = new(_profile.Current.Camera.RaspiCameraUrl);
+        client.Timeout = timeout ?? Timeout.InfiniteTimeSpan;
         return client;
     }
 
     public async Task<bool> ConnectAsync(CancellationToken token = default)
     {
-        using var client = CreateHttpClient();
-        var response = await client.GetAsync("/ping", token);
+        using var client = CreateHttpClient(timeout: TimeSpan.FromSeconds(3));
+        using var response = await client.GetAsync("/ping", token);
         IsConnected = response.IsSuccessStatusCode;
         return IsConnected;
     }
@@ -58,9 +63,6 @@ public class RaspiWebCamera : ICamera
         string args = RaspiCamUtils.CreateArgs(parameters, outputName: "img");
         string escapedArgs = Uri.EscapeDataString(args);
 
-        using var client = CreateHttpClient();
-        client.Timeout = Timeout.InfiniteTimeSpan;
-
         _exposeCts.CancelAfter(parameters.Duration + TimeSpan.FromSeconds(5));
 
         try
@@ -68,7 +70,7 @@ public class RaspiWebCamera : ICamera
             var exposureStart = DateTime.UtcNow;
 
             // Long poll, returns when the exposure is complete
-            var executeResponse = await client.PostAsync($"/execute?args={escapedArgs}", content: null, cancellationToken: _exposeCts.Token);
+            using var executeResponse = await _client.PostAsync($"/execute?args={escapedArgs}", content: null, cancellationToken: _exposeCts.Token);
             executeResponse.EnsureSuccessStatusCode();
 
             _exposeCts.Token.ThrowIfCancellationRequested();
@@ -87,7 +89,7 @@ public class RaspiWebCamera : ICamera
 
             // LumiSky.Rpicam creates a TIFF from the DNG and the extension is appended.
             var tiff = Uri.EscapeDataString("img.dng.tiff");
-            var downloadResponse = await client.GetAsync($"/download?filename={tiff}", _exposeCts.Token);
+            using var downloadResponse = await _client.GetAsync($"/download?filename={tiff}", _exposeCts.Token);
             downloadResponse.EnsureSuccessStatusCode();
 
             // Successful output puts text in stderr, NOT stdout.
