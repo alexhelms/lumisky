@@ -39,10 +39,6 @@ public partial class AllSkyImage
             throw new NotSupportedException($"{pixelType.Name} images are not supported");
         }
 
-        // Compute statistics
-        for (int c = 0; c < image.Channels; c++)
-            new StatisticsOperation(image, c).Run();
-
         var header = fits.ReadHeader();
         var metadata = header.ToImageMetadata();
         image.Metadata.Merge(metadata);
