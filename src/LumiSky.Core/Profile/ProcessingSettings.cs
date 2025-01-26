@@ -31,6 +31,8 @@ public interface IProcessingSettings : ISettings
     double AutoSCurveContrast { get; set; }
     bool HotPixelCorrection { get; set; }
     int HotPixelThresholdPercent { get; set; }
+    bool EnableOverlays { get; set; }
+    bool EnableVariableOverlays { get; set; }
     ObservableCollection<TextOverlay> TextOverlays { get; set; }
 }
 
@@ -72,6 +74,8 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
         AutoSCurveContrast = 2.2;
         HotPixelCorrection = true;
         HotPixelThresholdPercent = 25;
+        EnableOverlays = true;
+        EnableVariableOverlays = true;
         TextOverlays = [];
     }
 
@@ -146,6 +150,12 @@ public sealed partial class ProcessingSettings : Settings, IProcessingSettings
 
     [ObservableProperty]
     public partial int HotPixelThresholdPercent { get; set; }
+
+    [ObservableProperty]
+    public partial bool EnableOverlays { get; set; }
+
+    [ObservableProperty]
+    public partial bool EnableVariableOverlays { get; set; }
 
     [ObservableProperty]
     public partial ObservableCollection<TextOverlay> TextOverlays { get; set; } = [];

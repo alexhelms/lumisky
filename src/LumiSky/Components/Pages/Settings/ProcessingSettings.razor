@@ -143,6 +143,11 @@
                 <RadzenStack>
 
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="EnableAllOverlays" @bind-Value="model.EnableOverlays" />
+                        <RadzenLabel Text="Enable All Overlays" Component="EnableAllOverlays" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
                         <RadzenSwitch Name="DrawCardinalOverlay" @bind-Value="model.DrawCardinalOverlay" />
                         <RadzenLabel Text="Draw Cardinal Directions" Component="DrawCardinalOverlay" />
                     </RadzenStack>
@@ -155,7 +160,7 @@
                         <RadzenNumeric @bind-Value="model.TextOutline" Min="0" Max="50" Step="1" />
                     </RadzenFormField>
 
-                    
+
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="5rem">
                         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="0.5rem">
                             <RadzenLabel Text="Text Color" Component="TextColor" />
@@ -207,8 +212,14 @@
                     <RadzenCard class="rz-p-4" Variant="Variant.Outlined">
                         <RadzenStack Orientation="Orientation.Vertical">
                             <RadzenText><strong>Variable Overlays</strong></RadzenText>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                                <RadzenSwitch Name="EnableVariableOverlays" @bind-Value="model.EnableVariableOverlays" />
+                                <RadzenLabel Text="Enable Variable Overlays" Component="EnableVariableOverlays" />
+                            </RadzenStack>
+
                             <RadzenDataGrid @ref=_overlayDataGrid TItem="TextOverlayModel" Data="@overlays" AllowFiltering="false" AllowPaging="false" AllowSorting="false" AllowColumnResize="true"
-                                            AllowAlternatingRows="false" EditMode="DataGridEditMode.Single" RowUpdate="OnUpdateRow" RowCreate="OnCreateRow">
+                            AllowAlternatingRows="false" EditMode="DataGridEditMode.Single" RowUpdate="OnUpdateRow" RowCreate="OnCreateRow">
                                 <HeaderTemplate>
                                     <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="add_circle" Text="Add New Text Overlay" Click="InsertRow" Disabled="@(overlaysToInsert.Count > 0)" />
                                 </HeaderTemplate>
@@ -231,31 +242,31 @@
                                             <RadzenTextBox @bind-Value=item.TextFormat Style="width: 90%;" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.X)" Title="X (from Left)" Width="128px" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
                                             <RadzenNumeric @bind-Value=item.X TValue="int" Min="-10000" Max="10000" Step="1" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.Y)" Title="Y (from Top)" Width="128px" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
                                             <RadzenNumeric @bind-Value=item.Y TValue="int" Min="-10000" Max="10000" Step="1" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.FontSize)" Title="Font Size" Width="72px" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
                                             <RadzenNumeric @bind-Value=item.FontSize TValue="int" Min="8" Max="1000" Step="1" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.TextAnchor)" Title="Text Anchor" TextAlign="TextAlign.Center">
                                         <EditTemplate Context="item">
                                             <RadzenDropDown @bind-Value=item.TextAnchor Data="@(Enum.GetValues<TextAnchor>())" Style="width: 90%;" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.TextColor)" Title="Text Color" Width="128px" TextAlign="TextAlign.Center">
                                         <Template Context="item">
                                             <svg width="32" height="32">
@@ -266,7 +277,7 @@
                                             <RadzenColorPicker @bind-Value=item.TextColor ShowHSV="true" ShowRGBA="false" ShowColors="true" ShowButton="false" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Property="@nameof(TextOverlayModel.StrokeColor)" Title="Stroke Color" Width="128px" TextAlign="TextAlign.Center">
                                         <Template Context="item">
                                             <svg width="32" height="32">
@@ -283,7 +294,7 @@
                                             <RadzenNumeric @bind-Value=item.StrokeWidth TValue="int" Min="0" Max="100" Step="1" Style="width: 100px;" />
                                         </EditTemplate>
                                     </RadzenDataGridColumn>
-                                    
+
                                     <RadzenDataGridColumn Frozen="true" FrozenPosition="FrozenColumnPosition.Right" TextAlign="TextAlign.Right">
                                         <Template Context="item">
                                             <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(item))" @onclick:stopPropagation="true" />
@@ -349,6 +360,8 @@
         model.AutoSCurveContrast = Profile.Current.Processing.AutoSCurveContrast;
         model.HotPixelCorrection = Profile.Current.Processing.HotPixelCorrection;
         model.HotPixelThresholdPercent = Profile.Current.Processing.HotPixelThresholdPercent;
+        model.EnableOverlays = Profile.Current.Processing.EnableOverlays;
+        model.EnableVariableOverlays = Profile.Current.Processing.EnableVariableOverlays;
 
         overlays = new(Profile.Current.Processing.TextOverlays
             .Select(item => new TextOverlayModel
@@ -391,6 +404,8 @@
         Profile.Current.Processing.AutoSCurveContrast = model.AutoSCurveContrast;
         Profile.Current.Processing.HotPixelCorrection = model.HotPixelCorrection;
         Profile.Current.Processing.HotPixelThresholdPercent = model.HotPixelThresholdPercent;
+        Profile.Current.Processing.EnableOverlays = model.EnableOverlays;
+        Profile.Current.Processing.EnableVariableOverlays = model.EnableVariableOverlays;
 
         Profile.Current.Processing.TextOverlays.Clear();
         foreach (var item in overlays)
@@ -580,6 +595,8 @@
         public double AutoSCurveContrast { get; set; }
         public bool HotPixelCorrection { get; set; }
         public int HotPixelThresholdPercent { get; set; }
+        public bool EnableOverlays { get; set; }
+        public bool EnableVariableOverlays { get; set; }
     }
 
     public record TextOverlayModel

@@ -163,19 +163,22 @@ public class OverlayRenderer
         }
 
         // User-defined Text Overlays
-        foreach (var overlay in _profile.Current.Processing.TextOverlays)
+        if (_profile.Current.Processing.EnableVariableOverlays)
         {
-            dto.TextOverlays.Add(new TextOverlayDto
+            foreach (var overlay in _profile.Current.Processing.TextOverlays)
             {
-                X = overlay.X,
-                Y = overlay.Y,
-                FontSize = overlay.FontSize,
-                StrokeFill = overlay.StrokeColor,
-                StrokeWidth = overlay.StrokeWidth,
-                Text = FormatOverlayText(overlay.Variable, overlay.Format ?? "{0}", metadata),
-                TextAnchor = TextAnchorToPillow(overlay.Anchor),
-                TextFill = overlay.Color,
-            });
+                dto.TextOverlays.Add(new TextOverlayDto
+                {
+                    X = overlay.X,
+                    Y = overlay.Y,
+                    FontSize = overlay.FontSize,
+                    StrokeFill = overlay.StrokeColor,
+                    StrokeWidth = overlay.StrokeWidth,
+                    Text = FormatOverlayText(overlay.Variable, overlay.Format ?? "{0}", metadata),
+                    TextAnchor = TextAnchorToPillow(overlay.Anchor),
+                    TextFill = overlay.Color,
+                });
+            }
         }
 
         var json = JsonSerializer.Serialize(dto, _serializerOptions);

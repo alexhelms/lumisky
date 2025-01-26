@@ -255,16 +255,20 @@ public class ProcessingJob : JobBase
 
     private async Task DrawImageOverlays(Mat image, ImageMetadata metadata)
     {
-        using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Draw Overlays", t)));
-        var renderer = new OverlayRenderer(_profile);
-        await renderer.DrawImageOverlays(image, metadata);
+        if (_profile.Current.Processing.EnableOverlays)
+        {
+            using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Draw Overlays", t)));
+            var renderer = new OverlayRenderer(_profile);
+            await renderer.DrawImageOverlays(image, metadata);
+        }
     }
 
     private async Task DrawPanoramaOverlays(Mat panorama)
     {
         // The cardinal overlay is the only overlay on a panorama.
 
-        if (_profile.Current.Processing.DrawCardinalOverlay)
+        if (_profile.Current.Processing.EnableOverlays && 
+            _profile.Current.Processing.DrawCardinalOverlay)
         {
             using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Draw Panorama Overlays", t)));
             var renderer = new OverlayRenderer(_profile);
