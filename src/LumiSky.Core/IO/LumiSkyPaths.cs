@@ -32,4 +32,6 @@ public static class LumiSkyPaths
     public static string Temp => Path.Combine(BasePath, "temp");
 
     public static string LatestFocusImage => Path.Join(Temp, "latest_focus.jpg");
+
+    public static string Tmpfs => "/mnt/lumisky-tmp";
 }

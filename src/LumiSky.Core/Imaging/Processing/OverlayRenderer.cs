@@ -83,7 +83,7 @@ public class OverlayRenderer
 
     public async Task DrawImageOverlays(Mat mat, ImageMetadata metadata)
     {
-        using var rawData = new TemporaryFile();
+        using var rawData = TemporaryFile.TryCreateInTmfps();
         int width = mat.Cols;
         int height = mat.Rows;
 
@@ -210,7 +210,7 @@ public class OverlayRenderer
 
     public async Task DrawPanoramaOverlays(Mat mat)
     {
-        using var rawData = new TemporaryFile();
+        using var rawData = TemporaryFile.TryCreateInTmfps();
         int width = mat.Cols;
         int height = mat.Rows;
 

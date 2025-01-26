@@ -76,9 +76,9 @@ public static class Debayer
 
     public static AllSkyImage FromImage(AllSkyImage image)
     {
-        using var temporaryFile = new TemporaryFile();
+        using var temporaryFile = TemporaryFile.TryCreateInTmfps();
         image.SaveAsFits(temporaryFile.Path, ImageOutputType.UInt16);
-        var debayeredImage = FromFits(temporaryFile.Path);
+        var debayeredImage = Debayer.FromFits(temporaryFile.Path);
         return debayeredImage;
     }
 }
