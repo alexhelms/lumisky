@@ -9,7 +9,7 @@ public static class Transform
     public static void Rotate(Mat mat, double angle)
     {
         using var rotationMatrix = new Mat();
-        CvInvoke.GetRotationMatrix2D(new(mat.Cols / 2, mat.Rows/ 2), angle, 1.0, rotationMatrix);
+        CvInvoke.GetRotationMatrix2D(new(mat.Cols / 2, mat.Rows / 2), angle, 1.0, rotationMatrix);
         CvInvoke.WarpAffine(mat, mat, rotationMatrix, mat.Size, Inter.Lanczos4);
     }
 
@@ -46,7 +46,7 @@ public static class Transform
 
         int centerX = (int)(fisheyeBounds.Width / 2 + xOffset);
         int centerY = (int)(fisheyeBounds.Height / 2 + yOffset);
-        
+
         var equirectBounds = new Rectangle(0, 0, equirectWidth, equirectHeight);
         var panoImage = new Mat(equirectBounds.Height, equirectBounds.Width, DepthType.Cv8U, 3);
 
@@ -102,7 +102,7 @@ public static class Transform
         {
             int fisheyeLength = fisheyeBounds.Height * fisheyeStride;
             int equirectLength = equirectBounds.Height * equirectStride;
-            var fisheyeSpan = new Span<byte>((void*)fisheyePtr, fisheyeLength);
+            var fisheyeSpan = new ReadOnlySpan<byte>((void*)fisheyePtr, fisheyeLength);
             var equirectSpan = new Span<byte>((void*)equirectPtr, equirectLength);
 
             for (int y = rows.Top; y < rows.Bottom; y++)
@@ -116,13 +116,21 @@ public static class Transform
                     double yy = r0 * Math.Sin(theta) + centerY;
                     int ix = (int)(xx + 0.5);
                     int iy = (int)(yy + 0.5);
+
+                    int fisheyeOffset = (fisheyeStride * iy) + (ix * Channels);
+                    int equirectOffset = (equirectStride * y) + (x * Channels);
+
                     if (xx >= 0 && ix < fisheyeBounds.Width && yy >= 0 && iy < fisheyeBounds.Height)
                     {
-                        int fisheyeOffset = (fisheyeStride * iy) + (ix * Channels);
-                        int equirectOffset = (equirectStride * y) + (x * Channels);
                         equirectSpan[equirectOffset + 0] = fisheyeSpan[fisheyeOffset + 0];
                         equirectSpan[equirectOffset + 1] = fisheyeSpan[fisheyeOffset + 1];
                         equirectSpan[equirectOffset + 2] = fisheyeSpan[fisheyeOffset + 2];
+                    }
+                    else
+                    {
+                        equirectSpan[equirectOffset + 0] = 0;
+                        equirectSpan[equirectOffset + 1] = 0;
+                        equirectSpan[equirectOffset + 2] = 0;
                     }
                 }
             }
