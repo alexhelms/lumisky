@@ -21,10 +21,11 @@ public class PublishService
         };
     }
 
-    private HttpClient CreateHttpClient(string? baseUrl = null, string? apiKey = null)
+    private HttpClient CreateHttpClient(string? baseUrl = null, string? apiKey = null, TimeSpan? timeout = null)
     {
         baseUrl ??= _profile.Current.Publish.CfWorkerUrl;
         apiKey ??= _profile.Current.Publish.CfWorkerApiKey;
+        timeout ??= TimeSpan.FromMinutes(10);
 
         if (baseUrl.EndsWith('/'))
             baseUrl = baseUrl[..^1];
@@ -32,7 +33,7 @@ public class PublishService
         var httpClient = new HttpClient
         {
             BaseAddress = new Uri(baseUrl),
-            Timeout = TimeSpan.FromSeconds(10),
+            Timeout = timeout.Value,
         };
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
@@ -44,7 +45,7 @@ public class PublishService
     {
         try
         {
-            using var client = CreateHttpClient(baseUrl, apiKey);
+            using var client = CreateHttpClient(baseUrl, apiKey, timeout: TimeSpan.FromSeconds(5));
             var response = await client.GetAsync("/api/check");
             response.EnsureSuccessStatusCode();
             return true;
@@ -58,7 +59,7 @@ public class PublishService
 
     public async Task<PublishMetadata> GetMetadata()
     {
-        using var client = CreateHttpClient();
+        using var client = CreateHttpClient(timeout: TimeSpan.FromSeconds(10));
         return await client.GetFromJsonAsync<PublishMetadata>("/api/metadata", _jsonOptions) ?? new();
     }
 
@@ -78,7 +79,7 @@ public class PublishService
 
     public async Task SetMetadata(PublishMetadata metadata, CancellationToken token = default)
     {
-        using var client = CreateHttpClient();
+        using var client = CreateHttpClient(timeout: TimeSpan.FromSeconds(10));
         var response = await client.PostAsJsonAsync("/api/metadata", metadata, _jsonOptions, token);
         response.EnsureSuccessStatusCode();
 
