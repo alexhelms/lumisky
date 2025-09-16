@@ -7,7 +7,7 @@ namespace LumiSky.Core.Indi;
 
 public class IndiDevice
 {
-    private AsyncMonitor _newParameterSignal = new();
+    private readonly AsyncMonitor _newParameterSignal = new();
 
     private readonly IndiConnection _connection;
     private readonly ConcurrentDictionary<string, IndiParameter> _parameters = [];
@@ -17,6 +17,12 @@ public class IndiDevice
     public IndiDevice(IndiConnection connection)
     {
         _connection = connection;
+        _connection.Disconnected += Connection_Disconnected;
+    }
+
+    private void Connection_Disconnected(object? sender, EventArgs e)
+    {
+        _parameters.Clear();
     }
 
     private void ThrowIfNotConnected()

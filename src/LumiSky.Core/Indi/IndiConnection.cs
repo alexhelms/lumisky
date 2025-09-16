@@ -16,6 +16,8 @@ public class IndiConnection : IDisposable
 
     public bool IsConnected => _tcpClient?.Connected ?? false;
 
+    public event EventHandler? Disconnected;
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);
@@ -77,6 +79,8 @@ public class IndiConnection : IDisposable
         {
             _isDisconnecting = false;
         }
+
+        Disconnected?.Invoke(this, EventArgs.Empty);
     }
 
     public async Task SendCommand(IIndiCommand command)
