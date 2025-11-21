@@ -113,7 +113,6 @@ public class IndiCamera : ICamera, IDisposable
 
             // Transfer format and binning are common for all indi camera devices.
             tasks.Add(_device.Change("CCD_TRANSFER_FORMAT", [("FORMAT_FITS", true), ("FORMAT_NATIVE", false)]));
-            tasks.Add(_device.WaitForChange("CCD_TRANSFER_FORMAT", token: token));
             tasks.Add(SetBinning(parameters.Binning, token));
             tasks.Add(SetGain(parameters.Gain, token));
             tasks.Add(SetOffset(parameters.Offset, token));
@@ -246,10 +245,10 @@ public class IndiCamera : ICamera, IDisposable
                 {
                     var clampedValue = Math.Clamp(value, field.Min, field.Max);
                     await _device.Change(parameterName, [(fieldName, clampedValue)], token: token);
-                    await _device.WaitForChange(parameterName, token: token);
                 }
             }
         }
+        catch (OperationCanceledException) { }
         catch (Exception e)
         {
             Log.Warning(e, "Could not set mapping {Mapping} to {Value}", mapping, value);
@@ -281,7 +280,6 @@ public class IndiCamera : ICamera, IDisposable
         var max = fields["HOR_BIN"].Max;
         var value = Math.Clamp(binning, min, max);
         await _device.Change("CCD_BINNING", [("HOR_BIN", value), ("VER_BIN", value)], token: token);
-        await _device.WaitForChange("CCD_BINNING", token: token);
     }
 
     private async Task SetCustomProperties(CancellationToken token)
@@ -306,7 +304,6 @@ public class IndiCamera : ICamera, IDisposable
                     .ToList();
 
                 tasks.Add(_device.Change(group.Key, valuesToSend, timeout: TimeSpan.FromSeconds(1), token: token));
-                tasks.Add(_device.WaitForChange(group.Key, token: token));
             }
 
             await Task.WhenAll(tasks);

@@ -49,7 +49,7 @@ public partial class AllSkyImage : IDisposable
     {
         ReadOnlySpan<byte> src = data.GetSpan();
         Span<float> dst = Data.GetSpan();
-        ImagingUtil.UInt8ToNormalizedFloat(src, dst);
+        ImagingUtil.UInt8ToFloat(src, dst);
     }
 
     internal AllSkyImage(Memory3D<byte> data)
@@ -59,7 +59,7 @@ public partial class AllSkyImage : IDisposable
         {
             ReadOnlySpan<byte> src = data.GetSpan(c);
             Span<float> dst = Data.GetSpan(c);
-            ImagingUtil.UInt8ToNormalizedFloat(src, dst);
+            ImagingUtil.UInt8ToFloat(src, dst);
         }
     }
 
@@ -68,7 +68,7 @@ public partial class AllSkyImage : IDisposable
     {
         ReadOnlySpan<ushort> src = data.GetSpan();
         Span<float> dst = Data.GetSpan();
-        ImagingUtil.UInt16ToNormalizedFloat(src, dst);
+        ImagingUtil.UInt16ToFloat(src, dst);
     }
 
     internal AllSkyImage(Memory3D<ushort> data)
@@ -78,7 +78,7 @@ public partial class AllSkyImage : IDisposable
         {
             ReadOnlySpan<ushort> src = data.GetSpan(c);
             Span<float> dst = Data.GetSpan(c);
-            ImagingUtil.UInt16ToNormalizedFloat(src, dst);
+            ImagingUtil.UInt16ToFloat(src, dst);
         }
     }
 

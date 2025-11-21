@@ -75,7 +75,7 @@ public partial class AllSkyImage
         void SaveUInt8Single(FitsFile fits)
         {
             using var data = new Memory2D<byte>(Width, Height);
-            ImagingUtil.NormalizedFloatToUInt8(Data.GetSpan(), data.GetSpan());
+            ImagingUtil.FloatToUInt8(Data.GetSpan(), data.GetSpan());
             fits.Write(data);
         }
 
@@ -83,14 +83,14 @@ public partial class AllSkyImage
         {
             using var data = new Memory3D<byte>(Width, Height, Channels);
             for (int c = 0; c < Channels; c++)
-                ImagingUtil.NormalizedFloatToUInt8(Data.GetSpan(c), data.GetSpan(c));
+                ImagingUtil.FloatToUInt8(Data.GetSpan(c), data.GetSpan(c));
             fits.Write(data);
         }
 
         void SaveUInt16Single(FitsFile fits)
         {
             using var data = new Memory2D<ushort>(Width, Height);
-            ImagingUtil.NormalizedFloatToUInt16(Data.GetSpan(), data.GetSpan());
+            ImagingUtil.FloatToUInt16(Data.GetSpan(), data.GetSpan());
             fits.Write(data);
         }
 
@@ -98,7 +98,7 @@ public partial class AllSkyImage
         {
             using var data = new Memory3D<ushort>(Width, Height, Channels);
             for (int c = 0; c < Channels; c++)
-                ImagingUtil.NormalizedFloatToUInt16(Data.GetSpan(c), data.GetSpan(c));
+                ImagingUtil.FloatToUInt16(Data.GetSpan(c), data.GetSpan(c));
             fits.Write(data);
         }
     }
@@ -109,7 +109,7 @@ public partial class AllSkyImage
         var image = new AllSkyImage(data.Width, data.Height);
         var src = data.GetSpan();
         var dst = image.Data.GetSpan();
-        ImagingUtil.UInt8ToNormalizedFloat(src, dst);
+        ImagingUtil.UInt8ToFloat(src, dst);
         return image;
     }
 
@@ -122,7 +122,7 @@ public partial class AllSkyImage
         {
             var src = data.GetSpan(channel);
             var dst = image.Data.GetSpan(channel);
-            ImagingUtil.UInt8ToNormalizedFloat(src, dst);
+            ImagingUtil.UInt8ToFloat(src, dst);
         }
 
         return image;
@@ -134,7 +134,7 @@ public partial class AllSkyImage
         var image = new AllSkyImage(data.Width, data.Height);
         var src = data.GetSpan();
         var dst = image.Data.GetSpan();
-        ImagingUtil.UInt16ToNormalizedFloat(src, dst);
+        ImagingUtil.UInt16ToFloat(src, dst);
         return image;
     }
 
@@ -147,7 +147,7 @@ public partial class AllSkyImage
         {
             var src = data.GetSpan(channel);
             var dst = image.Data.GetSpan(channel);
-            ImagingUtil.UInt16ToNormalizedFloat(src, dst);
+            ImagingUtil.UInt16ToFloat(src, dst);
         }
 
         return image;

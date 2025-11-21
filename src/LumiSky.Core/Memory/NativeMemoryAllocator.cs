@@ -30,7 +30,7 @@ public sealed unsafe class NativeMemoryAllocator<T> : MemoryManager<T>, IDisposa
             throw new InvalidOperationException();
 #endif
         nuint byteCount = (nuint)(length * Unsafe.SizeOf<T>());
-        void* ptr = NativeMemory.AlignedAlloc(byteCount, Simd.AlignmentSize);
+        void* ptr = NativeMemory.AlignedAlloc(byteCount, Simd.Constants.AlignmentSize);
         NativeMemory.Clear(ptr, byteCount);
         return new NativeMemoryAllocator<T>(ptr, length);
     }

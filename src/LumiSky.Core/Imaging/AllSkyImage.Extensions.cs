@@ -30,7 +30,7 @@ public static class AllSkyImageExtensions
         if (image.Channels == 1)
         {
             using var data = new Memory2D<byte>(image.Width, image.Height);
-            ImagingUtil.NormalizedFloatToUInt8(image.Data.GetSpan(), data.GetSpan());
+            ImagingUtil.FloatToUInt8(image.Data.GetSpan(), data.GetSpan());
 
             unsafe
             {
@@ -68,7 +68,7 @@ public static class AllSkyImageExtensions
                         // and LumiSky is a contiguous block with no padding.
                         var srcSpan = image.Data.GetRowSpan(y, c);
                         var dstSpan = matSpan.Slice(y * mats[c].Width, mats[c].Width);
-                        ImagingUtil.NormalizedFloatToUInt8(srcSpan, dstSpan);
+                        ImagingUtil.FloatToUInt8(srcSpan, dstSpan);
                     }
                 }
             }
@@ -126,7 +126,7 @@ public static class AllSkyImageExtensions
                         // and LumiSky is a contiguous block with no padding.
                         var srcSpan = matSpan.Slice(y * mat.Width, mat.Width);
                         var dstSpan = image.Data.GetRowSpan(y);
-                        ImagingUtil.UInt16ToNormalizedFloat(srcSpan, dstSpan);
+                        ImagingUtil.UInt16ToFloat(srcSpan, dstSpan);
                     }
                 }
                 else if (mat.ElementSize == sizeof(byte))
@@ -138,7 +138,7 @@ public static class AllSkyImageExtensions
                         // and LumiSky is a contiguous block with no padding.
                         var srcSpan = matSpan.Slice(y * mat.Width, mat.Width);
                         var dstSpan = image.Data.GetRowSpan(y);
-                        ImagingUtil.UInt8ToNormalizedFloat(srcSpan, dstSpan);
+                        ImagingUtil.UInt8ToFloat(srcSpan, dstSpan);
                     }
                 }
                 else
@@ -185,7 +185,7 @@ public static class AllSkyImageExtensions
                         // and LumiSky is a contiguous block with no padding.
                         var srcSpan = matSpan.Slice(y * mats[c].Width, mats[c].Width);
                         var dstSpan = image.Data.GetRowSpan(y, c);
-                        ImagingUtil.UInt16ToNormalizedFloat(srcSpan, dstSpan);
+                        ImagingUtil.UInt16ToFloat(srcSpan, dstSpan);
                     }
                 }
                 else if (elementSize == sizeof(byte))
@@ -197,7 +197,7 @@ public static class AllSkyImageExtensions
                         // and LumiSky is a contiguous block with no padding.
                         var srcSpan = matSpan.Slice(y * mats[c].Width, mats[c].Width);
                         var dstSpan = image.Data.GetRowSpan(y, c);
-                        ImagingUtil.UInt8ToNormalizedFloat(srcSpan, dstSpan);
+                        ImagingUtil.UInt8ToFloat(srcSpan, dstSpan);
                     }
                 }
                 else
