@@ -20,6 +20,20 @@ public static class LumiSkyMath
     }
 
     /// <summary>
+    /// Find the minimum of 4 numbers.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T Min4<T>(T a, T b, T c, T d)
+        where T : INumber<T>
+    {
+        T min = a;
+        if (b < min) min = b;
+        if (c < min) min = c;
+        if (d < min) min = d;
+        return min;
+    }
+
+    /// <summary>
     /// Find the maximum of 4 numbers.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -752,15 +752,18 @@ public partial class AllSkyImage
         }
     }
 
-    private class BayerHotPixelCorrectionOperation : BaseRowIntervalOperation
+    private class BayerPixelCorrectionOperation : BaseRowIntervalOperation
     {
-        private int thresholdPercent;
+        private int? hotThresholdPercent;
 
-        public BayerHotPixelCorrectionOperation(AllSkyImage image, int channel, int thresholdPercent)
+        private int? coldThresholdPercent;
+
+        public BayerPixelCorrectionOperation(AllSkyImage image, int channel, int? hotThresholdPercent, int? coldThresholdPercent)
             : base(image, channel)
         {
             AcquireWriteLock = true;
-            this.thresholdPercent = thresholdPercent;
+            this.hotThresholdPercent = hotThresholdPercent;
+            this.coldThresholdPercent = coldThresholdPercent;
         }
 
         public override void Invoke(in RowInterval rows)
@@ -786,7 +789,16 @@ public partial class AllSkyImage
                     float c = thisRowSpan[x];
 
                     float maxValue = LumiSkyMath.Max4(n, s, e, w);
-                    if (c > maxValue + (maxValue * (thresholdPercent / 100.0f)))
+                    float minValue = LumiSkyMath.Min4(n, s, e, w);
+
+                    if (hotThresholdPercent.HasValue &&
+                        c > maxValue + (maxValue * (hotThresholdPercent / 100.0f)))
+                    {
+                        float average = (n + s + e + w) / 4.0f;
+                        thisRowSpan[x] = (float)average;
+                    }
+                    else if (coldThresholdPercent.HasValue &&
+                        c < minValue - (minValue * (coldThresholdPercent / 100.0f)))
                     {
                         float average = (n + s + e + w) / 4.0f;
                         thisRowSpan[x] = (float)average;

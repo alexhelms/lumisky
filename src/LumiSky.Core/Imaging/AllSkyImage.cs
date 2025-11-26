@@ -453,10 +453,15 @@ public partial class AllSkyImage : IDisposable
         PropCache.Clear();
     }
 
-    public void BayerHotPixelCorrection(int thresholdPercent = 100)
+    public void BayerPixelCorrection(int? hotThresholdPercent, int? coldThresholdPercent)
     {
-        if (Channels != 1) throw new InvalidOperationException($"{nameof(BayerHotPixelCorrection)} only works on 1 channel images");
-        new BayerHotPixelCorrectionOperation(this, 0, thresholdPercent).Run();
+        if (Channels != 1)
+            throw new InvalidOperationException($"{nameof(BayerPixelCorrection)} only works on 1 channel images");
+
+        if (!hotThresholdPercent.HasValue && !coldThresholdPercent.HasValue)
+            return;
+
+        new BayerPixelCorrectionOperation(this, 0, hotThresholdPercent, coldThresholdPercent).Run();
         PropCache.Clear();
     }
 
