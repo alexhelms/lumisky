@@ -375,39 +375,51 @@ public partial class AllSkyImage : IDisposable
         PropCache.Clear();
     }
 
-    public void Stretch(bool boost = false, int channel = 0)
+    public STF[] GetDefaultSTFs()
     {
-        AssertChannel(channel);
-
-        var stf = STF.Estimate(boost, Median(channel), MAD(channel));
-        Stretch(stf);
+        return Enumerable.Repeat(STF.Default, Channels).ToArray();
     }
 
-    public void Stretch(STF stf, int channel = 0)
+    public STF[] GetSTFs(bool unlinked = false, bool boost = false)
     {
-        AssertChannel(channel);
+        STF[] stfs = new STF[Channels];
 
-        new StretchOperation(this, channel, stf).Run();
-        PropCache.Clear();
+        if (unlinked)
+        {
+            for (int c = 0; c < Channels; c++)
+            {
+                stfs[c] = STF.Estimate(boost, Median(c), MAD(c));
+            }
+        }
+        else
+        {
+            double[] medians = new double[Channels];
+            double[] mads = new double[Channels];
+
+            for (int c = 0; c < Channels; c++)
+            {
+                medians[c] = Median(c);
+                mads[c] = MAD(c);
+            }
+
+            for (int c = 0; c < Channels; c++)
+            {
+                stfs[c] = STF.EstimateLinked(boost, medians, mads);
+            }
+        }
+
+        return stfs;
     }
 
-    public void StretchUnlinked(bool boost = false)
+    public void Stretch(STF[] stfs)
     {
-        (double[] medians, double[] mads) = DoSubsampledMedianAndMAD();
+        if (stfs.Length != Channels)
+            throw new ArgumentException($"{nameof(stfs)} length must match the number of channels");
+
         for (int c = 0; c < Channels; c++)
         {
-            var stf = STF.Estimate(boost, medians[c], mads[c]);
-            Stretch(stf, c);
+            HistogramTransform.Apply(Data[c], stfs[c]);
         }
-    }
-
-    public void StretchLinked(bool boost = false)
-    {
-        (double[] medians, double[] mads) = DoSubsampledMedianAndMAD();
-        var stf = STF.EstimateLinked(boost, medians, mads);
-
-        for (int c = 0; c < Channels; c++)
-            Stretch(stf, c);
     }
 
     public void WhiteBalance(

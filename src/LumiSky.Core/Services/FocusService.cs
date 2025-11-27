@@ -149,7 +149,9 @@ public class FocusService : IDisposable
     private void ProcessAndSaveImage(AllSkyImage rawImage)
     {
         using AllSkyImage debayeredImage = Debayer.FromImage(rawImage);
-        debayeredImage.StretchLinked();
+
+        var linkedStfs = debayeredImage.GetSTFs();
+        debayeredImage.Stretch(linkedStfs);
 
         using Mat uint8Mat = debayeredImage.To8BitMat();
         using var image = new Image<Rgb, byte>(uint8Mat);

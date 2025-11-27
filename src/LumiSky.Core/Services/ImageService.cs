@@ -348,7 +348,8 @@ public class ImageService
     private void Stretch(AllSkyImage image)
     {
         using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Linked Stretch", t)));
-        image.StretchLinked();
+        var linkedStfs = image.GetSTFs();
+        image.Stretch(linkedStfs);
     }
 
     private void AutoSCurve(AllSkyImage image)
