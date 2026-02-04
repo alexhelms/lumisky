@@ -4,7 +4,8 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "PYTHONEXE": "C:\\Program Files\\Python311\\python.exe"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5135"

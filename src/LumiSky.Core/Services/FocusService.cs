@@ -25,6 +25,7 @@ public class FocusService : IDisposable
     public bool IsRunning { get; private set; }
     public TimeSpan Exposure { get; set; } = TimeSpan.FromSeconds(1);
     public int Gain { get; set; }
+    public double[] Medians { get; set; } = [];
 
     public FocusService(
         IProfileProvider profileProvider,
@@ -102,6 +103,8 @@ public class FocusService : IDisposable
                     Binning = _profileProvider.Current.Camera.Binning,
                 };
 
+                Medians = [];
+
                 using var image = await camera.TakeImageAsync(exposureParameters, token);
                 token.ThrowIfCancellationRequested();
 
@@ -149,6 +152,14 @@ public class FocusService : IDisposable
     private void ProcessAndSaveImage(AllSkyImage rawImage)
     {
         using AllSkyImage debayeredImage = Debayer.FromImage(rawImage);
+
+        // If the image is mono, debayered image is single channel
+        Medians = new double[debayeredImage.Channels];
+        for (int c = 0; c < debayeredImage.Channels; c++)
+        {
+            Medians[c] = debayeredImage.SubsampledMedian(c);
+        }
+
         debayeredImage.StretchLinked();
 
         using Mat uint8Mat = debayeredImage.To8BitMat();
