@@ -55,6 +55,13 @@ public class FindExposureJob : JobBase
                 ? _profile.Current.Camera.DaytimeGain
                 : _profile.Current.Camera.NighttimeGain;
 
+            var bias = isDay
+                ? _profile.Current.Camera.DaytimeBiasG
+                : _profile.Current.Camera.NighttimeBiasG;
+
+            var lowerThresh = bias * 1.1;
+            var upperThresh = 0.9;
+
             var exposureParameters = new ExposureParameters
             {
                 Duration = exposure,
@@ -65,8 +72,11 @@ public class FindExposureJob : JobBase
 
             Log.Information("Finding initial exposure");
 
+            int iters = 0;
             while (true)
             {
+                iters++;
+
                 context.CancellationToken.ThrowIfCancellationRequested();
 
                 var median = await ExposeAndMeasureMedian(camera, exposureParameters, context.CancellationToken);
@@ -75,7 +85,7 @@ public class FindExposureJob : JobBase
                 var nextExposure = _exposureService.GetNextExposure();
                 exposureParameters = exposureParameters with { Duration = nextExposure };
 
-                if (median < 0.9)
+                if (median > lowerThresh && median < upperThresh)
                 {
                     Log.Information("Starting exposure found at {Exposure:#.000000} sec, iterating once more",
                         exposureParameters.Duration.TotalSeconds);
@@ -88,6 +98,13 @@ public class FindExposureJob : JobBase
 
                     success = true;
                     break;
+                }
+
+                if (iters >= 10)
+                {
+                    string message = "Failed to find starting exposure, check gain and try again.";
+                    Log.Error(message);
+                    throw new Exception("Failed to find starting exposure, check gain and try again.");
                 }
             }
         }

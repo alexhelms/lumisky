@@ -43,10 +43,32 @@ public class ExposureService
     {
         using var _ = Serilog.Context.LogContext.PushProperty("SourceContext", GetType().Name);
 
-        if (median > 0.9)
+        bool isDay = _sunService.IsDaytime();
+        var maxExposureSeconds = Math.Min(_profile.Current.Capture.MaxExposureDuration.TotalSeconds,
+            _profile.Current.Capture.CaptureInterval.TotalSeconds);
+        var maxExposure = TimeSpan.FromSeconds(maxExposureSeconds);
+        double bias = isDay
+            ? _profile.Current.Camera.DaytimeBiasG
+            : _profile.Current.Camera.NighttimeBiasG;
+        var lowerThresh = bias * 1.1;
+        var upperThresh = 0.9;
+
+        if (median < lowerThresh)
         {
             // Clipped, do not store
-            // Set the next exposure to half the supplied exposure
+            // Set the next exposure to double the supplied exposure
+            // in hopes of getting an image that is not clipped.
+
+            Log.Information("Image clipped with median={Median:F6}, doubling exposure", median);
+            ExposureSecNext = exposure * 2;
+            if (ExposureSecNext > maxExposure)
+                ExposureSecNext = maxExposure;
+            return;
+        }
+        else if (median > upperThresh)
+        {
+            // Clipped, do not store
+            // Set the next exposure to quarter the supplied exposure
             // in hopes of getting an image that is not clipped.
 
             Log.Information("Image clipped with median={Median:F6}, quartering exposure", median);
@@ -54,17 +76,10 @@ public class ExposureService
             return;
         }
 
-        bool isDay = _sunService.IsDaytime();
-        var maxExposureSeconds = Math.Min(_profile.Current.Capture.MaxExposureDuration.TotalSeconds,
-            _profile.Current.Capture.CaptureInterval.TotalSeconds);
-        var maxExposure = TimeSpan.FromSeconds(maxExposureSeconds);
         double targetMedian = _profile.Current.Camera.TargetMedian / ushort.MaxValue;
         double conversionGain = isDay
             ? _profile.Current.Camera.DaytimeElectronGain
             : _profile.Current.Camera.NighttimeElectronGain;
-        double bias = isDay
-            ? _profile.Current.Camera.DaytimeBiasG / ushort.MaxValue
-            : _profile.Current.Camera.NighttimeBiasB / ushort.MaxValue;
 
         // Ensure positive, nonzero, negative doesn't make sense
         conversionGain = Math.Clamp(conversionGain, 0.001, double.MaxValue);
