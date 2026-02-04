@@ -4,6 +4,8 @@ namespace LumiSky.Core.Utilities;
 
 public static class ImagingUtil
 {
+    private const int MinParallelLength = 8192;
+
     public static unsafe void UInt8ToFloat(ReadOnlySpan<byte> src, Span<float> dst)
     {
         if (src.Length != dst.Length) throw new ArgumentException("src and dst must be equal length");
@@ -16,15 +18,24 @@ public static class ImagingUtil
             byte* pSrc = pS;
             float* pDst = pD;
 
-            var partition = Partitioner.Create(0, src.Length);
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-
-            Parallel.ForEach(partition, parallelOptions, x =>
+            if (src.Length < MinParallelLength)
             {
-                var source = new ReadOnlySpan<byte>(pSrc + x.Item1, x.Item2 - x.Item1);
-                var target = new Span<float>(pDst + x.Item1, x.Item2 - x.Item1);
+                var source = new ReadOnlySpan<byte>(pSrc, src.Length);
+                var target = new Span<float>(pDst, dst.Length);
                 Simd.Conversion.UInt8ToFloat(source, target);
-            });
+            }
+            else
+            {
+                var partition = Partitioner.Create(0, src.Length);
+                var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+                Parallel.ForEach(partition, parallelOptions, x =>
+                {
+                    var source = new ReadOnlySpan<byte>(pSrc + x.Item1, x.Item2 - x.Item1);
+                    var target = new Span<float>(pDst + x.Item1, x.Item2 - x.Item1);
+                    Simd.Conversion.UInt8ToFloat(source, target);
+                });
+            }
         }
     }
 
@@ -40,15 +51,24 @@ public static class ImagingUtil
             ushort* pSrc = pS;
             float* pDst = pD;
 
-            var partition = Partitioner.Create(0, src.Length);
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-
-            Parallel.ForEach(partition, parallelOptions, x =>
+            if (src.Length < MinParallelLength)
             {
-                var source = new ReadOnlySpan<ushort>(pSrc + x.Item1, x.Item2 - x.Item1);
-                var target = new Span<float>(pDst + x.Item1, x.Item2 - x.Item1);
+                var source = new ReadOnlySpan<ushort>(pSrc, src.Length);
+                var target = new Span<float>(pDst, dst.Length);
                 Simd.Conversion.UInt16ToFloat(source, target);
-            });
+            }
+            else
+            {
+                var partition = Partitioner.Create(0, src.Length);
+                var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+                Parallel.ForEach(partition, parallelOptions, x =>
+                {
+                    var source = new ReadOnlySpan<ushort>(pSrc + x.Item1, x.Item2 - x.Item1);
+                    var target = new Span<float>(pDst + x.Item1, x.Item2 - x.Item1);
+                    Simd.Conversion.UInt16ToFloat(source, target);
+                });
+            }
         }
     }
 
@@ -64,15 +84,24 @@ public static class ImagingUtil
             float* pSrc = pS;
             byte* pDst = pD;
 
-            var partition = Partitioner.Create(0, src.Length);
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-
-            Parallel.ForEach(partition, parallelOptions, x =>
+            if (src.Length < MinParallelLength)
             {
-                var source = new ReadOnlySpan<float>(pSrc + x.Item1, x.Item2 - x.Item1);
-                var target = new Span<byte>(pDst + x.Item1, x.Item2 - x.Item1);
+                var source = new ReadOnlySpan<float>(pSrc, src.Length);
+                var target = new Span<byte>(pDst, dst.Length);
                 Simd.Conversion.FloatToUInt8(source, target);
-            });
+            }
+            else
+            {
+                var partition = Partitioner.Create(0, src.Length);
+                var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+                Parallel.ForEach(partition, parallelOptions, x =>
+                {
+                    var source = new ReadOnlySpan<float>(pSrc + x.Item1, x.Item2 - x.Item1);
+                    var target = new Span<byte>(pDst + x.Item1, x.Item2 - x.Item1);
+                    Simd.Conversion.FloatToUInt8(source, target);
+                });
+            }
         }
     }
 
@@ -88,15 +117,24 @@ public static class ImagingUtil
             float* pSrc = pS;
             ushort* pDst = pD;
 
-            var partition = Partitioner.Create(0, src.Length);
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-
-            Parallel.ForEach(partition, parallelOptions, x =>
+            if (src.Length < MinParallelLength)
             {
-                var source = new ReadOnlySpan<float>(pSrc + x.Item1, x.Item2 - x.Item1);
-                var target = new Span<ushort>(pDst + x.Item1, x.Item2 - x.Item1);
+                var source = new ReadOnlySpan<float>(pSrc, src.Length);
+                var target = new Span<ushort>(pDst, dst.Length);
                 Simd.Conversion.FloatToUInt16(source, target);
-            });
+            }
+            else
+            {
+                var partition = Partitioner.Create(0, src.Length);
+                var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+                Parallel.ForEach(partition, parallelOptions, x =>
+                {
+                    var source = new ReadOnlySpan<float>(pSrc + x.Item1, x.Item2 - x.Item1);
+                    var target = new Span<ushort>(pDst + x.Item1, x.Item2 - x.Item1);
+                    Simd.Conversion.FloatToUInt16(source, target);
+                });
+            }
         }
     }
 }
