@@ -144,8 +144,17 @@ public static class Bootstrap
                 .WithCronSchedule("0 0 10 * * ?")  // 10am every day
                 .Build();
 
+            var diskSpaceTrigger = TriggerBuilder.Create()
+                .WithIdentity(TriggerKeys.DiskSpace)
+                .ForJob(DiskSpaceJob.Key)
+                .WithSimpleSchedule(o => o
+                    .WithInterval(TimeSpan.FromMinutes(10))
+                    .RepeatForever())
+                .Build();
+
             await scheduler.ScheduleJob(dayNightTrigger);
             await scheduler.ScheduleJob(cleanupTrigger);
+            await scheduler.ScheduleJob(diskSpaceTrigger);
         }
         catch (Exception e)
         {
@@ -194,6 +203,11 @@ public static class Bootstrap
 
             q.AddJob<PanoramaTimelapseJob>(c => c
                 .WithIdentity(PanoramaTimelapseJob.Key)
+                .StoreDurably()
+                .Build());
+
+            q.AddJob<DiskSpaceJob>(c => c
+                .WithIdentity(DiskSpaceJob.Key)
                 .StoreDurably()
                 .Build());
         });

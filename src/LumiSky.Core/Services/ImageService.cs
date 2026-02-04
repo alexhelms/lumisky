@@ -254,7 +254,7 @@ public class ImageService
             throw new FileNotFoundException(filename);
 
         using var rawImage = LoadRawImage(filename);
-        RemoveHotPixels(rawImage);
+        RemoveHotAndColdPixels(rawImage);
 
         using var debayeredImage = DebayerImage(rawImage);
 
@@ -319,12 +319,15 @@ public class ImageService
         return rawImage;
     }
 
-    private void RemoveHotPixels(AllSkyImage image)
+    private void RemoveHotAndColdPixels(AllSkyImage image)
     {
-        if (_profile.Current.Processing.HotPixelCorrection)
+        int? hot = _profile.Current.Processing.HotPixelCorrection ? _profile.Current.Processing.HotPixelThresholdPercent : null;
+        int? cold = _profile.Current.Processing.ColdPixelCorrection ? _profile.Current.Processing.ColdPixelThresholdPercent : null;
+
+        if (hot.HasValue || cold.HasValue)
         {
-            using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Remove Hot Pixels", t)));
-            image.BayerHotPixelCorrection(_profile.Current.Processing.HotPixelThresholdPercent);
+            using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Remove Hot/Cold Pixels", t)));
+            image.BayerPixelCorrection(hot, cold);
         }
     }
 
@@ -345,7 +348,8 @@ public class ImageService
     private void Stretch(AllSkyImage image)
     {
         using var _ = Benchmark.Start(t => ProcessTimingTracker.Add(new("Linked Stretch", t)));
-        image.StretchLinked();
+        var linkedStfs = image.GetSTFs();
+        image.Stretch(linkedStfs);
     }
 
     private void AutoSCurve(AllSkyImage image)

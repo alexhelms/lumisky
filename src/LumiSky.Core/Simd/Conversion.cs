@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 
 namespace LumiSky.Core.Simd;
 
@@ -47,7 +46,7 @@ public static class Conversion
         const byte scale = byte.MaxValue;
         Vector<float> vScale = new(scale);
 
-        if (input.Length >= Vector<ushort>.Count)
+        if (input.Length >= Vector<ushort>.Count * 4)
         {
             for (; elementOffset <= oneVectorAwayFromEnd; elementOffset += (nuint)Vector<byte>.Count)
             {
@@ -121,7 +120,7 @@ public static class Conversion
         const ushort scale = ushort.MaxValue;
         Vector<float> vScale = new(scale);
 
-        if (input.Length >= Vector<ushort>.Count)
+        if (input.Length >= Vector<ushort>.Count * 2)
         {
             for (; elementOffset <= oneVectorAwayFromEnd; elementOffset += (nuint)Vector<ushort>.Count)
             {

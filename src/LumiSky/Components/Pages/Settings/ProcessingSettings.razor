@@ -56,7 +56,7 @@
 
         <RadzenFieldset class="ls-shadow">
             <HeaderTemplate>
-                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Hot Pixel Correction</strong></RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0"><strong>Hot/Cold Pixel Correction</strong></RadzenText>
             </HeaderTemplate>
             <ChildContent>
                 <RadzenStack>
@@ -66,13 +66,31 @@
                         <RadzenLabel Text="Hot Pixel Correction" Component="HotPixelCorrection" />
                     </RadzenStack>
 
-                    <RadzenFormField Text="Threshold Percent" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                    <RadzenFormField Text="Hot Threshold Percent" Variant="Variant.Outlined" AllowFloatingLabel="false">
                         <ChildContent>
                             <RadzenNumeric @bind-Value="model.HotPixelThresholdPercent" Min="5" Max="1000" Step="5" Format="F0" />
                         </ChildContent>
                         <Helper>
                             <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
                                 A hot pixel is corrected if its value is greater than [1 + threshold/100] times the max of its NSEW neighbors.
+                                When corrected, the pixel is replaced with the average of its four neighbors. The neighbors are always of
+                                the same color filter, respecting the CFA.
+                            </RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenSwitch Name="ColdPixelCorrection" @bind-Value="model.ColdPixelCorrection" />
+                        <RadzenLabel Text="Cold Pixel Correction" Component="ColdPixelCorrection" />
+                    </RadzenStack>
+
+                    <RadzenFormField Text="Cold Threshold Percent" Variant="Variant.Outlined" AllowFloatingLabel="false">
+                        <ChildContent>
+                            <RadzenNumeric @bind-Value="model.ColdPixelThresholdPercent" Min="5" Max="1000" Step="5" Format="F0" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-2 rz-mb-0">
+                                A cold pixel is corrected if its value is less than [1 + threshold/100] times the max of its NSEW neighbors.
                                 When corrected, the pixel is replaced with the average of its four neighbors. The neighbors are always of
                                 the same color filter, respecting the CFA.
                             </RadzenText>
@@ -360,6 +378,8 @@
         model.AutoSCurveContrast = Profile.Current.Processing.AutoSCurveContrast;
         model.HotPixelCorrection = Profile.Current.Processing.HotPixelCorrection;
         model.HotPixelThresholdPercent = Profile.Current.Processing.HotPixelThresholdPercent;
+        model.ColdPixelCorrection = Profile.Current.Processing.ColdPixelCorrection;
+        model.ColdPixelThresholdPercent = Profile.Current.Processing.ColdPixelThresholdPercent;
         model.EnableOverlays = Profile.Current.Processing.EnableOverlays;
         model.EnableVariableOverlays = Profile.Current.Processing.EnableVariableOverlays;
 
@@ -404,6 +424,8 @@
         Profile.Current.Processing.AutoSCurveContrast = model.AutoSCurveContrast;
         Profile.Current.Processing.HotPixelCorrection = model.HotPixelCorrection;
         Profile.Current.Processing.HotPixelThresholdPercent = model.HotPixelThresholdPercent;
+        Profile.Current.Processing.ColdPixelThresholdPercent = model.ColdPixelThresholdPercent;
+        Profile.Current.Processing.ColdPixelCorrection = model.ColdPixelCorrection;
         Profile.Current.Processing.EnableOverlays = model.EnableOverlays;
         Profile.Current.Processing.EnableVariableOverlays = model.EnableVariableOverlays;
 
@@ -595,6 +617,8 @@
         public double AutoSCurveContrast { get; set; }
         public bool HotPixelCorrection { get; set; }
         public int HotPixelThresholdPercent { get; set; }
+        public bool ColdPixelCorrection { get; set; }
+        public int ColdPixelThresholdPercent { get; set; }
         public bool EnableOverlays { get; set; }
         public bool EnableVariableOverlays { get; set; }
     }

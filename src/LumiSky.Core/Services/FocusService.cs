@@ -152,15 +152,16 @@ public class FocusService : IDisposable
     private void ProcessAndSaveImage(AllSkyImage rawImage)
     {
         using AllSkyImage debayeredImage = Debayer.FromImage(rawImage);
+        var linkedStfs = debayeredImage.GetSTFs();
 
         // If the image is mono, debayered image is single channel
         Medians = new double[debayeredImage.Channels];
         for (int c = 0; c < debayeredImage.Channels; c++)
         {
-            Medians[c] = debayeredImage.SubsampledMedian(c);
+            Medians[c] = debayeredImage.Median(c);
         }
 
-        debayeredImage.StretchLinked();
+        debayeredImage.Stretch(linkedStfs);
 
         using Mat uint8Mat = debayeredImage.To8BitMat();
         using var image = new Image<Rgb, byte>(uint8Mat);

@@ -15,6 +15,7 @@ public static class JobConstants
         public const string DayNight = "day-night-job";
         public const string Cleanup = "cleanup-job";
         public const string Publish = "publish-job";
+        public const string DiskSpace = "disk-space";
     }
 
     public static class Triggers
@@ -24,6 +25,7 @@ public static class JobConstants
         public const string PanoramaTimelapse = "panorama-timelapse-trigger";
         public const string DayNight = "day-night-trigger";
         public const string Cleanup = "cleanup-trigger";
+        public const string DiskSpace = "disk-space-trigger";
     }
 
     public static class Groups
@@ -41,4 +43,5 @@ public static class TriggerKeys
     public static readonly TriggerKey PanoramaTimelapse = new(JobConstants.Triggers.PanoramaTimelapse, JobConstants.Groups.Generation);
     public static readonly TriggerKey DayNight = new(JobConstants.Triggers.DayNight, JobConstants.Groups.Maintenance);
     public static readonly TriggerKey Cleanup = new(JobConstants.Triggers.Cleanup, JobConstants.Groups.Maintenance);
+    public static readonly TriggerKey DiskSpace = new(JobConstants.Triggers.DiskSpace, JobConstants.Groups.Maintenance);
 }

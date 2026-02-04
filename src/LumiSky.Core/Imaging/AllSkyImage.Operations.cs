@@ -581,87 +581,6 @@ public partial class AllSkyImage
         }
     }
 
-    private class StretchOperation : BaseRowIntervalOperation
-    {
-        private readonly STF stf;
-
-        private float[] mtfLut;
-
-        public StretchOperation(AllSkyImage image, int channel, STF stf)
-            : base(image, channel)
-        {
-            AcquireWriteLock = true;
-            this.stf = stf;
-            this.mtfLut = CreateLut(stf);
-        }
-
-        private static float[] CreateLut(STF stf)
-        {
-            const int LutSize = ushort.MaxValue + 1;
-            var lut = ArrayPool<float>.Shared.Rent(LutSize);
-            for (int i = 0; i < LutSize; i++)
-            {
-                double value = (double) i / ushort.MaxValue;
-                lut[i] = (float)STF.MTF(stf.M, value);
-            }
-            return lut;
-        }
-
-        public override void Complete()
-        {
-            ArrayPool<float>.Shared.Return(mtfLut);
-        }
-
-        public override void Invoke(in RowInterval rows)
-        {
-            float d = 1.0f;
-            bool hasClipping = stf.C0 != 0 || stf.C1 != 1.0;
-            bool hasDelta = false;
-            if (hasClipping)
-            {
-                d = (float)(stf.C1 - stf.C0);
-                hasDelta = 1 + d != 1;
-            }
-
-            for (int y = rows.Top; y < rows.Bottom; y++)
-            {
-                var rowSpan = image.Data.GetRowSpan(y, channel);
-
-                for (int x = rows.Left; x < rows.Right; x++)
-                {
-                    float value = rowSpan[x];
-
-                    if (hasClipping)
-                    {
-                        if (hasDelta)
-                        {
-                            if (value <= stf.C0)
-                            {
-                                value = 0;
-                            }
-                            else if (value >= stf.C1)
-                            {
-                                value = 1.0f;
-                            }
-                            else
-                            {
-                                value = (float)((value - stf.C0) / d);
-                            }
-                        }
-                        else
-                        {
-                            value = (float)stf.C0;
-                        }
-                    }
-
-                    int index = (int)(value * ushort.MaxValue);
-                    value = mtfLut[index];
-                    rowSpan[x] = value;
-                }
-            }
-        }
-    }
-
     private class ManualWhiteBalanceOperation : BaseRowIntervalOperation
     {
         private readonly double scale;
@@ -752,15 +671,18 @@ public partial class AllSkyImage
         }
     }
 
-    private class BayerHotPixelCorrectionOperation : BaseRowIntervalOperation
+    private class BayerPixelCorrectionOperation : BaseRowIntervalOperation
     {
-        private int thresholdPercent;
+        private int? hotThresholdPercent;
 
-        public BayerHotPixelCorrectionOperation(AllSkyImage image, int channel, int thresholdPercent)
+        private int? coldThresholdPercent;
+
+        public BayerPixelCorrectionOperation(AllSkyImage image, int channel, int? hotThresholdPercent, int? coldThresholdPercent)
             : base(image, channel)
         {
             AcquireWriteLock = true;
-            this.thresholdPercent = thresholdPercent;
+            this.hotThresholdPercent = hotThresholdPercent;
+            this.coldThresholdPercent = coldThresholdPercent;
         }
 
         public override void Invoke(in RowInterval rows)
@@ -786,7 +708,16 @@ public partial class AllSkyImage
                     float c = thisRowSpan[x];
 
                     float maxValue = LumiSkyMath.Max4(n, s, e, w);
-                    if (c > maxValue + (maxValue * (thresholdPercent / 100.0f)))
+                    float minValue = LumiSkyMath.Min4(n, s, e, w);
+
+                    if (hotThresholdPercent.HasValue &&
+                        c > maxValue + (maxValue * (hotThresholdPercent / 100.0f)))
+                    {
+                        float average = (n + s + e + w) / 4.0f;
+                        thisRowSpan[x] = (float)average;
+                    }
+                    else if (coldThresholdPercent.HasValue &&
+                        c < minValue - (minValue * (coldThresholdPercent / 100.0f)))
                     {
                         float average = (n + s + e + w) / 4.0f;
                         thisRowSpan[x] = (float)average;
